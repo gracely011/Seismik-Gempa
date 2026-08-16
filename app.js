@@ -1360,6 +1360,24 @@ function initHistats() {
     }
 }
 
+// ==================== GOOGLE ANALYTICS (GA4) ====================
+function initGoogleAnalytics() {
+    try {
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { window.dataLayer.push(arguments); }
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', 'G-P8H6SWEKK2');
+
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-P8H6SWEKK2';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(script);
+    } catch (e) {
+        console.warn('[Analytics] Google Analytics init warning:', e);
+    }
+}
+
 // ==================== APP INITIALIZATION ====================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1370,6 +1388,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateRecentQuakesUI();
     initChipsSliderInteractions();
     initHistats();
+    initGoogleAnalytics();
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     } else {
