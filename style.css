@@ -249,6 +249,12 @@ body.theme-dark .rail-btn.active .rail-label {
     margin: 4px 0;
 }
 
+/* PRO VERSION LINK & BANNER (DISEMBUNYIKAN) */
+#railBtnPro,
+.promo-gmap {
+    display: none !important;
+}
+
 /* ==================== UNIFIED SOLID SEARCH & CARDS PANEL (GOOGLE MAPS SIDEBAR) ==================== */
 .panel-container {
     position: fixed;
