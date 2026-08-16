@@ -339,11 +339,9 @@ function openMobileDrawer() {
 const canvasMarkerRenderer = L.canvas({ padding: 0.5, tolerance: 5 });
 const markerGroup = L.layerGroup().addTo(map);
 
-async function loadMapData() {
+async function loadMapData(silent = false) {
     const loadingEl = document.getElementById("loading");
-    if (loadingEl) loadingEl.style.display = "block";
-    markerGroup.clearLayers();
-    quakesArray = [];
+    if (loadingEl && !silent) loadingEl.style.display = "block";
 
     const rawQuakes = [];
 
@@ -819,21 +817,16 @@ function initSystem() {
     }, 1200);
 
     // Refresh data tanpa force prompt
-    loadMapData();
+    // Refresh data pertama kali saat sensor dimulai
+    loadMapData(false);
 
-    // Auto-Sync Berkala Cerdas (Setiap 60 Detik setelah Sensor Aktif)
+    // Auto-Sync Berkala Halus di Latar Belakang (Setiap 60 Detik tanpa kedip / tanpa popup)
     if (!window.seismoAutoSyncTimer) {
         window.seismoAutoSyncTimer = setInterval(() => {
             if (document.visibilityState === 'visible' && isStarted) {
-                loadMapData();
+                loadMapData(true);
             }
         }, 60000);
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && isStarted) {
-                loadMapData();
-            }
-        });
     }
 }
 
