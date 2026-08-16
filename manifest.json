@@ -1,0 +1,20 @@
+{
+  "name": "Monitor Seismik - Pantau Gempa BMKG & USGS",
+  "short_name": "Seismik",
+  "description": "Sistem pemantauan gempa bumi real-time BMKG & USGS dengan antarmuka modern Google Maps.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#171717",
+  "theme_color": "#202124",
+  "categories": ["weather", "utilities", "news"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

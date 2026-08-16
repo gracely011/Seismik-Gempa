@@ -1340,3 +1340,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 150);
 });
 
+// ==================== PWA INSTALL PROMPT CONTROLLER ====================
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    console.log('[PWA] Seismik App ready for installation.');
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    console.log('[PWA] Seismik App successfully installed!');
+});
+
+
