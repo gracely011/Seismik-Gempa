@@ -1416,18 +1416,22 @@ button.btn-act.active {
 
     .cards-scroll-wrap {
         position: fixed;
-        bottom: 60px;
-        left: 8px;
-        right: 8px;
-        max-height: 72vh;
+        bottom: 56px;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        max-height: 50vh;
         z-index: 1001;
         background: var(--bg-panel);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--border-color);
-        border-radius: 20px 20px 14px 14px;
-        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
-        padding: 0 10px 12px 10px;
+        border-top: 1px solid var(--border-color);
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+        padding: 0 14px 14px 14px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         pointer-events: auto;
@@ -1436,7 +1440,7 @@ button.btn-act.active {
 
     /* PEEK MODE (HANYA MENAMPILKAN KARTU AREA BATAM & CUACA) */
     .cards-scroll-wrap.collapsed {
-        max-height: 132px;
+        max-height: 125px;
         overflow-y: hidden;
     }
 
