@@ -249,7 +249,8 @@ body.theme-dark .rail-btn.active .rail-label {
     margin: 4px 0;
 }
 
-/* PRO VERSION LINK & BANNER (DISEMBUNYIKAN) */
+/* DISEMBUNYIKAN (DESKTOP & GLOBAL) */
+#railBtnGps,
 #railBtnPro,
 .promo-gmap {
     display: none !important;
@@ -1264,7 +1265,7 @@ button.btn-act.active {
         flex-direction: row;
         align-items: center;
         justify-content: space-around;
-        flex: 2;
+        flex: 1;
         width: auto;
         gap: 0;
     }
@@ -1274,18 +1275,22 @@ button.btn-act.active {
         flex-direction: row;
         align-items: center;
         justify-content: space-around;
-        flex: 1;
+        flex: 2;
         width: auto;
         gap: 0;
     }
 
-    /* SEMBUNYIKAN MENU LAIN DI MOBILE AGAR HANYA MUNCUL: MENU, GPS, INFO */
+    /* SEMBUNYIKAN MENU LAIN DI MOBILE AGAR HANYA MUNCUL: MENU, MODE (TERANG/GELAP), INFO */
     #railBtnSaved,
     #railBtnRecent,
+    #railBtnGps,
     #railBtnPro,
-    #btnTheme,
     .rail-separator {
         display: none !important;
+    }
+
+    #btnTheme {
+        display: flex !important;
     }
 
     .rail-btn {
