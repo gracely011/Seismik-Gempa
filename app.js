@@ -217,6 +217,67 @@ function toggleMapLayer(e) {
     });
 });
 
+// ==================== FAULT LINES & MEGATHRUST LAYER ====================
+let faultLinesLayerGroup = L.layerGroup();
+// Baca preferensi tersimpan dari LocalStorage (default true jika belum disetel)
+let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') !== 'false';
+
+function initFaultLinesLayer() {
+    if (typeof FAULT_LINES_DATA === 'undefined') return;
+
+    FAULT_LINES_DATA.forEach(f => {
+        const color = f.isMegathrust ? '#ef4444' : '#f97316';
+        const weight = f.isMegathrust ? 3.5 : 2.5;
+        const dashArray = f.isMegathrust ? '6, 6' : null;
+
+        const polyline = L.polyline(f.coords, {
+            color: color,
+            weight: weight,
+            opacity: 0.85,
+            dashArray: dashArray,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+
+        const popupContent = `
+            <div class="fault-popup-content">
+                <div class="fault-popup-title">${f.isMegathrust ? '🌊 ' : '⚡ '}${f.name}</div>
+                <div class="fault-popup-sub">📍 Wilayah: ${f.region} • ${f.type}</div>
+                <div class="fault-popup-desc">${f.desc}</div>
+            </div>
+        `;
+        polyline.bindPopup(popupContent);
+        faultLinesLayerGroup.addLayer(polyline);
+    });
+
+    const btn = document.getElementById("layerOptFaults");
+    if (isFaultsLayerVisible) {
+        faultLinesLayerGroup.addTo(map);
+        if (btn) btn.classList.add("active");
+    } else {
+        if (btn) btn.classList.remove("active");
+    }
+}
+
+function toggleFaultsLayer() {
+    isFaultsLayerVisible = !isFaultsLayerVisible;
+    try {
+        localStorage.setItem('seismo_faults_visible', isFaultsLayerVisible ? 'true' : 'false');
+    } catch (e) { }
+
+    const btn = document.getElementById("layerOptFaults");
+    if (isFaultsLayerVisible) {
+        map.addLayer(faultLinesLayerGroup);
+        if (btn) btn.classList.add("active");
+    } else {
+        map.removeLayer(faultLinesLayerGroup);
+        if (btn) btn.classList.remove("active");
+    }
+}
+
+// Inisialisasi garis sesar aktif saat boot
+initFaultLinesLayer();
+
 // ==================== GPS PULSE MARKER ====================
 let gpsMarker = null;
 let gpsCircle = null;
@@ -677,10 +738,34 @@ function addEarthquakeMarker(q, isLatest = false) {
             ${potensi ? `<div style="font-size:10px; color:#137333; margin-top:2px;">🛡️ ${potensi}</div>` : ''}
             ${dist !== null ? `<div style="font-size:10px; color:#1a73e8; margin-top:5px; font-weight:700;">📏 Jarak: ${dist} km dari lokasi Anda</div>` : ''}
             <div style="font-size:9px; color:#80868b; margin-top:3px;">Koordinat: ${lat.toFixed(2)}, ${lon.toFixed(2)}</div>
+            <div style="margin-top:8px; padding-top:6px; border-top:1px solid #eee;">
+                <button onclick="shareQuakeInfo('${escapeQuotes(place)}', ${mag}, '${escapeQuotes(time)}', '${escapeQuotes(depth || '10 km')}', '${escapeQuotes(potensi || 'Tidak berpotensi tsunami')}', event)" style="width:100%; background:#25d366; color:#fff; border:none; border-radius:6px; padding:5px 8px; font-size:10.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <svg style="width:13px; height:13px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    Bagikan ke WhatsApp
+                </button>
+            </div>
         </div>
     `;
 
     marker.bindPopup(popupContent);
+}
+
+// ==================== SHARE QUAKE INFO (WHATSAPP & WEB SHARE API) ====================
+function shareQuakeInfo(place, mag, time, depth, potensi, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    const magVal = typeof mag === 'number' ? mag.toFixed(1) : parseFloat(mag).toFixed(1);
+    const text = `⚠️ *INFORMASI GEMPA BUMI (BMKG / USGS)*\n\n📍 *Lokasi:* ${place}\n💥 *Magnitudo:* M ${magVal}\n🕒 *Waktu:* ${time}\n🌊 *Kedalaman:* ${depth} | ${potensi || 'Tidak berpotensi tsunami'}\n\n🌐 *Pantau Langsung Live Seismograf:*\nhttps://seismik.gracely.my.id/`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: `Info Gempa M ${magVal} - ${place}`,
+            text: text,
+            url: 'https://seismik.gracely.my.id/'
+        }).catch(() => { });
+    } else {
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(waUrl, '_blank');
+    }
 }
 
 // ==================== INDONESIAN CITIES DATABASE & GEOCODING ====================
@@ -1031,11 +1116,16 @@ function updateRecentQuakesUI() {
                         ${dist !== null ? `<span class="quake-dist">• 📏 ${dist} km</span>` : ''}
                     </div>
                 </div>
-                <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
-                    <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
-                        ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
-                    </svg>
-                </button>
+                <div style="display: flex; align-items: center; gap: 2px;">
+                    <button class="btn-quake-share" onclick="shareQuakeInfo('${safePlace}', ${q.mag}, '${humanTime || q.time}', '${q.depth || '10 km'}', '${escapeQuotes(q.potensi || 'Tidak berpotensi tsunami')}', event)" title="Bagikan Info Gempa (WhatsApp)">
+                        <svg class="gmap-icon" style="width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    </button>
+                    <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
+                        <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
+                            ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -1311,6 +1401,7 @@ function renderBookmarkedQuakesUI() {
 
     container.innerHTML = bookmarks.map(q => {
         let magClass = q.mag >= 5 ? 'mag-red' : (q.mag >= 3 ? 'mag-orange' : 'mag-gray');
+        let safePlace = escapeQuotes(q.place);
         return `
             <div class="quake-card-item" onclick="focusQuake(${q.lat}, ${q.lon})">
                 <div class="quake-mag-badge ${magClass}">M ${q.mag.toFixed(1)}</div>
@@ -1321,9 +1412,14 @@ function renderBookmarkedQuakesUI() {
                         <span>• Kedalaman ${q.depth}</span>
                     </div>
                 </div>
-                <button class="btn-item-delete" style="color:var(--accent-red);" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, time:'${q.time}'}, event)" title="Hapus Bookmark">
-                    <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                </button>
+                <div style="display: flex; align-items: center; gap: 2px;">
+                    <button class="btn-quake-share" onclick="shareQuakeInfo('${safePlace}', ${q.mag}, '${escapeQuotes(q.time)}', '${escapeQuotes(q.depth || '10 km')}', 'Tidak berpotensi tsunami', event)" title="Bagikan Info Gempa (WhatsApp)">
+                        <svg class="gmap-icon" style="width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    </button>
+                    <button class="btn-item-delete" style="color:var(--accent-red);" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, time:'${q.time}'}, event)" title="Hapus Bookmark">
+                        <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -1463,11 +1559,16 @@ function render24hTimelineUI() {
                         ${dist !== null ? `<span class="quake-dist">• 📏 ${dist} km</span>` : ''}
                     </div>
                 </div>
-                <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
-                    <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
-                        ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
-                    </svg>
-                </button>
+                <div style="display: flex; align-items: center; gap: 2px;">
+                    <button class="btn-quake-share" onclick="shareQuakeInfo('${safePlace}', ${q.mag}, '${humanTime || q.time}', '${q.depth || '10 km'}', '${escapeQuotes(q.potensi || 'Tidak berpotensi tsunami')}', event)" title="Bagikan Info Gempa (WhatsApp)">
+                        <svg class="gmap-icon" style="width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    </button>
+                    <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
+                        <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
+                            ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -2136,6 +2237,179 @@ document.addEventListener("DOMContentLoaded", () => {
         map.invalidateSize();
         resizeCanvas();
     }, 150);
+});
+
+// ==================== SIMULASI GEMPA (SEISMOGRAPH EXPERIMENT) ====================
+let isSimulating = false;
+let simShakeTimer = null;
+
+function simulateEarthquake(mag) {
+    if (!isStarted) {
+        initSystem();
+    }
+
+    if (isSimulating) {
+        clearInterval(simShakeTimer);
+    }
+    isSimulating = true;
+
+    // Bunyikan sirene darurat jika alarm aktif dan M >= 5.0
+    if (isAlarmOn) {
+        playEmergencySiren();
+        if (mag >= 5.0) {
+            speakAlert(`Peringatan getaran gempa magnitudo ${mag.toFixed(1)} terdeteksi`);
+        }
+    }
+
+    const durationMs = 8000;
+    const startTime = Date.now();
+    const peakAmp = mag >= 7 ? 6.5 : (mag >= 5 ? 3.8 : 1.8);
+
+    simShakeTimer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        if (elapsed > durationMs) {
+            clearInterval(simShakeTimer);
+            isSimulating = false;
+            return;
+        }
+
+        // Fase 1: P-wave (0-2s) getaran frekuensi tinggi amplitudo sedang
+        // Fase 2: S-wave & Surface wave (2-5s) guncangan puncak
+        // Fase 3: Decay coda (5-8s) peluruhan
+        let currentAmp = 0;
+        if (elapsed < 2000) {
+            currentAmp = (peakAmp * 0.4) * Math.sin(elapsed * 0.05);
+        } else if (elapsed < 5000) {
+            const decay = 1 - ((elapsed - 2000) / 3000) * 0.3;
+            currentAmp = peakAmp * decay * (Math.sin(elapsed * 0.03) + 0.5 * Math.sin(elapsed * 0.08));
+        } else {
+            const decay = 1 - ((elapsed - 5000) / 3000);
+            currentAmp = (peakAmp * 0.4) * decay * Math.sin(elapsed * 0.02);
+        }
+
+        // Micro jitter
+        currentAmp += (Math.random() - 0.5) * (peakAmp * 0.2);
+
+        let simVal = baseZ + currentAmp;
+        sData.push(simVal);
+        if (sData.length > 300) sData.shift();
+        historyLog.push({ ts: Date.now(), v: simVal });
+        if (historyLog.length > 1000) historyLog.shift();
+
+        if (!isReplaying) {
+            draw(sData);
+        }
+    }, 30);
+}
+
+// ==================== SIRENE PERINGATAN & VOICE ALERT ====================
+function playEmergencySiren() {
+    if (isMuted) return;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        // FM sweeping sirene Ina-TEWS 650Hz s/d 1150Hz
+        const now = audioCtx.currentTime;
+        osc.frequency.setValueAtTime(650, now);
+        osc.frequency.linearRampToValueAtTime(1150, now + 0.5);
+        osc.frequency.linearRampToValueAtTime(650, now + 1.0);
+        osc.frequency.linearRampToValueAtTime(1150, now + 1.5);
+        osc.frequency.linearRampToValueAtTime(650, now + 2.0);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 2.2);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 2.2);
+    } catch (e) { }
+}
+
+function speakAlert(text) {
+    if (isMuted) return;
+    try {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 1.05;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    } catch (e) { }
+}
+
+// ==================== PANDUAN SIAGA MITIGASI MODAL ====================
+function openDisasterGuide() {
+    const modal = document.getElementById("modalDisasterGuide");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function closeDisasterGuide(e) {
+    if (e && e.target && e.target !== e.currentTarget) return;
+    const modal = document.getElementById("modalDisasterGuide");
+    if (modal) modal.style.display = "none";
+}
+
+function handleContactClick(number, name, e) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(number);
+        }
+    } catch (err) { }
+    showToastNotification(`📞 Nomor ${name} (${number}) siap dipanggil / disalin ke clipboard!`);
+}
+
+function showToastNotification(msg) {
+    let toast = document.getElementById("seismoToast");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "seismoToast";
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #202124;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 10px 18px;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.15);
+            z-index: 1000000;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        `;
+        document.body.appendChild(toast);
+    }
+    toast.innerText = msg;
+    toast.style.opacity = "1";
+    toast.style.transform = "translateX(-50%) translateY(0)";
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(-50%) translateY(20px)";
+    }, 2800);
+}
+
+// Tutup modal panduan dengan tombol Esc
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        closeDisasterGuide();
+    }
 });
 
 // ==================== PWA INSTALL PROMPT CONTROLLER ====================

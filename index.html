@@ -45,7 +45,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=11.1">
+    <link rel="stylesheet" href="style.css?v=12.0">
 </head>
 
 <body>
@@ -113,6 +113,14 @@
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                 </div>
                 <span class="rail-label">Info</span>
+            </button>
+
+            <!-- PANDUAN SIAGA BENCANA -->
+            <button class="rail-btn" id="railBtnGuide" onclick="openDisasterGuide()" title="Panduan Siaga &amp; Kontak Darurat">
+                <div class="rail-icon-indicator" style="color: #ea4335;">
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
+                </div>
+                <span class="rail-label">Siaga</span>
             </button>
         </div>
     </nav>
@@ -207,6 +215,18 @@
                         <button class="btn-act" id="btnMute" onclick="toggleMute()">MUTE: OFF</button>
                         <button class="btn-act" id="btnAlarm" onclick="toggleAlarm()">ALARM: OFF</button>
                         <button class="btn-act" onclick="loadMapData()">REFRESH PETA</button>
+                    </div>
+
+                    <!-- SIMULASI GETARAN GEMPA (EDUKASI SEISMOLOGI) -->
+                    <div class="simulation-section">
+                        <div class="simulation-label">
+                            <span>🧪 Uji Coba Simulasi Gempa</span>
+                        </div>
+                        <div class="simulation-btn-group">
+                            <button class="btn-sim" onclick="simulateEarthquake(3.5)" title="Uji Simulasi Gempa Ringan M 3.5">M 3.5</button>
+                            <button class="btn-sim" onclick="simulateEarthquake(5.5)" title="Uji Simulasi Gempa Sedang M 5.5">M 5.5</button>
+                            <button class="btn-sim btn-sim-strong" onclick="simulateEarthquake(7.2)" title="Uji Simulasi Guncangan Kuat M 7.2">M 7.2</button>
+                        </div>
                     </div>
                 </div>
 
@@ -349,12 +369,144 @@
                     <div class="layer-thumb-preview" style="background-image: url('https://a.tile.opentopomap.org/4/8/6.png');"></div>
                     <span class="layer-opt-label">Medan</span>
                 </div>
+
+                <!-- 5. SESAR AKTIF & MEGATHRUST OVERLAY TOGGLE -->
+                <div class="layer-option-item" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Garis Patahan Sesar &amp; Megathrust (Klik untuk Aktifkan)">
+                    <div class="layer-thumb-preview" style="background: linear-gradient(135deg, #1e293b, #b91c1c); display:flex; align-items:center; justify-content:center;">
+                        <svg style="width:18px; height:18px; color:#f87171;" viewBox="0 0 24 24" fill="currentColor"><path d="M14 6l-3.75 5 2.85 3.8L11.5 16l-4-5.33L10 7.33 8.5 6 3 13.33 6.5 18h11l3.5-4.67L14 6z"/></svg>
+                    </div>
+                    <span class="layer-opt-label">Sesar Aktif</span>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- ==================== MODAL PANDUAN SIAGA MITIGASI & KONTAK DARURAT ==================== -->
+    <div class="modal-backdrop" id="modalDisasterGuide" style="display: none;" onclick="closeDisasterGuide(event)">
+        <div class="modal-dialog guide-modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-icon-badge" style="background: rgba(234, 67, 53, 0.12); color: #ea4335;">
+                        <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="modal-title">Panduan Siaga Bencana Gempa</h3>
+                        <p class="modal-sub">Prosedur Keselamatan &amp; Mitigasi Standar BNPB / BMKG</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="closeDisasterGuide()" title="Tutup">
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+
+            <div class="modal-body-scroll">
+                <!-- 1. TIGA LANGKAH UTAMA (DROP, COVER, HOLD ON) -->
+                <div class="guide-card-section">
+                    <h4 class="guide-section-title">🚨 3 Langkah Utama Saat Terjadi Gempa</h4>
+                    <div class="step-grid">
+                        <div class="step-box">
+                            <div class="step-num">1</div>
+                            <div class="step-head">DROP (Merunduk)</div>
+                            <div class="step-desc">Segera rendahkan tubuh Anda ke lantai sebelum guncangan menjatuhkan Anda.</div>
+                        </div>
+                        <div class="step-box">
+                            <div class="step-num">2</div>
+                            <div class="step-head">COVER (Lindungi)</div>
+                            <div class="step-desc">Lindungi kepala dan leher di bawah meja kokoh atau dengan tas / bantal.</div>
+                        </div>
+                        <div class="step-box">
+                            <div class="step-num">3</div>
+                            <div class="step-head">HOLD ON (Bertahan)</div>
+                            <div class="step-desc">Pegang kuat kaki meja dan tetap berlindung sampai guncangan benar-benar berhenti.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. PANDUAN LOKASI (DALAM RUANGAN / LUAR / PESISIR) -->
+                <div class="guide-card-section">
+                    <h4 class="guide-section-title">🏢 Tindakan Berdasarkan Lokasi Anda</h4>
+                    <ul class="guide-list">
+                        <li><strong>Di Dalam Gedung / Rumah:</strong> Jauhi jendela kaca, cermin, lemari tinggi, dan lampu gantung. Jangan gunakan lift! Gunakan tangga darurat.</li>
+                        <li><strong>Di Luar Ruangan:</strong> Menjauh dari tiang listrik, papan reklame, pohon besar, jembatan penyeberangan, dan dinding bata. Cari lapangan terbuka.</li>
+                        <li><strong>Di Dekat Pantai:</strong> Jika gempa terasa kuat (>20 detik) atau air laut surut tiba-tiba, <em>segera evakuasi ke tempat tinggi minimal 20 meter</em> (Waspada Tsunami!).</li>
+                        <li><strong>Di Dalam Kendaraan:</strong> Kurangi kecepatan perlahan, menepi ke bahu jalan yang aman, dan matikan mesin. Tetap di dalam mobil sampai gempa reda.</li>
+                    </ul>
+                </div>
+
+                <!-- 3. TAS SIAGA BENCANA (TSB) -->
+                <div class="guide-card-section">
+                    <h4 class="guide-section-title">🎒 Perlengkapan Tas Siaga Bencana (TSB)</h4>
+                    <div class="tsb-chips-grid">
+                        <div class="tsb-item">💊 Kotak P3K &amp; Obat Pribadi</div>
+                        <div class="tsb-item">🔦 Senter &amp; Baterai Cadangan</div>
+                        <div class="tsb-item">📢 Peluit Darurat (Sinyal Suara)</div>
+                        <div class="tsb-item">💧 Air Minum (Minimal 3 Hari)</div>
+                        <div class="tsb-item">🍞 Makanan Siap Saji / Biskuit</div>
+                        <div class="tsb-item">📻 Radio Portable (Info Darurat)</div>
+                        <div class="tsb-item">📄 Dokumen Penting (Plastik Kedap)</div>
+                        <div class="tsb-item">🔋 Powerbank &amp; Kabel Charger</div>
+                        <div class="tsb-item">💵 Uang Tunai Secukupnya</div>
+                        <div class="tsb-item">😷 Masker &amp; Hand Sanitizer</div>
+                    </div>
+                </div>
+
+                <!-- 4. KONTAK DARURAT CEPAT (KLIK UNTUK PANGGIL) -->
+                <div class="guide-card-section">
+                    <h4 class="guide-section-title">📞 Kontak Nomor Darurat Nasional Indonesia</h4>
+                    <div class="emergency-contacts-grid">
+                        <a href="tel:115" class="contact-card" onclick="handleContactClick('115', 'BASARNAS', event)" title="Klik untuk Panggil / Salin Nomor 115">
+                            <div class="contact-icon" style="background:#ea4335;">115</div>
+                            <div class="contact-info">
+                                <div class="contact-name">BASARNAS (115)</div>
+                                <div class="contact-desc">Pencarian &amp; Pertolongan Jiwa</div>
+                            </div>
+                        </a>
+                        <a href="tel:117" class="contact-card" onclick="handleContactClick('117', 'BNPB / BPBD', event)" title="Klik untuk Panggil / Salin Nomor 117">
+                            <div class="contact-icon" style="background:#f29900;">117</div>
+                            <div class="contact-info">
+                                <div class="contact-name">BNPB / BPBD (117)</div>
+                                <div class="contact-desc">Pusat Pengendalian Bencana</div>
+                            </div>
+                        </a>
+                        <a href="tel:118" class="contact-card" onclick="handleContactClick('118', 'Ambulans / PMI', event)" title="Klik untuk Panggil / Salin Nomor 118 / 119">
+                            <div class="contact-icon" style="background:#34a853;">118</div>
+                            <div class="contact-info">
+                                <div class="contact-name">Ambulans / PMI (118/119)</div>
+                                <div class="contact-desc">Pertolongan Medis Gawat Darurat</div>
+                            </div>
+                        </a>
+                        <a href="tel:110" class="contact-card" onclick="handleContactClick('110', 'Kepolisian RI', event)" title="Klik untuk Panggil / Salin Nomor 110">
+                            <div class="contact-icon" style="background:#1a73e8;">110</div>
+                            <div class="contact-info">
+                                <div class="contact-name">Kepolisian RI (110)</div>
+                                <div class="contact-desc">Bantuan Keamanan &amp; Ketertiban</div>
+                            </div>
+                        </a>
+                        <a href="tel:113" class="contact-card" onclick="handleContactClick('113', 'Pemadam Kebakaran', event)" title="Klik untuk Panggil / Salin Nomor 113">
+                            <div class="contact-icon" style="background:#d93025;">113</div>
+                            <div class="contact-info">
+                                <div class="contact-name">Damkar (113)</div>
+                                <div class="contact-desc">Evakuasi &amp; Bahaya Kebakaran</div>
+                            </div>
+                        </a>
+                        <a href="tel:112" class="contact-card" onclick="handleContactClick('112', 'Panggilan Terpadu', event)" title="Klik untuk Panggil / Salin Nomor 112">
+                            <div class="contact-icon" style="background:#673ab7;">112</div>
+                            <div class="contact-info">
+                                <div class="contact-name">Panggilan Terpadu (112)</div>
+                                <div class="contact-desc">Nomor Darurat Terintegrasi</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
+    <script src="faults.js?v=12.0"></script>
+
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=11.1"></script>
+    <script src="app.js?v=12.0"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>
