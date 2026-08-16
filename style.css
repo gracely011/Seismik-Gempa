@@ -1353,7 +1353,11 @@ button.btn-act.active {
         width: auto;
         z-index: 1004;
         display: flex;
-        pointer-events: auto;
+        pointer-events: none;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0;
     }
 
     .filter-chips {
@@ -1363,8 +1367,9 @@ button.btn-act.active {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        padding: 2px 0 6px 0;
-        pointer-events: auto;
+        padding: 2px 2px 8px 2px;
+        pointer-events: none;
+        background: transparent;
     }
 
     .filter-chips::-webkit-scrollbar {
@@ -1373,10 +1378,12 @@ button.btn-act.active {
 
     .chip {
         font-size: 11px;
-        padding: 5px 12px;
-        border-radius: 16px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-        background: var(--bg-card);
+        padding: 6px 13px;
+        border-radius: 18px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        pointer-events: auto;
     }
 
     /* BOTTOM SHEET DRAWER */
