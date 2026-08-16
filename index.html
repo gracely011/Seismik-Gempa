@@ -45,7 +45,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=10.4">
+    <link rel="stylesheet" href="style.css?v=11.1">
 </head>
 
 <body>
@@ -76,13 +76,13 @@
     <!-- ==================== LEFT NAVIGATION RAIL ==================== -->
     <nav class="nav-rail">
         <div class="rail-top">
-            <!-- HAMBURGER MENU (TOGGLE SIDEBAR) -->
-            <button class="rail-btn rail-menu-btn active" id="railMenuBtn" onclick="toggleSidebar()" title="Menu / Panel Seismograf" aria-label="Menu">
+            <!-- HAMBURGER MENU / TAB MONITOR -->
+            <button class="rail-btn rail-menu-btn active" id="railMenuBtn" onclick="switchNavTab('monitor')" title="Menu / Panel Seismograf" aria-label="Menu">
                 <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
             </button>
 
             <!-- DISIMPAN (BOOKMARK) -->
-            <button class="rail-btn" id="railBtnSaved" onclick="filterQuakes('near', this)" title="Gempa Dekat Saya">
+            <button class="rail-btn" id="railBtnSaved" onclick="switchNavTab('saved')" title="Wilayah &amp; Gempa Disimpan">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 </div>
@@ -90,30 +90,12 @@
             </button>
 
             <!-- TERBARU (RECENT) -->
-            <button class="rail-btn" id="railBtnRecent" onclick="filterQuakes('all', this)" title="Riwayat Gempa Terbaru">
+            <button class="rail-btn" id="railBtnRecent" onclick="switchNavTab('recent')" title="Aktivitas &amp; Gempa Terbaru">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                 </div>
                 <span class="rail-label">Terbaru</span>
             </button>
-
-            <div class="rail-separator"></div>
-
-            <!-- GPS LOCATE -->
-            <button class="rail-btn" id="railBtnGps" onclick="focusUserGPS()" title="Lokasi GPS Saya">
-                <div class="rail-icon-indicator">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
-                </div>
-                <span class="rail-label">GPS</span>
-            </button>
-
-            <!-- PRO VERSION -->
-            <a href="https://petrus.gracely.my.id/" target="_blank" class="rail-btn" id="railBtnPro" title="Aplikasi Pro">
-                <div class="rail-icon-indicator">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/></svg>
-                </div>
-                <span class="rail-label">Pro</span>
-            </a>
         </div>
 
         <div class="rail-bottom">
@@ -125,8 +107,8 @@
                 <span class="rail-label">Mode</span>
             </button>
 
-            <!-- APP INFO -->
-            <button class="rail-btn" id="railBtnInfo" onclick="openAppInfo()" title="Tentang Sistem">
+            <!-- ABOUT / INFO -->
+            <button class="rail-btn" id="railBtnInfo" onclick="openAppInfo()" title="Tentang Seismograf">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                 </div>
@@ -135,22 +117,25 @@
         </div>
     </nav>
 
-    <!-- ==================== FLOATING SEARCH & CARDS PANEL ==================== -->
-    <div class="panel-container" id="panelContainer">
+    <!-- ==================== UNIFIED SOLID SEARCH & CARDS PANEL (GOOGLE MAPS SIDEBAR) ==================== -->
+    <div class="panel-container" id="mainPanel">
         <!-- GOOGLE MAPS SEARCH BAR -->
         <div class="search-box-card" id="searchBoxCard">
             <button class="search-icon-btn" onclick="document.getElementById('searchInput').focus()" title="Cari">
                 <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             </button>
-            <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)">
+            <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)" autocomplete="off">
             <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Hapus Pencarian">
                 <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
             <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
-            <button class="directions-btn" onclick="centerToUserLocation()" title="Pusatkan ke Lokasi Saya">
+            <button class="directions-btn" onclick="triggerSearchCity()" title="Cari Kota / Arahkan">
                 <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 10.59l-7.99-8c-.78-.78-2.05-.78-2.83 0l-8 8c-.78.78-.78 2.05 0 2.83l8 8c.78.78 2.05.78 2.83 0l7.99-8c.79-.79.79-2.05 0-2.83zM13.5 14.5V12H10v3H8v-4c0-.55.45-1 1-1h4.5V7.5L17 11l-3.5 3.5z"/></svg>
             </button>
         </div>
+
+        <!-- SEARCH SUGGESTIONS DROPDOWN -->
+        <div class="search-suggestions-dropdown" id="searchSuggestionsDropdown" style="display: none;"></div>
 
         <!-- CHIPS FILTER (FLOATING UNDER SEARCH) -->
         <div class="filter-chips-wrapper" id="filterChipsWrapper">
@@ -169,68 +154,162 @@
                 <div class="bottom-sheet-handle"></div>
             </div>
 
-            <!-- "AREA INI" STATUS CARD (GOOGLE MAPS STYLE) -->
-            <div class="g-card area-gmap-card">
-                <div class="area-header">
-                    <div class="area-title-group">
-                        <h2 class="area-city-main" id="areaCityMain">Batam</h2>
-                        <div class="area-sub-line" id="areaCityAdmin">Kota Batam</div>
-                        <div class="area-sub-line" id="areaProvince">Kepulauan Riau</div>
-                        <div class="area-gps-coord mono" id="user_loc">GPS: 1.103, 104.038</div>
-                    </div>
-                    <div class="area-weather-box">
-                        <div class="weather-icon-gmap" id="weatherGmapIcon">
-                            <div class="gmap-sun-circle"></div>
+            <!-- ==================== TAB 1: MONITOR (UTAMA) ==================== -->
+            <div class="panel-view-tab active" id="viewMonitor">
+                <!-- "AREA INI" STATUS CARD (GOOGLE MAPS STYLE) -->
+                <div class="g-card area-gmap-card">
+                    <div class="area-header">
+                        <div class="area-title-group">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                                <h2 class="area-city-main" id="areaCityMain">Sibolga</h2>
+                                <button class="btn-bookmark-action" id="btnBookmarkArea" onclick="toggleSaveCurrentArea()" title="Simpan Lokasi Ini">
+                                    <svg class="gmap-icon" id="bookmarkAreaIcon" style="width: 17px; height: 17px;" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                                </button>
+                            </div>
+                            <div class="area-sub-line" id="areaCityAdmin">Kota Sibolga</div>
+                            <div class="area-sub-line" id="areaProvince">Sumatera Utara</div>
+                            <div class="area-gps-coord mono" id="user_loc">GPS: 1.743, 98.779</div>
                         </div>
-                        <div class="weather-cond-temp" id="weatherConditionTemp">Cerah &middot; 28 &deg;C</div>
-                        <div class="weather-time mono" id="weatherLocalTime">--.--</div>
+                        <div class="area-weather-box">
+                            <div class="weather-icon-gmap" id="weatherGmapIcon">
+                                <div class="gmap-sun-circle"></div>
+                            </div>
+                            <div class="weather-cond-temp" id="weatherConditionTemp">Cerah &middot; 28 &deg;C</div>
+                            <div class="weather-time mono" id="weatherLocalTime">--.--</div>
+                        </div>
+                    </div>
+
+                    <div class="area-status-pill" id="areaRiskStatus">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="riskStatusText">Kondisi sekitar terpantau stabil &amp; normal</span>
                     </div>
                 </div>
 
-                <div class="area-status-pill" id="areaRiskStatus">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="riskStatusText">Kondisi sekitar terpantau stabil &amp; normal</span>
-                </div>
-            </div>
+                <!-- PRO BANNER (CLEAN GOOGLE STYLE) -->
+                <a href="https://petrus.gracely.my.id/" target="_blank" class="promo-gmap">
+                    <span>⚡ Dapatkan Aplikasi Versi Lengkap Pro</span>
+                    <span style="font-size: 13px; color: var(--accent-blue);">›</span>
+                </a>
 
-            <!-- PRO BANNER (CLEAN GOOGLE STYLE) -->
-            <a href="https://petrus.gracely.my.id/" target="_blank" class="promo-gmap">
-                <span>⚡ Dapatkan Aplikasi Versi Lengkap Pro</span>
-                <span style="font-size: 13px; color: var(--accent-blue);">›</span>
-            </a>
+                <!-- SEISMOGRAPH SENSOR MONITOR CARD -->
+                <div class="g-card" id="sensorBox">
+                    <div class="sensor-top mono">
+                        <span id="mode_label">LIVE MONITOR</span>
+                        <span id="ts_label">--:--:--</span>
+                    </div>
+                    <div class="canvas-frame">
+                        <canvas id="c"></canvas>
+                    </div>
+                    <input type="range" id="timeline" min="0" max="0" value="0" disabled title="Geser untuk Replay riwayat getaran">
 
-            <!-- SEISMOGRAPH SENSOR MONITOR CARD -->
-            <div class="g-card" id="sensorBox">
-                <div class="sensor-top mono">
-                    <span id="mode_label">LIVE MONITOR</span>
-                    <span id="ts_label">--:--:--</span>
-                </div>
-                <div class="canvas-frame">
-                    <canvas id="c"></canvas>
-                </div>
-                <input type="range" id="timeline" min="0" max="0" value="0" disabled title="Geser untuk Replay riwayat getaran">
-
-                <div class="ctrl-grid">
-                    <button class="btn-act" id="btnStart" onclick="initSystem()">START SENSOR</button>
-                    <button class="btn-act" id="btnMute" onclick="toggleMute()">MUTE: OFF</button>
-                    <button class="btn-act" id="btnAlarm" onclick="toggleAlarm()">ALARM: OFF</button>
-                    <button class="btn-act" onclick="loadMapData()">REFRESH PETA</button>
-                </div>
-            </div>
-
-            <!-- RECENT QUAKES LIST -->
-            <div class="g-card">
-                <div class="quake-header-row">
-                    <span>🔴 Gempa Terkini</span>
-                    <span id="quakeCountBadge" style="font-size: 9px; color: var(--text-muted);">0 terdeteksi</span>
-                </div>
-                <div class="quake-scroll-list" id="recentQuakesList">
-                    <div style="font-size: 10px; color: var(--text-muted); text-align: center; padding: 12px;">
-                        Memuat data gempa terkini...
+                    <div class="ctrl-grid">
+                        <button class="btn-act" id="btnStart" onclick="initSystem()">START SENSOR</button>
+                        <button class="btn-act" id="btnMute" onclick="toggleMute()">MUTE: OFF</button>
+                        <button class="btn-act" id="btnAlarm" onclick="toggleAlarm()">ALARM: OFF</button>
+                        <button class="btn-act" onclick="loadMapData()">REFRESH PETA</button>
                     </div>
                 </div>
-                <div style="font-size: 9px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
-                    * Data bersumber dari USGS Real-time & BMKG. Klik entri untuk terbang ke episentrum.
+
+                <!-- RECENT QUAKES LIST -->
+                <div class="g-card">
+                    <div class="quake-header-row">
+                        <span>🔴 Gempa Terkini</span>
+                        <span id="quakeCountBadge" style="font-size: 9px; color: var(--text-muted);">0 terdeteksi</span>
+                    </div>
+                    <div class="quake-scroll-list" id="recentQuakesList">
+                        <div style="font-size: 10px; color: var(--text-muted); text-align: center; padding: 12px;">
+                            Memuat data gempa terkini...
+                        </div>
+                    </div>
+                    <div style="font-size: 9px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
+                        * Data bersumber dari USGS Real-time &amp; BMKG. Klik entri untuk terbang ke episentrum.
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 2: DISIMPAN (SAVED / WATCHLIST) ==================== -->
+            <div class="panel-view-tab" id="viewSaved" style="display: none;">
+                <!-- SAVED HEADER -->
+                <div class="g-card saved-header-card">
+                    <div class="tab-header-top">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg class="gmap-icon" style="width: 18px; height: 18px; color: var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                            <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Tempat Pantauan &amp; Bookmark</span>
+                        </div>
+                        <button class="btn-tab-action" onclick="toggleSaveCurrentArea()" title="Simpan Wilayah Saat Ini">＋ Simpan Wilayah Ini</button>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px; line-height: 1.35;">
+                        Pantau status gempa terdekat dan cuaca di kota-kota penting Anda (Rumah, Keluarga, Kantor).
+                    </div>
+                </div>
+
+                <!-- SAVED PLACES LIST -->
+                <div class="g-card">
+                    <div class="quake-header-row">
+                        <span>📍 Wilayah Favorit</span>
+                        <span id="savedPlacesCountBadge" style="font-size: 9px; color: var(--text-muted);">0 disimpan</span>
+                    </div>
+                    <div class="saved-items-container" id="savedPlacesList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- BOOKMARKED QUAKES LIST -->
+                <div class="g-card">
+                    <div class="quake-header-row">
+                        <span>🔖 Gempa yang Ditandai</span>
+                        <span id="bookmarkedQuakesCountBadge" style="font-size: 9px; color: var(--text-muted);">0 ditandai</span>
+                    </div>
+                    <div class="saved-items-container" id="bookmarkedQuakesList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 3: TERBARU (RECENT / TIMELINE) ==================== -->
+            <div class="panel-view-tab" id="viewRecent" style="display: none;">
+                <!-- RECENT HEADER -->
+                <div class="g-card recent-header-card">
+                    <div class="tab-header-top">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg class="gmap-icon" style="width: 18px; height: 18px; color: var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                            <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Aktivitas &amp; Linimasa 24 Jam</span>
+                        </div>
+                        <button class="btn-tab-action" onclick="clearRecentSearches()" title="Hapus Riwayat Penelusuran">Hapus Riwayat</button>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px; line-height: 1.35;">
+                        Daftar lokasi yang baru saja Anda cari dan linimasa seluruh kejadian gempa 24 jam terakhir.
+                    </div>
+                </div>
+
+                <!-- RECENT SEARCHES -->
+                <div class="g-card">
+                    <div class="quake-header-row">
+                        <span>🔍 Riwayat Penelusuran</span>
+                        <span id="recentSearchesCountBadge" style="font-size: 9px; color: var(--text-muted);">0 riwayat</span>
+                    </div>
+                    <div class="saved-items-container" id="recentSearchesList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- 24H FULL QUAKE FEED TIMELINE -->
+                <div class="g-card">
+                    <div class="quake-header-row">
+                        <span id="timelineTitleText">⏱️ Linimasa Gempa 24 Jam</span>
+                        <span id="timeline24hCountBadge" style="font-size: 9px; color: var(--text-muted);">0 data</span>
+                    </div>
+                    <!-- Range Filter Chips -->
+                    <div class="chips-scroll-container" style="margin-bottom: 8px;">
+                        <div class="chips-row">
+                            <button class="chip active" id="chipTimeline24h" onclick="setTimelineFilter('24h')">24 Jam Terakhir</button>
+                            <button class="chip" id="chipTimeline7d" onclick="setTimelineFilter('7d')">7 Hari</button>
+                            <button class="chip" id="chipTimelineAll" onclick="setTimelineFilter('all')">Semua Data</button>
+                        </div>
+                    </div>
+                    <div class="quake-scroll-list" id="timeline24hList" style="max-height: 280px;">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -275,7 +354,7 @@
     </div>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=10.4"></script>
+    <script src="app.js?v=11.1"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>

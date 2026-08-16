@@ -19,15 +19,27 @@ let simInterval = null;
 const savedLat = localStorage.getItem('seismo_user_lat');
 const savedLon = localStorage.getItem('seismo_user_lon');
 const savedAcc = localStorage.getItem('seismo_user_acc');
-let userPlaceName = localStorage.getItem('seismo_user_place') || '';
+let userPlaceName = localStorage.getItem('seismo_user_place') || 'Sibolga, Kota Sibolga, Sumatera Utara';
 let userPlaceObj = null;
 try {
     const savedObj = localStorage.getItem('seismo_user_place_obj');
     if (savedObj) userPlaceObj = JSON.parse(savedObj);
 } catch (e) { }
 
-let userCoords = (savedLat && savedLon) ? [parseFloat(savedLat), parseFloat(savedLon)] : [-2.5, 118];
+let userCoords = (savedLat && savedLon) ? [parseFloat(savedLat), parseFloat(savedLon)] : [1.7428, 98.7792];
 let hasUserGPS = !!(savedLat && savedLon);
+
+// Sanitasi otomatis: jika koordinat di area Sibolga namun nama lama berbeda, sinkronkan ke Sibolga
+if (userCoords[0] >= 1.55 && userCoords[0] <= 1.95 && userCoords[1] >= 98.55 && userCoords[1] <= 99.05) {
+    if (!userPlaceObj || userPlaceObj.main !== 'Sibolga') {
+        userPlaceObj = { main: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara" };
+        userPlaceName = "Sibolga, Kota Sibolga, Sumatera Utara";
+        try {
+            localStorage.setItem('seismo_user_place_obj', JSON.stringify(userPlaceObj));
+            localStorage.setItem('seismo_user_place', userPlaceName);
+        } catch (e) { }
+    }
+}
 let quakesArray = [];
 let currentFilter = 'all';
 let searchQuery = '';
@@ -298,25 +310,75 @@ function calcDistance(lat1, lon1, lat2, lon2) {
 // ==================== SIDEBAR & MOBILE DRAWER TOGGLE ====================
 let isPanelCollapsed = false;
 let isMobileDrawerOpen = false;
-
+let currentNavTab = 'monitor'; // 'monitor' | 'saved' | 'recent'
 
 function toggleSidebar() {
     if (window.innerWidth <= 768) {
         toggleMobileDrawer();
         return;
     }
-    const panel = document.getElementById("panelContainer");
+    const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
     const menuBtn = document.getElementById("railMenuBtn");
 
     isPanelCollapsed = !isPanelCollapsed;
     if (panel) panel.classList.toggle("collapsed", isPanelCollapsed);
-    if (menuBtn) menuBtn.classList.toggle("active", !isPanelCollapsed);
+    if (menuBtn && currentNavTab === 'monitor') menuBtn.classList.toggle("active", !isPanelCollapsed);
     document.body.classList.toggle("panel-collapsed", isPanelCollapsed);
 
     setTimeout(() => {
         map.invalidateSize();
         resizeCanvas();
     }, 360);
+}
+
+function switchNavTab(tabName) {
+    // Jika mengklik tab yang sama, buka/tutup panel
+    if (tabName === currentNavTab) {
+        if (window.innerWidth <= 768) {
+            toggleMobileDrawer();
+        } else {
+            toggleSidebar();
+        }
+        return;
+    }
+
+    currentNavTab = tabName;
+
+    // Perbarui status aktif pada tombol navigasi rail
+    const menuBtn = document.getElementById("railMenuBtn");
+    const savedBtn = document.getElementById("railBtnSaved");
+    const recentBtn = document.getElementById("railBtnRecent");
+
+    if (menuBtn) menuBtn.classList.toggle("active", tabName === 'monitor');
+    if (savedBtn) savedBtn.classList.toggle("active", tabName === 'saved');
+    if (recentBtn) recentBtn.classList.toggle("active", tabName === 'recent');
+
+    // Tampilkan panel tab yang sesuai
+    const tabMonitor = document.getElementById("viewMonitor");
+    const tabSaved = document.getElementById("viewSaved");
+    const tabRecent = document.getElementById("viewRecent");
+
+    if (tabMonitor) tabMonitor.style.display = tabName === 'monitor' ? 'flex' : 'none';
+    if (tabSaved) tabSaved.style.display = tabName === 'saved' ? 'flex' : 'none';
+    if (tabRecent) tabRecent.style.display = tabName === 'recent' ? 'flex' : 'none';
+
+    // Refresh konten tab
+    if (tabName === 'saved') {
+        renderSavedPlacesUI();
+        renderBookmarkedQuakesUI();
+    } else if (tabName === 'recent') {
+        renderRecentSearchesUI();
+        render24hTimelineUI();
+    }
+
+    // Pastikan panel/drawer terbuka
+    if (window.innerWidth <= 768) {
+        toggleMobileDrawer(true);
+    } else {
+        if (isPanelCollapsed) {
+            toggleSidebar();
+        }
+    }
 }
 
 function toggleMobileDrawer(forceOpen) {
@@ -331,7 +393,7 @@ function toggleMobileDrawer(forceOpen) {
     }
 
     drawer.classList.toggle("collapsed", !isMobileDrawerOpen);
-    if (menuBtn) menuBtn.classList.toggle("active", isMobileDrawerOpen);
+    if (menuBtn && currentNavTab === 'monitor') menuBtn.classList.toggle("active", isMobileDrawerOpen);
 }
 
 function openMobileDrawer() {
@@ -621,19 +683,250 @@ function addEarthquakeMarker(q, isLatest = false) {
     marker.bindPopup(popupContent);
 }
 
-// ==================== SEARCH & FILTERING ====================
+// ==================== INDONESIAN CITIES DATABASE & GEOCODING ====================
+const INDONESIA_CITIES_DB = [
+    // Sumatera
+    { name: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara", lat: 1.7428, lon: 98.7792 },
+    { name: "Medan", admin: "Kota Medan", province: "Sumatera Utara", lat: 3.5952, lon: 98.6722 },
+    { name: "Pekanbaru", admin: "Kota Pekanbaru", province: "Riau", lat: 0.5071, lon: 101.4478 },
+    { name: "Padang", admin: "Kota Padang", province: "Sumatera Barat", lat: -0.9471, lon: 100.4172 },
+    { name: "Batam", admin: "Kota Batam", province: "Kepulauan Riau", lat: 1.1030, lon: 104.0383 },
+    { name: "Tanjungpinang", admin: "Kota Tanjungpinang", province: "Kepulauan Riau", lat: 0.9167, lon: 104.4583 },
+    { name: "Banda Aceh", admin: "Kota Banda Aceh", province: "Aceh", lat: 5.5483, lon: 95.3238 },
+    { name: "Palembang", admin: "Kota Palembang", province: "Sumatera Selatan", lat: -2.9761, lon: 104.7754 },
+    { name: "Bandar Lampung", admin: "Kota Bandar Lampung", province: "Lampung", lat: -5.4500, lon: 105.2667 },
+    { name: "Jambi", admin: "Kota Jambi", province: "Jambi", lat: -1.6101, lon: 103.6131 },
+    { name: "Bengkulu", admin: "Kota Bengkulu", province: "Bengkulu", lat: -3.8004, lon: 102.2655 },
+    { name: "Pangkalpinang", admin: "Kota Pangkalpinang", province: "Kep. Bangka Belitung", lat: -2.1333, lon: 106.1167 },
+    { name: "Pematangsiantar", admin: "Kota Pematangsiantar", province: "Sumatera Utara", lat: 2.9583, lon: 99.0667 },
+    { name: "Bukittinggi", admin: "Kota Bukittinggi", province: "Sumatera Barat", lat: -0.3056, lon: 100.3692 },
+    { name: "Dumai", admin: "Kota Dumai", province: "Riau", lat: 1.6667, lon: 101.4500 },
+
+    // Jawa
+    { name: "Jakarta", admin: "DKI Jakarta", province: "DKI Jakarta", lat: -6.2088, lon: 106.8456 },
+    { name: "Bandung", admin: "Kota Bandung", province: "Jawa Barat", lat: -6.9175, lon: 107.6191 },
+    { name: "Surabaya", admin: "Kota Surabaya", province: "Jawa Timur", lat: -7.2575, lon: 112.7521 },
+    { name: "Semarang", admin: "Kota Semarang", province: "Jawa Tengah", lat: -6.9667, lon: 110.4167 },
+    { name: "Yogyakarta", admin: "Kota Yogyakarta", province: "D.I. Yogyakarta", lat: -7.7956, lon: 110.3695 },
+    { name: "Bekasi", admin: "Kota Bekasi", province: "Jawa Barat", lat: -6.2383, lon: 106.9756 },
+    { name: "Depok", admin: "Kota Depok", province: "Jawa Barat", lat: -6.4025, lon: 106.7942 },
+    { name: "Tangerang", admin: "Kota Tangerang", province: "Banten", lat: -6.1783, lon: 106.6319 },
+    { name: "Tangerang Selatan", admin: "Kota Tangerang Selatan", province: "Banten", lat: -6.2886, lon: 106.7179 },
+    { name: "Bogor", admin: "Kota Bogor", province: "Jawa Barat", lat: -6.5971, lon: 106.8060 },
+    { name: "Surakarta (Solo)", admin: "Kota Surakarta", province: "Jawa Tengah", lat: -7.5755, lon: 110.8243 },
+    { name: "Malang", admin: "Kota Malang", province: "Jawa Timur", lat: -7.9797, lon: 112.6304 },
+    { name: "Cirebon", admin: "Kota Cirebon", province: "Jawa Barat", lat: -6.7320, lon: 108.5523 },
+    { name: "Serang", admin: "Kota Serang", province: "Banten", lat: -6.1104, lon: 106.1640 },
+
+    // Bali & Nusa Tenggara
+    { name: "Denpasar", admin: "Kota Denpasar", province: "Bali", lat: -8.6705, lon: 115.2126 },
+    { name: "Mataram", admin: "Kota Mataram", province: "Nusa Tenggara Barat", lat: -8.5833, lon: 116.1167 },
+    { name: "Kupang", admin: "Kota Kupang", province: "Nusa Tenggara Timur", lat: -10.1772, lon: 123.6070 },
+    { name: "Labuan Bajo", admin: "Kabupaten Manggarai Barat", province: "Nusa Tenggara Timur", lat: -8.4964, lon: 119.8877 },
+    { name: "Ruteng", admin: "Kabupaten Manggarai", province: "Nusa Tenggara Timur", lat: -8.6134, lon: 120.4721 },
+
+    // Kalimantan
+    { name: "Pontianak", admin: "Kota Pontianak", province: "Kalimantan Barat", lat: -0.0263, lon: 109.3425 },
+    { name: "Banjarmasin", admin: "Kota Banjarmasin", province: "Kalimantan Selatan", lat: -3.3167, lon: 114.5900 },
+    { name: "Balikpapan", admin: "Kota Balikpapan", province: "Kalimantan Timur", lat: -1.2379, lon: 116.8529 },
+    { name: "Samarinda", admin: "Kota Samarinda", province: "Kalimantan Timur", lat: -0.5022, lon: 117.1536 },
+    { name: "Palangka Raya", admin: "Kota Palangka Raya", province: "Kalimantan Tengah", lat: -2.2167, lon: 113.9167 },
+    { name: "Tarakan", admin: "Kota Tarakan", province: "Kalimantan Utara", lat: 3.3000, lon: 117.6333 },
+    { name: "Nusantara (IKN)", admin: "Ibu Kota Nusantara", province: "Kalimantan Timur", lat: -0.9744, lon: 116.7089 },
+
+    // Sulawesi, Maluku & Papua
+    { name: "Makassar", admin: "Kota Makassar", province: "Sulawesi Selatan", lat: -5.1477, lon: 119.4327 },
+    { name: "Manado", admin: "Kota Manado", province: "Sulawesi Utara", lat: 1.4748, lon: 124.8421 },
+    { name: "Palu", admin: "Kota Palu", province: "Sulawesi Tengah", lat: -0.9000, lon: 119.8707 },
+    { name: "Kendari", admin: "Kota Kendari", province: "Sulawesi Tenggara", lat: -3.9985, lon: 122.5126 },
+    { name: "Gorontalo", admin: "Kota Gorontalo", province: "Gorontalo", lat: 0.5435, lon: 123.0568 },
+    { name: "Mamuju", admin: "Kabupaten Mamuju", province: "Sulawesi Barat", lat: -2.6778, lon: 118.8878 },
+    { name: "Ambon", admin: "Kota Ambon", province: "Maluku", lat: -3.6547, lon: 128.1906 },
+    { name: "Ternate", admin: "Kota Ternate", province: "Maluku Utara", lat: 0.7833, lon: 127.3667 },
+    { name: "Jayapura", admin: "Kota Jayapura", province: "Papua", lat: -2.5337, lon: 140.7181 },
+    { name: "Sorong", admin: "Kota Sorong", province: "Papua Barat Daya", lat: -0.8762, lon: 131.2558 },
+    { name: "Manokwari", admin: "Kabupaten Manokwari", province: "Papua Barat", lat: -0.8615, lon: 134.0620 },
+    { name: "Merauke", admin: "Kabupaten Merauke", province: "Papua Selatan", lat: -8.4991, lon: 140.4019 }
+];
+
+let searchDebounceTimer = null;
+
 function handleSearch(val) {
-    searchQuery = val.trim().toLowerCase();
+    searchQuery = (val || "").trim();
     const clearBtn = document.getElementById("searchClearBtn");
     if (clearBtn) clearBtn.style.display = searchQuery ? "flex" : "none";
+
+    // 1. Filter data gempa yang sedang dimuat
     updateRecentQuakesUI();
+
+    // 2. Query saran kota untuk dropdown otomatis
+    clearTimeout(searchDebounceTimer);
+    if (!searchQuery || searchQuery.length < 2) {
+        hideSearchSuggestions();
+        return;
+    }
+
+    searchDebounceTimer = setTimeout(() => {
+        performCitySearch(searchQuery);
+    }, 150);
+}
+
+function handleSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        triggerSearchCity();
+    } else if (e.key === 'Escape') {
+        hideSearchSuggestions();
+    }
+}
+
+function triggerSearchCity() {
+    const input = document.getElementById("searchInput");
+    const val = input ? input.value.trim() : "";
+    if (!val) return;
+
+    const q = val.toLowerCase();
+    const match = INDONESIA_CITIES_DB.find(c =>
+        c.name.toLowerCase() === q ||
+        c.admin.toLowerCase() === q ||
+        c.name.toLowerCase().includes(q)
+    );
+
+    if (match) {
+        selectSearchCity(match.name, match.admin, match.province, match.lat, match.lon);
+    } else {
+        fetchOnlineGeocode(val, false);
+    }
+}
+
+function performCitySearch(query) {
+    const q = query.toLowerCase();
+    const localMatches = INDONESIA_CITIES_DB.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.admin.toLowerCase().includes(q) ||
+        c.province.toLowerCase().includes(q)
+    ).slice(0, 5);
+
+    if (localMatches.length > 0) {
+        renderSearchSuggestions(localMatches);
+    } else {
+        fetchOnlineGeocode(query, true);
+    }
+}
+
+async function fetchOnlineGeocode(query, renderOnly = false) {
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=5&addressdetails=1`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const results = data.map(item => {
+                    const addr = item.address || {};
+                    let name = addr.city || addr.town || addr.municipality || addr.county || item.name || query;
+                    let prov = addr.state || addr.region || "Indonesia";
+                    let admin = addr.county || addr.city_district || ("Kota " + name);
+                    return {
+                        name: name,
+                        admin: admin,
+                        province: prov,
+                        lat: parseFloat(item.lat),
+                        lon: parseFloat(item.lon)
+                    };
+                });
+
+                if (renderOnly) {
+                    renderSearchSuggestions(results);
+                } else {
+                    const top = results[0];
+                    selectSearchCity(top.name, top.admin, top.province, top.lat, top.lon);
+                }
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn("Online geocode error:", e);
+    }
+
+    if (renderOnly) hideSearchSuggestions();
+}
+
+function renderSearchSuggestions(cities) {
+    const dropdown = document.getElementById("searchSuggestionsDropdown");
+    if (!dropdown) return;
+
+    if (!cities || cities.length === 0) {
+        hideSearchSuggestions();
+        return;
+    }
+
+    dropdown.innerHTML = cities.map(c => `
+        <div class="search-suggestion-item" onclick="selectSearchCity('${escapeQuotes(c.name)}', '${escapeQuotes(c.admin)}', '${escapeQuotes(c.province)}', ${c.lat}, ${c.lon})">
+            <div class="suggestion-icon">
+                <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+            <div class="suggestion-text-group">
+                <div class="suggestion-main-name">${c.name}</div>
+                <div class="suggestion-sub-name">${c.admin}, ${c.province}</div>
+            </div>
+        </div>
+    `).join('');
+
+    dropdown.style.display = "flex";
+}
+
+function hideSearchSuggestions() {
+    const dropdown = document.getElementById("searchSuggestionsDropdown");
+    if (dropdown) dropdown.style.display = "none";
+}
+
+function selectSearchCity(name, admin, prov, lat, lon) {
+    hideSearchSuggestions();
+
+    const input = document.getElementById("searchInput");
+    if (input) input.value = name;
+    const clearBtn = document.getElementById("searchClearBtn");
+    if (clearBtn) clearBtn.style.display = "flex";
+
+    // Pindah fokus peta ke kota yang dicari
+    map.flyTo([lat, lon], 10, { duration: 1.2 });
+    userCoords = [lat, lon];
+
+    // Perbarui objek lokasi dan kartu area
+    const placeObj = { main: name, admin: admin, province: prov };
+    userPlaceObj = placeObj;
+    userPlaceName = `${name}, ${admin}, ${prov}`;
+    renderLocationUI(placeObj, lat, lon);
+
+    // Ambil cuaca kota tersebut secara real-time
+    fetchWeather(lat, lon);
+
+    // Periksa risiko gempa di sekitar kota tersebut
+    checkProximityRisk();
+
+    // Catat ke Riwayat Penelusuran (Tab Terbaru)
+    addRecentSearch(name, lat, lon);
+
+    // Pastikan berada di Tab Monitor untuk melihat detail kota
+    if (currentNavTab !== 'monitor') {
+        switchNavTab('monitor');
+    }
 }
 
 function clearSearch() {
     const input = document.getElementById("searchInput");
     if (input) input.value = "";
+    hideSearchSuggestions();
     handleSearch("");
 }
+
+// Tutup dropdown saran saat klik di luar kotak pencarian
+document.addEventListener('click', (e) => {
+    const wrap = document.getElementById("searchBoxCard");
+    const dropdown = document.getElementById("searchSuggestionsDropdown");
+    if (dropdown && dropdown.style.display !== 'none' && wrap && !wrap.contains(e.target) && !dropdown.contains(e.target)) {
+        hideSearchSuggestions();
+    }
+});
 
 // ==================== CHIPS SLIDER CONTROLS ====================
 function initChipsSliderInteractions() {
@@ -725,20 +1018,68 @@ function updateRecentQuakesUI() {
     listEl.innerHTML = filtered.slice(0, 20).map(q => {
         let magClass = q.mag >= 5 ? 'mag-red' : (q.mag >= 3 ? 'mag-orange' : 'mag-gray');
         let dist = hasUserGPS ? calcDistance(userCoords[0], userCoords[1], q.lat, q.lon) : null;
+        let isBookmarked = isQuakeBookmarked(q);
+        let safePlace = escapeQuotes(q.place);
+        let humanTime = formatQuakeTime(q);
         return `
             <div class="quake-card-item" onclick="focusQuake(${q.lat}, ${q.lon})">
                 <div class="quake-mag-badge ${magClass}">M ${q.mag.toFixed(1)}</div>
                 <div class="quake-item-details">
                     <div class="quake-item-place">${q.place}</div>
                     <div class="quake-item-sub">
-                        <span>${q.time}</span>
+                        <span>🕒 ${humanTime}</span>
                         ${dist !== null ? `<span class="quake-dist">• 📏 ${dist} km</span>` : ''}
                     </div>
                 </div>
-                <div style="font-size:14px; color:var(--text-muted); font-weight:bold;">›</div>
+                <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
+                    <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
+                        ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+                    </svg>
+                </button>
             </div>
         `;
     }).join('');
+}
+
+function formatQuakeTime(q) {
+    if (!q) return "-";
+    let ts = q.iso ? new Date(q.iso).getTime() : null;
+    if (!ts || isNaN(ts)) {
+        return q.time || "-";
+    }
+
+    const now = Date.now();
+    const diffMs = now - ts;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    const d = new Date(ts);
+    const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+    const day = d.getDate();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const monthStr = months[d.getMonth()];
+
+    const today = new Date();
+    const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear();
+
+    if (diffMins >= 0 && diffMins < 60) {
+        return `${diffMins} mnt lalu (${timeStr})`;
+    } else if (isToday) {
+        return `Hari ini, ${timeStr} (${diffHours}j lalu)`;
+    } else if (isYesterday) {
+        return `Kemarin, ${timeStr}`;
+    } else {
+        return `${day} ${monthStr}, ${timeStr}`;
+    }
+}
+
+function escapeQuotes(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 function focusQuake(lat, lon) {
@@ -752,6 +1093,384 @@ function focusQuake(lat, lon) {
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     }
+}
+
+// ==================== DISIMPAN (SAVED PLACES & CUSTOM WATCHLIST) ====================
+const DEFAULT_SAVED_PLACES = [
+    { id: 'sibolga', name: 'Sibolga', admin: 'Kota Sibolga', province: 'Sumatera Utara', lat: 1.7428, lon: 98.7792, temp: '28°C' },
+    { id: 'pekanbaru', name: 'Pekanbaru', admin: 'Kota Pekanbaru', province: 'Riau', lat: 0.5071, lon: 101.4478, temp: '29°C' },
+    { id: 'batam', name: 'Batam', admin: 'Kota Batam', province: 'Kepulauan Riau', lat: 1.1030, lon: 104.0383, temp: '28°C' },
+    { id: 'padang', name: 'Padang', admin: 'Kota Padang', province: 'Sumatera Barat', lat: -0.9471, lon: 100.4172, temp: '27°C' },
+    { id: 'jakarta', name: 'Jakarta', admin: 'DKI Jakarta', province: 'Indonesia', lat: -6.2088, lon: 106.8456, temp: '30°C' }
+];
+
+function getSavedPlaces() {
+    try {
+        const data = localStorage.getItem('seismo_saved_places');
+        if (data) return JSON.parse(data);
+    } catch (e) { }
+    return DEFAULT_SAVED_PLACES;
+}
+
+function savePlacesList(places) {
+    try {
+        localStorage.setItem('seismo_saved_places', JSON.stringify(places));
+    } catch (e) { }
+}
+
+function toggleSaveCurrentArea() {
+    const cityName = userPlaceObj?.main || document.getElementById("areaCityMain")?.innerText || "Wilayah Terpilih";
+    const adminName = userPlaceObj?.admin || document.getElementById("areaCityAdmin")?.innerText || "";
+    const provName = userPlaceObj?.province || document.getElementById("areaProvince")?.innerText || "";
+    const lat = userCoords[0];
+    const lon = userCoords[1];
+    const tempText = document.getElementById("weatherConditionTemp")?.innerText || "28°C";
+
+    let places = getSavedPlaces();
+    const existingIndex = places.findIndex(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05);
+
+    const btnIcon = document.getElementById("bookmarkAreaIcon");
+    const btnEl = document.getElementById("btnBookmarkArea");
+
+    if (existingIndex >= 0) {
+        places.splice(existingIndex, 1);
+        savePlacesList(places);
+        if (btnEl) btnEl.classList.remove("active");
+        if (btnIcon) btnIcon.innerHTML = '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    } else {
+        const newPlace = {
+            id: 'place_' + Date.now(),
+            name: cityName,
+            admin: adminName,
+            province: provName,
+            lat: lat,
+            lon: lon,
+            temp: tempText
+        };
+        places.unshift(newPlace);
+        savePlacesList(places);
+        if (btnEl) btnEl.classList.add("active");
+        if (btnIcon) btnIcon.innerHTML = '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>';
+    }
+
+    renderSavedPlacesUI();
+}
+
+function updateBookmarkIconState() {
+    const lat = userCoords[0];
+    const lon = userCoords[1];
+    const places = getSavedPlaces();
+    const isSaved = places.some(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05);
+
+    const btnIcon = document.getElementById("bookmarkAreaIcon");
+    const btnEl = document.getElementById("btnBookmarkArea");
+    if (btnEl) btnEl.classList.toggle("active", isSaved);
+    if (btnIcon) {
+        btnIcon.innerHTML = isSaved
+            ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>'
+            : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>';
+    }
+}
+
+function removeSavedPlace(id, e) {
+    if (e) e.stopPropagation();
+    let places = getSavedPlaces().filter(p => p.id !== id);
+    savePlacesList(places);
+    renderSavedPlacesUI();
+    updateBookmarkIconState();
+}
+
+function flyToSavedPlace(lat, lon, name) {
+    map.flyTo([lat, lon], 10, { duration: 1.2 });
+    userCoords = [lat, lon];
+    fetchLocationName(lat, lon);
+    fetchWeather(lat, lon);
+    checkProximityRisk();
+    addRecentSearch(name, lat, lon);
+    if (window.innerWidth <= 768) {
+        toggleMobileDrawer(false);
+    }
+}
+
+function renderSavedPlacesUI() {
+    const container = document.getElementById("savedPlacesList");
+    const badge = document.getElementById("savedPlacesCountBadge");
+    if (!container) return;
+
+    const places = getSavedPlaces();
+    if (badge) badge.innerText = `${places.length} disimpan`;
+
+    if (places.length === 0) {
+        container.innerHTML = `
+            <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:16px;">
+                Belum ada wilayah pantauan yang disimpan.<br>
+                Klik tombol <b>＋ Simpan Wilayah Ini</b> untuk menambahkan.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = places.map(p => {
+        let nearestDist = null;
+        let nearestMag = 0;
+        quakesArray.forEach(q => {
+            let d = calcDistance(p.lat, p.lon, q.lat, q.lon);
+            if (nearestDist === null || d < nearestDist) {
+                nearestDist = d;
+                nearestMag = q.mag;
+            }
+        });
+
+        let isWarning = nearestDist !== null && nearestDist <= 150 && nearestMag >= 4.5;
+        let statusLabel = isWarning
+            ? `⚠️ Gempa M${nearestMag.toFixed(1)} (${nearestDist} km)`
+            : (nearestDist !== null ? `🟢 Terpantau Aman (${nearestDist} km)` : `🟢 Terpantau Aman`);
+
+        let safeName = escapeQuotes(p.name);
+        return `
+            <div class="saved-place-card" onclick="flyToSavedPlace(${p.lat}, ${p.lon}, '${safeName}')">
+                <div class="saved-place-info">
+                    <div class="saved-place-name">📍 ${p.name}</div>
+                    <div class="saved-place-sub">
+                        <span class="saved-place-status-dot ${isWarning ? 'warning' : ''}"></span>
+                        <span>${statusLabel}</span>
+                    </div>
+                </div>
+                <div class="saved-place-right">
+                    <div class="saved-place-weather">${p.temp || '28°C'}</div>
+                    <button class="btn-item-delete" onclick="removeSavedPlace('${p.id}', event)" title="Hapus dari Disimpan">
+                        <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ==================== GEMPA DITANDAI (BOOKMARKED QUAKES) ====================
+function getBookmarkedQuakes() {
+    try {
+        const data = localStorage.getItem('seismo_bookmarked_quakes');
+        if (data) return JSON.parse(data);
+    } catch (e) { }
+    return [];
+}
+
+function isQuakeBookmarked(quakeObj) {
+    const id = `${quakeObj.lat.toFixed(2)}_${quakeObj.lon.toFixed(2)}_${quakeObj.time}`;
+    return getBookmarkedQuakes().some(b => b.id === id);
+}
+
+function saveBookmarkedQuakes(list) {
+    try {
+        localStorage.setItem('seismo_bookmarked_quakes', JSON.stringify(list));
+    } catch (e) { }
+}
+
+function toggleBookmarkQuake(quakeObj, e) {
+    if (e) e.stopPropagation();
+    let bookmarks = getBookmarkedQuakes();
+    const id = `${quakeObj.lat.toFixed(2)}_${quakeObj.lon.toFixed(2)}_${quakeObj.time}`;
+    const idx = bookmarks.findIndex(b => b.id === id);
+
+    if (idx >= 0) {
+        bookmarks.splice(idx, 1);
+    } else {
+        bookmarks.unshift({
+            id: id,
+            lat: quakeObj.lat,
+            lon: quakeObj.lon,
+            mag: quakeObj.mag,
+            place: quakeObj.place,
+            time: quakeObj.time,
+            depth: quakeObj.depth
+        });
+    }
+    saveBookmarkedQuakes(bookmarks);
+    renderBookmarkedQuakesUI();
+    updateRecentQuakesUI();
+}
+
+function renderBookmarkedQuakesUI() {
+    const container = document.getElementById("bookmarkedQuakesList");
+    const badge = document.getElementById("bookmarkedQuakesCountBadge");
+    if (!container) return;
+
+    const bookmarks = getBookmarkedQuakes();
+    if (badge) badge.innerText = `${bookmarks.length} ditandai`;
+
+    if (bookmarks.length === 0) {
+        container.innerHTML = `
+            <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:16px;">
+                Belum ada gempa yang ditandai.<br>
+                Klik ikon bookmark pada kartu gempa untuk menyimpannya di sini.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = bookmarks.map(q => {
+        let magClass = q.mag >= 5 ? 'mag-red' : (q.mag >= 3 ? 'mag-orange' : 'mag-gray');
+        return `
+            <div class="quake-card-item" onclick="focusQuake(${q.lat}, ${q.lon})">
+                <div class="quake-mag-badge ${magClass}">M ${q.mag.toFixed(1)}</div>
+                <div class="quake-item-details">
+                    <div class="quake-item-place">${q.place}</div>
+                    <div class="quake-item-sub">
+                        <span>🕒 ${q.time}</span>
+                        <span>• Kedalaman ${q.depth}</span>
+                    </div>
+                </div>
+                <button class="btn-item-delete" style="color:var(--accent-red);" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, time:'${q.time}'}, event)" title="Hapus Bookmark">
+                    <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+// ==================== TERBARU (RECENT SEARCHES & 24H FEED) ====================
+function getRecentSearches() {
+    try {
+        const data = localStorage.getItem('seismo_recent_searches');
+        if (data !== null) return JSON.parse(data);
+    } catch (e) { }
+    return [
+        { name: "Sibolga", lat: 1.7428, lon: 98.7792, time: "Hari ini" },
+        { name: "Pekanbaru", lat: 0.5071, lon: 101.4478, time: "Hari ini" }
+    ];
+}
+
+function addRecentSearch(name, lat, lon) {
+    if (!name) return;
+    let list = getRecentSearches();
+    list = list.filter(item => item.name.toLowerCase() !== name.toLowerCase());
+    list.unshift({
+        name: name,
+        lat: lat,
+        lon: lon,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    if (list.length > 10) list.pop();
+    try {
+        localStorage.setItem('seismo_recent_searches', JSON.stringify(list));
+    } catch (e) { }
+    renderRecentSearchesUI();
+}
+
+function clearRecentSearches() {
+    try {
+        localStorage.setItem('seismo_recent_searches', JSON.stringify([]));
+    } catch (e) { }
+    renderRecentSearchesUI();
+}
+
+function renderRecentSearchesUI() {
+    const container = document.getElementById("recentSearchesList");
+    const badge = document.getElementById("recentSearchesCountBadge");
+    if (!container) return;
+
+    const searches = getRecentSearches();
+    if (badge) badge.innerText = `${searches.length} riwayat`;
+
+    if (searches.length === 0) {
+        container.innerHTML = `
+            <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:16px;">
+                Belum ada riwayat penelusuran.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = searches.map(s => {
+        let safeName = escapeQuotes(s.name);
+        return `
+            <div class="recent-search-card" onclick="flyToSavedPlace(${s.lat}, ${s.lon}, '${safeName}')">
+                <div class="recent-search-left">
+                    <svg class="gmap-icon" style="width:14px; height:14px; color:var(--text-muted);" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                    <div class="recent-search-text">${s.name}</div>
+                </div>
+                <span class="recent-search-time">${s.time}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+let timelineFilter = '24h'; // '24h' | '7d' | 'all'
+
+function setTimelineFilter(filter) {
+    timelineFilter = filter;
+
+    const c24 = document.getElementById("chipTimeline24h");
+    const c7d = document.getElementById("chipTimeline7d");
+    const cAll = document.getElementById("chipTimelineAll");
+    if (c24) c24.classList.toggle("active", filter === '24h');
+    if (c7d) c7d.classList.toggle("active", filter === '7d');
+    if (cAll) cAll.classList.toggle("active", filter === 'all');
+
+    const titleEl = document.getElementById("timelineTitleText");
+    if (titleEl) {
+        titleEl.innerText = filter === '24h' ? '⏱️ Linimasa Gempa 24 Jam' : (filter === '7d' ? '⏱️ Linimasa Gempa 7 Hari' : '⏱️ Semua Riwayat Gempa');
+    }
+
+    render24hTimelineUI();
+}
+
+function render24hTimelineUI() {
+    const container = document.getElementById("timeline24hList");
+    const badge = document.getElementById("timeline24hCountBadge");
+    if (!container) return;
+
+    const now = Date.now();
+    const filteredQuakes = quakesArray.filter(q => {
+        let ts = q.iso ? new Date(q.iso).getTime() : 0;
+        if (!ts || isNaN(ts)) return true;
+        const diffMs = now - ts;
+        if (timelineFilter === '24h') {
+            return diffMs <= (24 * 60 * 60 * 1000); // Gempa dalam 24 jam terakhir
+        } else if (timelineFilter === '7d') {
+            return diffMs <= (7 * 24 * 60 * 60 * 1000); // Gempa 7 hari terakhir
+        }
+        return true;
+    });
+
+    if (badge) badge.innerText = `${filteredQuakes.length} data`;
+
+    if (filteredQuakes.length === 0) {
+        let label = timelineFilter === '24h' ? '24 jam terakhir' : 'rentang waktu ini';
+        container.innerHTML = `
+            <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:16px;">
+                Tidak ada gempa tercatat dalam ${label}.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filteredQuakes.map(q => {
+        let magClass = q.mag >= 5 ? 'mag-red' : (q.mag >= 3 ? 'mag-orange' : 'mag-gray');
+        let dist = hasUserGPS ? calcDistance(userCoords[0], userCoords[1], q.lat, q.lon) : null;
+        let isBookmarked = isQuakeBookmarked(q);
+        let safePlace = escapeQuotes(q.place);
+        let humanTime = formatQuakeTime(q);
+        return `
+            <div class="quake-card-item" onclick="focusQuake(${q.lat}, ${q.lon})">
+                <div class="quake-mag-badge ${magClass}">M ${q.mag.toFixed(1)}</div>
+                <div class="quake-item-details">
+                    <div class="quake-item-place">${q.place}</div>
+                    <div class="quake-item-sub">
+                        <span>🕒 ${humanTime}</span>
+                        <span>• Kedalaman ${q.depth}</span>
+                        ${dist !== null ? `<span class="quake-dist">• 📏 ${dist} km</span>` : ''}
+                    </div>
+                </div>
+                <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
+                    <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
+                        ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+                    </svg>
+                </button>
+            </div>
+        `;
+    }).join('');
 }
 
 function checkProximityRisk() {
@@ -999,17 +1718,32 @@ function formatIndonesianPlace(rawCity, rawLocality, rawSubdivision, lat, lon) {
     let admin = "";
     let province = "";
 
-    // Deteksi cerdas koordinat & nama area Batam / Kepulauan Riau
-    const isBatamArea = (lat >= 0.7 && lat <= 1.35 && lon >= 103.7 && lon <= 104.45) ||
-        (rawCity && rawCity.toLowerCase().includes("batam")) ||
-        (rawLocality && rawLocality.toLowerCase().includes("batam"));
+    // 1. Validasi Geografis Ketat Berdasarkan Bounding Box Koordinat
+    // Sibolga & Tapanuli Tengah (Sumatera Utara)
+    if (lat >= 1.55 && lat <= 1.95 && lon >= 98.55 && lon <= 99.05) {
+        return { main: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara" };
+    }
 
-    if (isBatamArea) {
-        return {
-            main: "Batam",
-            admin: "Kota Batam",
-            province: "Kepulauan Riau"
-        };
+    // Batam / Barelang / Bintan / Kepulauan Riau
+    if (lat >= 0.5 && lat <= 1.5 && lon >= 103.4 && lon <= 104.9) {
+        let isTPI = (rawCity && rawCity.toLowerCase().includes("tanjung pinang")) || (rawLocality && rawLocality.toLowerCase().includes("tanjung pinang"));
+        let isBintan = (rawCity && rawCity.toLowerCase().includes("bintan")) || (rawLocality && rawLocality.toLowerCase().includes("bintan"));
+        let isKarimun = (rawCity && rawCity.toLowerCase().includes("karimun")) || (rawLocality && rawLocality.toLowerCase().includes("karimun"));
+
+        if (isTPI) {
+            return { main: "Tanjungpinang", admin: "Kota Tanjungpinang", province: "Kepulauan Riau" };
+        } else if (isBintan) {
+            return { main: "Bintan", admin: "Kabupaten Bintan", province: "Kepulauan Riau" };
+        } else if (isKarimun) {
+            return { main: "Karimun", admin: "Kabupaten Karimun", province: "Kepulauan Riau" };
+        } else {
+            return { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
+        }
+    }
+
+    // DKI Jakarta
+    if (lat >= -6.4 && lat <= -6.0 && lon >= 106.65 && lon <= 107.0) {
+        return { main: "Jakarta", admin: "DKI Jakarta", province: "DKI Jakarta" };
     }
 
     // Parsing nama kota/kabupaten
@@ -1037,7 +1771,7 @@ function formatIndonesianPlace(rawCity, rawLocality, rawSubdivision, lat, lon) {
     let candidateProv = rawSubdivision || "";
     if (candidateProv) {
         let provLower = candidateProv.toLowerCase();
-        if (provLower.includes("riau islands") || provLower === "riau kepulauan") {
+        if (provLower.includes("riau islands") || provLower.includes("kepulauan riau") || provLower === "riau kepulauan") {
             province = "Kepulauan Riau";
         } else if (provLower === "sumatra" || provLower === "sumatera") {
             if (lat > 1.5) province = "Sumatera Utara";
@@ -1058,8 +1792,23 @@ function formatIndonesianPlace(rawCity, rawLocality, rawSubdivision, lat, lon) {
             province = "Jawa Tengah";
         } else if (provLower.includes("east java")) {
             province = "Jawa Timur";
+        } else if (provLower.includes("yogyakarta") || provLower.includes("jogja")) {
+            province = "D.I. Yogyakarta";
+        } else if (provLower.includes("bali")) {
+            province = "Bali";
         } else {
             province = candidateProv;
+        }
+    }
+
+    // Cegah anomali: Koordinat di luar pulau Jawa tidak boleh berprovinsi Jawa/Jakarta
+    if (lat > -5.0 && (province.toLowerCase().includes("jawa") || province.toLowerCase().includes("jakarta"))) {
+        if (lat >= -1.0 && lat <= 2.0 && lon >= 100.0 && lon <= 106.0) {
+            province = (lon >= 103.4) ? "Kepulauan Riau" : "Riau";
+        } else if (lat > 2.0 && lon <= 100.0) {
+            province = "Sumatera Utara";
+        } else {
+            province = "Indonesia";
         }
     }
 
@@ -1085,6 +1834,8 @@ function renderLocationUI(obj, lat, lon) {
     if (locEl && lat !== undefined && lon !== undefined) {
         locEl.innerText = `GPS: ${lat.toFixed(3)}, ${lon.toFixed(3)}`;
     }
+
+    updateBookmarkIconState();
 }
 
 async function fetchLocationName(lat, lon) {
@@ -1097,11 +1848,13 @@ async function fetchLocationName(lat, lon) {
         if (dist < 0.03) { // < ~3km
             try {
                 const cachedObj = JSON.parse(cachedObjStr);
-                userPlaceObj = cachedObj;
-                userPlaceName = `${cachedObj.main}, ${cachedObj.admin}, ${cachedObj.province}`;
-                renderLocationUI(cachedObj, lat, lon);
+                // Validasi ulang cache terhadap koordinat aktual
+                const validatedObj = formatIndonesianPlace(cachedObj.main, cachedObj.admin, cachedObj.province, lat, lon);
+                userPlaceObj = validatedObj;
+                userPlaceName = `${validatedObj.main}, ${validatedObj.admin}, ${validatedObj.province}`;
+                renderLocationUI(validatedObj, lat, lon);
                 if (gpsMarker) updateGPSMarker(lat, lon, parseFloat(savedAcc) || 50, false);
-                return cachedObj;
+                return validatedObj;
             } catch (e) { }
         }
     }
@@ -1285,9 +2038,9 @@ function initLocation() {
             }).catch(() => { });
         }
     } else {
-        const defaultObj = { main: "Jakarta", admin: "DKI Jakarta", province: "Indonesia" };
-        renderLocationUI(defaultObj, -6.2088, 106.8456);
-        fetchWeather(-6.2088, 106.8456);
+        const defaultObj = { main: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara" };
+        renderLocationUI(defaultObj, 1.7428, 98.7792);
+        fetchWeather(1.7428, 98.7792);
     }
 }
 
@@ -1370,6 +2123,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateRecentQuakesUI();
     initChipsSliderInteractions();
     initHistats();
+    updateBookmarkIconState();
+    renderSavedPlacesUI();
+    renderBookmarkedQuakesUI();
+    renderRecentSearchesUI();
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     } else {
