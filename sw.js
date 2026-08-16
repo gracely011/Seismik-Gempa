@@ -2,17 +2,16 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v8.5';
+const CACHE_NAME = 'seismo-cache-v8.9';
 
 const PRECACHE_ASSETS = [
     './',
     'index.html',
-    'style.css?v=8.5',
-    'app.js?v=8.5',
+    'style.css?v=8.9',
+    'app.js?v=8.9',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap',
-    'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200'
+    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap'
 ];
 
 // 1. INSTALLATION: Pre-cache essential app shell assets

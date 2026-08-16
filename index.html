@@ -22,8 +22,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
-    <link rel="stylesheet" href="style.css?v=8.8">
+    <link rel="stylesheet" href="style.css?v=8.9">
 </head>
 
 <body>
@@ -37,15 +36,15 @@
     <!-- GOOGLE MAPS BOTTOM-RIGHT MAP CONTROLS GROUP (GPS LOCATE + ZOOM +/-) -->
     <div class="gmap-map-controls" id="gmapControlsGroup">
         <button class="gmap-ctrl-btn gmap-locate-btn" onclick="centerToUserLocation()" title="Pusatkan ke Titik Lokasi Saya (GPS)" aria-label="Lokasi Saya">
-            <span class="google-symbols" style="font-size: 18px;">my_location</span>
+            <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
         </button>
         <div class="gmap-zoom-group">
             <button class="gmap-ctrl-btn gmap-zoom-in" onclick="map.zoomIn()" title="Perbesar Peta" aria-label="Perbesar">
-                <span class="google-symbols" style="font-size: 18px;">add</span>
+                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
             </button>
             <div class="gmap-zoom-divider"></div>
             <button class="gmap-ctrl-btn gmap-zoom-out" onclick="map.zoomOut()" title="Perkecil Peta" aria-label="Perkecil">
-                <span class="google-symbols" style="font-size: 18px;">remove</span>
+                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
             </button>
         </div>
     </div>
@@ -56,13 +55,13 @@
         <div class="rail-top">
             <!-- HAMBURGER MENU (TOGGLE SIDEBAR) -->
             <button class="rail-btn rail-menu-btn active" id="railMenuBtn" onclick="toggleSidebar()" title="Menu / Panel Seismograf" aria-label="Menu">
-                <span class="google-symbols">menu</span>
+                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
             </button>
 
             <!-- DISIMPAN (BOOKMARK) -->
             <button class="rail-btn" onclick="filterQuakes('near', this)" title="Gempa Dekat Saya">
                 <div class="rail-icon-indicator">
-                    <span class="google-symbols">bookmark</span>
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 </div>
                 <span class="rail-label">Disimpan</span>
             </button>
@@ -70,7 +69,7 @@
             <!-- TERBARU (RECENT) -->
             <button class="rail-btn" onclick="filterQuakes('all', this)" title="Riwayat Gempa Terbaru">
                 <div class="rail-icon-indicator">
-                    <span class="google-symbols">history</span>
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                 </div>
                 <span class="rail-label">Terbaru</span>
             </button>
@@ -80,7 +79,7 @@
             <!-- GPS LOCATE -->
             <button class="rail-btn" onclick="focusUserGPS()" title="Lokasi GPS Saya">
                 <div class="rail-icon-indicator">
-                    <span class="google-symbols">my_location</span>
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
                 </div>
                 <span class="rail-label">GPS</span>
             </button>
@@ -88,7 +87,7 @@
             <!-- PRO VERSION -->
             <a href="https://petrus.gracely.my.id/" target="_blank" class="rail-btn" title="Aplikasi Pro">
                 <div class="rail-icon-indicator">
-                    <span class="google-symbols">bolt</span>
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/></svg>
                 </div>
                 <span class="rail-label">Pro</span>
             </a>
@@ -97,8 +96,8 @@
         <div class="rail-bottom">
             <!-- DARK / LIGHT MODE SWITCH -->
             <button class="rail-btn" onclick="toggleThemeMode()" id="btnTheme" title="Ganti Mode Gelap / Terang">
-                <div class="rail-icon-indicator">
-                    <span class="google-symbols" id="themeIcon">dark_mode</span>
+                <div class="rail-icon-indicator" id="themeIconIndicator">
+                    <svg class="gmap-icon" id="themeIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
                 </div>
                 <span class="rail-label">Mode</span>
             </button>
@@ -106,7 +105,7 @@
             <!-- APP INFO -->
             <button class="rail-btn" onclick="openAppInfo()" title="Tentang Sistem">
                 <div class="rail-icon-indicator">
-                    <span class="google-symbols">info</span>
+                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                 </div>
                 <span class="rail-label">Info</span>
             </button>
@@ -118,15 +117,15 @@
         <!-- GOOGLE MAPS SEARCH BAR -->
         <div class="search-box-card" id="searchBoxCard">
             <button class="search-icon-btn" onclick="document.getElementById('searchInput').focus()" title="Cari">
-                <span class="google-symbols" style="font-size: 20px;">search</span>
+                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             </button>
             <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)">
             <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Hapus Pencarian">
-                <span class="google-symbols" style="font-size: 18px;">close</span>
+                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
             <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
             <button class="directions-btn" onclick="centerToUserLocation()" title="Pusatkan ke Lokasi Saya">
-                <span class="google-symbols" style="font-size: 18px;">directions</span>
+                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 10.59l-7.99-8c-.78-.78-2.05-.78-2.83 0l-8 8c-.78.78-.78 2.05 0 2.83l8 8c.78.78 2.05.78 2.83 0l7.99-8c.79-.79.79-2.05 0-2.83zM13.5 14.5V12H10v3H8v-4c0-.55.45-1 1-1h4.5V7.5L17 11l-3.5 3.5z"/></svg>
             </button>
         </div>
 
@@ -218,7 +217,7 @@
             <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL -->
             <div class="layer-thumbnail-card" id="layerCard" onclick="toggleMapLayer()" title="Ganti Lapisan Peta">
                 <div class="layer-thumbnail-badge">
-                    <span class="google-symbols" style="font-size: 13px; font-variation-settings: 'FILL' 1;">layers</span>
+                    <svg class="gmap-icon" style="width: 13px; height: 13px;" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9.07l-9-7-9 7 1.63 1.27L12 16z"/></svg>
                     <span id="layerBadgeText">Standar</span>
                 </div>
             </div>
@@ -253,7 +252,7 @@
     </div>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=8.8"></script>
+    <script src="app.js?v=8.9"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>
