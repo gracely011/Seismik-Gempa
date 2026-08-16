@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9.4">
+    <link rel="stylesheet" href="style.css?v=9.5">
 </head>
 
 <body>
@@ -68,7 +68,7 @@
             </button>
 
             <!-- DISIMPAN (BOOKMARK) -->
-            <button class="rail-btn" onclick="filterQuakes('near', this)" title="Gempa Dekat Saya">
+            <button class="rail-btn" id="railBtnSaved" onclick="filterQuakes('near', this)" title="Gempa Dekat Saya">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
                 </div>
@@ -76,7 +76,7 @@
             </button>
 
             <!-- TERBARU (RECENT) -->
-            <button class="rail-btn" onclick="filterQuakes('all', this)" title="Riwayat Gempa Terbaru">
+            <button class="rail-btn" id="railBtnRecent" onclick="filterQuakes('all', this)" title="Riwayat Gempa Terbaru">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                 </div>
@@ -86,7 +86,7 @@
             <div class="rail-separator"></div>
 
             <!-- GPS LOCATE -->
-            <button class="rail-btn" onclick="focusUserGPS()" title="Lokasi GPS Saya">
+            <button class="rail-btn" id="railBtnGps" onclick="focusUserGPS()" title="Lokasi GPS Saya">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
                 </div>
@@ -94,7 +94,7 @@
             </button>
 
             <!-- PRO VERSION -->
-            <a href="https://petrus.gracely.my.id/" target="_blank" class="rail-btn" title="Aplikasi Pro">
+            <a href="https://petrus.gracely.my.id/" target="_blank" class="rail-btn" id="railBtnPro" title="Aplikasi Pro">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/></svg>
                 </div>
@@ -112,7 +112,7 @@
             </button>
 
             <!-- APP INFO -->
-            <button class="rail-btn" onclick="openAppInfo()" title="Tentang Sistem">
+            <button class="rail-btn" id="railBtnInfo" onclick="openAppInfo()" title="Tentang Sistem">
                 <div class="rail-icon-indicator">
                     <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                 </div>
@@ -224,7 +224,7 @@
         <!-- GOOGLE MAPS LAYER SWITCHER WITH HOVER EXPANSION -->
         <div class="layer-switcher-wrapper" id="layerSwitcherWrap">
             <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL -->
-            <div class="layer-thumbnail-card" id="layerCard" onclick="toggleMapLayer()" title="Ganti Lapisan Peta">
+            <div class="layer-thumbnail-card" id="layerCard" onclick="toggleMapLayer(event)" title="Ganti Lapisan Peta">
                 <div class="layer-thumbnail-badge">
                     <svg class="gmap-icon" style="width: 13px; height: 13px;" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9.07l-9-7-9 7 1.63 1.27L12 16z"/></svg>
                     <span id="layerBadgeText">Standar</span>
@@ -245,7 +245,7 @@
                     <span class="layer-opt-label">Satelit</span>
                 </div>
 
-                <!-- 3. GELAP -->
+                <!-- 3. GELAP / DARK -->
                 <div class="layer-option-item" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
                     <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png');"></div>
                     <span class="layer-opt-label">Gelap</span>
@@ -261,7 +261,7 @@
     </div>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=9.4"></script>
+    <script src="app.js?v=9.5"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>

@@ -1246,20 +1246,44 @@ button.btn-act.active {
         border-right: none;
         border-top: 1px solid var(--border-subtle);
         background: var(--bg-rail);
-        padding: 0 4px;
+        padding: 0 16px;
         z-index: 1003;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
     }
 
-    .rail-top,
-    .rail-bottom {
+    .rail-top {
+        display: flex;
         flex-direction: row;
+        align-items: center;
         justify-content: space-around;
-        width: 100%;
+        flex: 2;
+        width: auto;
         gap: 0;
     }
 
+    .rail-bottom {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        flex: 1;
+        width: auto;
+        gap: 0;
+    }
+
+    /* SEMBUNYIKAN MENU LAIN DI MOBILE AGAR HANYA MUNCUL: MENU, GPS, INFO */
+    #railBtnSaved,
+    #railBtnRecent,
+    #railBtnPro,
+    #btnTheme,
+    .rail-separator {
+        display: none !important;
+    }
+
     .rail-btn {
-        width: 52px;
+        width: 64px;
         min-height: 48px;
         border-radius: 12px;
         display: flex;
@@ -1271,25 +1295,24 @@ button.btn-act.active {
     }
 
     .rail-icon-indicator {
-        width: 46px;
-        height: 26px;
-        border-radius: 13px;
+        width: 50px;
+        height: 28px;
+        border-radius: 14px;
     }
 
     .rail-menu-btn {
-        width: 40px !important;
-        height: 40px !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        margin-bottom: 0;
     }
 
     .rail-label {
-        font-size: 9px;
+        font-size: 10px;
         font-weight: 600;
         line-height: 1;
         letter-spacing: -0.1px;
-    }
-
-    .rail-separator {
-        display: none;
     }
 
     /* TOP FLOATING SEARCH BAR & CHIPS */
@@ -1457,31 +1480,74 @@ button.btn-act.active {
         left: auto;
         bottom: auto;
         z-index: 1005;
+        display: flex;
         flex-direction: row-reverse;
+        align-items: center;
         gap: 8px;
+        pointer-events: auto;
         transition: none; /* Matikan animasi posisi di mobile */
     }
 
     .layer-thumbnail-card {
-        width: 42px;
-        height: 42px;
-        border-radius: 8px;
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+        pointer-events: auto;
+        flex-shrink: 0;
+    }
+
+    .layer-thumbnail-badge {
+        padding: 2px 0;
+        font-size: 8.5px;
+        gap: 2px;
+        line-height: 1;
+    }
+
+    .layer-thumbnail-badge .gmap-icon {
+        width: 10px !important;
+        height: 10px !important;
     }
 
     .layer-popup-menu {
-        padding: 6px 8px;
-        gap: 6px;
-        transform: translateX(8px) scale(0.95);
+        position: absolute;
+        right: 56px;
+        left: auto;
+        top: 50%;
+        bottom: auto;
+        margin-left: 0;
+        height: 56px;
+        padding: 4px 8px;
+        gap: 8px;
+        border-radius: 12px;
+        transform: translateY(-50%) translateX(10px) scale(0.95);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+        z-index: 1006;
     }
 
     .layer-popup-menu.show {
-        transform: translateX(0) scale(1);
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(-50%) translateX(0) scale(1);
+    }
+
+    .layer-option-item {
+        width: 38px;
+        gap: 2px;
     }
 
     .layer-thumb-preview {
-        width: 38px;
-        height: 38px;
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+    }
+
+    .layer-opt-label {
+        font-size: 8.5px;
+        margin-top: 2px;
     }
 
     #loading {

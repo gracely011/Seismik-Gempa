@@ -185,20 +185,24 @@ function selectMapLayer(layerName) {
 }
 
 function toggleMapLayer(e) {
-    if (e && e.stopPropagation) e.stopPropagation();
+    if (e) {
+        if (e.stopPropagation) e.stopPropagation();
+    }
     const popup = document.getElementById("layerPopupMenu");
     if (popup) {
         popup.classList.toggle('show');
     }
 }
 
-// Tutup popup menu layer jika klik di luar area
-document.addEventListener('click', (e) => {
-    const wrap = document.getElementById("layerSwitcherWrap");
-    const popup = document.getElementById("layerPopupMenu");
-    if (popup && wrap && !wrap.contains(e.target)) {
-        popup.classList.remove('show');
-    }
+// Tutup popup menu layer jika klik/sentuh di luar area
+['click', 'touchend'].forEach(evtType => {
+    document.addEventListener(evtType, (e) => {
+        const wrap = document.getElementById("layerSwitcherWrap");
+        const popup = document.getElementById("layerPopupMenu");
+        if (popup && popup.classList.contains('show') && wrap && !wrap.contains(e.target)) {
+            popup.classList.remove('show');
+        }
+    });
 });
 
 // ==================== GPS PULSE MARKER ====================
