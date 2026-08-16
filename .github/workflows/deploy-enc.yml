@@ -35,6 +35,10 @@ jobs:
           if [ -f "./app.js" ]; then
             javascript-obfuscator ./app.js --output ./app.js $MAIN_OPTIONS
           fi
+
+          if [ -f "./faults.js" ]; then
+            javascript-obfuscator ./faults.js --output ./faults.js $MAIN_OPTIONS
+          fi
           
           if [ -f "./sw.js" ]; then
             javascript-obfuscator ./sw.js --output ./sw.js $SW_OPTIONS
