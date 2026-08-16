@@ -5,6 +5,14 @@ desktop.ini
 .vscode/
 .idea/
 
+# Archives (ZIP, RAR, 7Z, TAR)
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.tgz
+
 # Node & Dependencies
 node_modules/
 npm-debug.log*
