@@ -338,6 +338,24 @@ function openMobileDrawer() {
     toggleMobileDrawer(true);
 }
 
+// Tutup otomatis drawer mobile saat klik di luar area menu
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && isMobileDrawerOpen) {
+        const drawer = document.getElementById("cardsScrollWrap");
+        const menuBtn = document.getElementById("railMenuBtn");
+        if (drawer && !drawer.contains(e.target) && menuBtn && !menuBtn.contains(e.target)) {
+            toggleMobileDrawer(false);
+        }
+    }
+});
+
+// Tutup otomatis saat peta digeser atau diklik di mobile
+map.on('movestart', () => {
+    if (window.innerWidth <= 768 && isMobileDrawerOpen) {
+        toggleMobileDrawer(false);
+    }
+});
+
 // ==================== MULTI-SOURCE EARTHQUAKE LOADER (BMKG + USGS) ====================
 // GPU Canvas Renderer untuk performa 60 FPS saat pan & zoom
 const canvasMarkerRenderer = L.canvas({ padding: 0.5, tolerance: 5 });
