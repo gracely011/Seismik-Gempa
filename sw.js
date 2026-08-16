@@ -2,15 +2,15 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v9.2';
+const CACHE_NAME = 'seismo-cache-v9.3';
 
 const PRECACHE_ASSETS = [
     './',
     'index.html',
     'manifest.json',
     'icon.svg',
-    'style.css?v=9.2',
-    'app.js?v=9.2',
+    'style.css?v=9.3',
+    'app.js?v=9.3',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap'
@@ -60,7 +60,25 @@ self.addEventListener('fetch', event => {
         return; // Native browser handling
     }
 
-    // Static Assets & App Shell: Cache First, Network Fallback
+    // 3A. HTML Navigation (Page Document): Network First, Cache Fallback (Always loads fresh UI when online)
+    if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+        event.respondWith(
+            fetch(event.request)
+                .then(networkResponse => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseClone = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(event.request, responseClone);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => caches.match(event.request) || caches.match('./') || caches.match('index.html'))
+        );
+        return;
+    }
+
+    // 3B. Static Assets & App Shell: Cache First, Network Fallback
     event.respondWith(
         caches.match(event.request).then(cachedResponse => {
             if (cachedResponse) return cachedResponse;
