@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <title>Monitor Seismik | Gracely</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="https://draft.gracely.my.id/assets/images/favicon.png">
+    <link rel="apple-touch-icon" href="https://draft.gracely.my.id/assets/images/favicon.png">
+    <!-- RESOURCE HINTS & PRECONNECT FOR LIGHTNING FAST LOAD -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
+    <link rel="preconnect" href="https://b.basemaps.cartocdn.com" crossorigin>
+    <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
+    <link rel="dns-prefetch" href="https://data.bmkg.go.id">
+    <link rel="dns-prefetch" href="https://earthquake.usgs.gov">
+    <link rel="dns-prefetch" href="https://api.open-meteo.com">
+    <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+    <link rel="stylesheet" href="style.css?v=8.8">
+</head>
+
+<body>
+
+    <!-- FULLSCREEN LEAFLET MAP -->
+    <div id="map"></div>
+
+    <!-- SYNC BADGE -->
+    <div id="loading">SINKRONISASI DATA...</div>
+
+    <!-- GOOGLE MAPS BOTTOM-RIGHT MAP CONTROLS GROUP (GPS LOCATE + ZOOM +/-) -->
+    <div class="gmap-map-controls" id="gmapControlsGroup">
+        <button class="gmap-ctrl-btn gmap-locate-btn" onclick="centerToUserLocation()" title="Pusatkan ke Titik Lokasi Saya (GPS)" aria-label="Lokasi Saya">
+            <span class="google-symbols" style="font-size: 18px;">my_location</span>
+        </button>
+        <div class="gmap-zoom-group">
+            <button class="gmap-ctrl-btn gmap-zoom-in" onclick="map.zoomIn()" title="Perbesar Peta" aria-label="Perbesar">
+                <span class="google-symbols" style="font-size: 18px;">add</span>
+            </button>
+            <div class="gmap-zoom-divider"></div>
+            <button class="gmap-ctrl-btn gmap-zoom-out" onclick="map.zoomOut()" title="Perkecil Peta" aria-label="Perkecil">
+                <span class="google-symbols" style="font-size: 18px;">remove</span>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ==================== LEFT NAVIGATION RAIL ==================== -->
+    <nav class="nav-rail">
+        <div class="rail-top">
+            <!-- HAMBURGER MENU (TOGGLE SIDEBAR) -->
+            <button class="rail-btn rail-menu-btn active" id="railMenuBtn" onclick="toggleSidebar()" title="Menu / Panel Seismograf" aria-label="Menu">
+                <span class="google-symbols">menu</span>
+            </button>
+
+            <!-- DISIMPAN (BOOKMARK) -->
+            <button class="rail-btn" onclick="filterQuakes('near', this)" title="Gempa Dekat Saya">
+                <div class="rail-icon-indicator">
+                    <span class="google-symbols">bookmark</span>
+                </div>
+                <span class="rail-label">Disimpan</span>
+            </button>
+
+            <!-- TERBARU (RECENT) -->
+            <button class="rail-btn" onclick="filterQuakes('all', this)" title="Riwayat Gempa Terbaru">
+                <div class="rail-icon-indicator">
+                    <span class="google-symbols">history</span>
+                </div>
+                <span class="rail-label">Terbaru</span>
+            </button>
+
+            <div class="rail-separator"></div>
+
+            <!-- GPS LOCATE -->
+            <button class="rail-btn" onclick="focusUserGPS()" title="Lokasi GPS Saya">
+                <div class="rail-icon-indicator">
+                    <span class="google-symbols">my_location</span>
+                </div>
+                <span class="rail-label">GPS</span>
+            </button>
+
+            <!-- PRO VERSION -->
+            <a href="https://petrus.gracely.my.id/" target="_blank" class="rail-btn" title="Aplikasi Pro">
+                <div class="rail-icon-indicator">
+                    <span class="google-symbols">bolt</span>
+                </div>
+                <span class="rail-label">Pro</span>
+            </a>
+        </div>
+
+        <div class="rail-bottom">
+            <!-- DARK / LIGHT MODE SWITCH -->
+            <button class="rail-btn" onclick="toggleThemeMode()" id="btnTheme" title="Ganti Mode Gelap / Terang">
+                <div class="rail-icon-indicator">
+                    <span class="google-symbols" id="themeIcon">dark_mode</span>
+                </div>
+                <span class="rail-label">Mode</span>
+            </button>
+
+            <!-- APP INFO -->
+            <button class="rail-btn" onclick="openAppInfo()" title="Tentang Sistem">
+                <div class="rail-icon-indicator">
+                    <span class="google-symbols">info</span>
+                </div>
+                <span class="rail-label">Info</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== FLOATING SEARCH & CARDS PANEL ==================== -->
+    <div class="panel-container" id="panelContainer">
+        <!-- GOOGLE MAPS SEARCH BAR -->
+        <div class="search-box-card" id="searchBoxCard">
+            <button class="search-icon-btn" onclick="document.getElementById('searchInput').focus()" title="Cari">
+                <span class="google-symbols" style="font-size: 20px;">search</span>
+            </button>
+            <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)">
+            <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Hapus Pencarian">
+                <span class="google-symbols" style="font-size: 18px;">close</span>
+            </button>
+            <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
+            <button class="directions-btn" onclick="centerToUserLocation()" title="Pusatkan ke Lokasi Saya">
+                <span class="google-symbols" style="font-size: 18px;">directions</span>
+            </button>
+        </div>
+
+        <!-- CHIPS FILTER (FLOATING UNDER SEARCH) -->
+        <div class="filter-chips-wrapper" id="filterChipsWrapper">
+            <div class="filter-chips" id="filterChipsRow">
+                <div class="chip active" onclick="filterQuakes('all', this)">Semua Gempa</div>
+                <div class="chip" onclick="filterQuakes('m3', this)">M &ge; 3.0</div>
+                <div class="chip" onclick="filterQuakes('m5', this)">M &ge; 5.0 (Kuat)</div>
+                <div class="chip" onclick="filterQuakes('near', this)">Dekat Saya (&lt;500km)</div>
+            </div>
+        </div>
+
+        <!-- CARDS SCROLLABLE CONTAINER / BOTTOM SHEET DRAWER -->
+        <div class="cards-scroll-wrap" id="cardsScrollWrap">
+            <!-- MOBILE BOTTOM SHEET DRAG HANDLE -->
+            <div class="bottom-sheet-handle-bar" onclick="toggleMobileDrawer()" title="Sentuh untuk Buka/Tutup Menu">
+                <div class="bottom-sheet-handle"></div>
+            </div>
+
+            <!-- "AREA INI" STATUS CARD (GOOGLE MAPS STYLE) -->
+            <div class="g-card area-gmap-card">
+                <div class="area-header">
+                    <div class="area-title-group">
+                        <h2 class="area-city-main" id="areaCityMain">Batam</h2>
+                        <div class="area-sub-line" id="areaCityAdmin">Kota Batam</div>
+                        <div class="area-sub-line" id="areaProvince">Kepulauan Riau</div>
+                        <div class="area-gps-coord mono" id="user_loc">GPS: 1.103, 104.038</div>
+                    </div>
+                    <div class="area-weather-box">
+                        <div class="weather-icon-gmap" id="weatherGmapIcon">
+                            <div class="gmap-sun-circle"></div>
+                        </div>
+                        <div class="weather-cond-temp" id="weatherConditionTemp">Cerah &middot; 28 &deg;C</div>
+                        <div class="weather-time mono" id="weatherLocalTime">--.--</div>
+                    </div>
+                </div>
+
+                <div class="area-status-pill" id="areaRiskStatus">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="riskStatusText">Kondisi sekitar terpantau stabil &amp; normal</span>
+                </div>
+            </div>
+
+            <!-- PRO BANNER (CLEAN GOOGLE STYLE) -->
+            <a href="https://petrus.gracely.my.id/" target="_blank" class="promo-gmap">
+                <span>⚡ Dapatkan Aplikasi Versi Lengkap Pro</span>
+                <span style="font-size: 13px; color: var(--accent-blue);">›</span>
+            </a>
+
+            <!-- SEISMOGRAPH SENSOR MONITOR CARD -->
+            <div class="g-card" id="sensorBox">
+                <div class="sensor-top mono">
+                    <span id="mode_label">LIVE MONITOR</span>
+                    <span id="ts_label">--:--:--</span>
+                </div>
+                <div class="canvas-frame">
+                    <canvas id="c"></canvas>
+                </div>
+                <input type="range" id="timeline" min="0" max="0" value="0" disabled title="Geser untuk Replay riwayat getaran">
+
+                <div class="ctrl-grid">
+                    <button class="btn-act" id="btnStart" onclick="initSystem()">START SENSOR</button>
+                    <button class="btn-act" id="btnMute" onclick="toggleMute()">MUTE: OFF</button>
+                    <button class="btn-act" id="btnAlarm" onclick="toggleAlarm()">ALARM: OFF</button>
+                    <button class="btn-act" onclick="loadMapData()">REFRESH PETA</button>
+                </div>
+            </div>
+
+            <!-- RECENT QUAKES LIST -->
+            <div class="g-card">
+                <div class="quake-header-row">
+                    <span>🔴 Gempa Terkini</span>
+                    <span id="quakeCountBadge" style="font-size: 9px; color: var(--text-muted);">0 terdeteksi</span>
+                </div>
+                <div class="quake-scroll-list" id="recentQuakesList">
+                    <div style="font-size: 10px; color: var(--text-muted); text-align: center; padding: 12px;">
+                        Memuat data gempa terkini...
+                    </div>
+                </div>
+                <div style="font-size: 9px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
+                    * Data bersumber dari USGS Real-time & BMKG. Klik entri untuk terbang ke episentrum.
+                </div>
+            </div>
+        </div>
+
+        <!-- GOOGLE MAPS LAYER SWITCHER WITH HOVER EXPANSION -->
+        <div class="layer-switcher-wrapper" id="layerSwitcherWrap">
+            <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL -->
+            <div class="layer-thumbnail-card" id="layerCard" onclick="toggleMapLayer()" title="Ganti Lapisan Peta">
+                <div class="layer-thumbnail-badge">
+                    <span class="google-symbols" style="font-size: 13px; font-variation-settings: 'FILL' 1;">layers</span>
+                    <span id="layerBadgeText">Standar</span>
+                </div>
+            </div>
+
+            <!-- HOVER POPUP MENU (GOOGLE MAPS STYLE) -->
+            <div class="layer-popup-menu" id="layerPopupMenu">
+                <!-- 1. STANDAR (DEFAULT) -->
+                <div class="layer-option-item active" id="layerOptLight" onclick="selectMapLayer('light')" title="Peta Standar">
+                    <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png');"></div>
+                    <span class="layer-opt-label">Standar</span>
+                </div>
+
+                <!-- 2. SATELIT -->
+                <div class="layer-option-item" id="layerOptSat" onclick="selectMapLayer('sat')" title="Citra Satelit">
+                    <div class="layer-thumb-preview" style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13');"></div>
+                    <span class="layer-opt-label">Satelit</span>
+                </div>
+
+                <!-- 3. GELAP -->
+                <div class="layer-option-item" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
+                    <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png');"></div>
+                    <span class="layer-opt-label">Gelap</span>
+                </div>
+
+                <!-- 4. MEDAN / TERRAIN -->
+                <div class="layer-option-item" id="layerOptTerrain" onclick="selectMapLayer('terrain')" title="Peta Medan">
+                    <div class="layer-thumb-preview" style="background-image: url('https://a.tile.opentopomap.org/4/8/6.png');"></div>
+                    <span class="layer-opt-label">Medan</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script src="app.js?v=8.8"></script>
+
+    <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('[SW] Registered with scope:', reg.scope);
+                }).catch(err => {
+                    console.log('[SW] Registration failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

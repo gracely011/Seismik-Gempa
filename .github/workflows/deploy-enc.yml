@@ -1,0 +1,48 @@
+name: Deploy Encrypted to Main
+
+on:
+  push:
+    branches: ["dev-clean"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev-clean
+        uses: actions/checkout@v4
+        with:
+          ref: dev-clean
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Obfuscator
+        run: npm install -g javascript-obfuscator
+
+      - name: Obfuscate JavaScript (Anti-Tamper & Security)
+        run: |
+          OPTIONS="--compact true --self-defending true --disable-console-output false --debug-protection true --debug-protection-interval 4000 --string-array-encoding base64,rc4"
+          
+          if [ -f "./app.js" ]; then
+            javascript-obfuscator ./app.js --output ./app.js $OPTIONS
+          fi
+          
+          if [ -f "./sw.js" ]; then
+            javascript-obfuscator ./sw.js --output ./sw.js $OPTIONS
+          fi
+
+      - name: Setup Git Config
+        run: |
+          git config --global user.name "gracely011"
+          git config --global user.email "gracely011@users.noreply.github.com"
+
+      - name: Force Push to Main
+        run: |
+          git --work-tree=. add .
+          git commit -m "Deploy: Encrypted build from dev-clean"
+          git push origin HEAD:main --force
