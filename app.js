@@ -15,31 +15,25 @@ const filterAlpha = 0.05;
 let hasHardwareMotion = false;
 let simInterval = null;
 
-// User Location & LocalStorage Persistence
+// User Location & LocalStorage Persistence (GPS Asli Pengguna)
 const savedLat = localStorage.getItem('seismo_user_lat');
 const savedLon = localStorage.getItem('seismo_user_lon');
 const savedAcc = localStorage.getItem('seismo_user_acc');
-let userPlaceName = localStorage.getItem('seismo_user_place') || 'Sibolga, Kota Sibolga, Sumatera Utara';
+let userPlaceName = localStorage.getItem('seismo_user_place') || 'Batam, Kota Batam, Kepulauan Riau';
 let userPlaceObj = null;
 try {
     const savedObj = localStorage.getItem('seismo_user_place_obj');
     if (savedObj) userPlaceObj = JSON.parse(savedObj);
 } catch (e) { }
 
-let userCoords = (savedLat && savedLon) ? [parseFloat(savedLat), parseFloat(savedLon)] : [1.7428, 98.7792];
+// Default GPS pengguna (Batam jika belum ada koordinat GPS terdeteksi)
+let userCoords = (savedLat && savedLon) ? [parseFloat(savedLat), parseFloat(savedLon)] : [1.1030, 104.0383];
 let hasUserGPS = !!(savedLat && savedLon);
 
-// Sanitasi otomatis: jika koordinat di area Sibolga namun nama lama berbeda, sinkronkan ke Sibolga
-if (userCoords[0] >= 1.55 && userCoords[0] <= 1.95 && userCoords[1] >= 98.55 && userCoords[1] <= 99.05) {
-    if (!userPlaceObj || userPlaceObj.main !== 'Sibolga') {
-        userPlaceObj = { main: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara" };
-        userPlaceName = "Sibolga, Kota Sibolga, Sumatera Utara";
-        try {
-            localStorage.setItem('seismo_user_place_obj', JSON.stringify(userPlaceObj));
-            localStorage.setItem('seismo_user_place', userPlaceName);
-        } catch (e) { }
-    }
-}
+// Wilayah yang sedang dipantau / dilihat di kartu status area (bisa berbeda dari GPS saat cari kota)
+let viewedCoords = [...userCoords];
+let viewedPlaceObj = userPlaceObj || { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
+
 let quakesArray = [];
 let currentFilter = 'all';
 let searchQuery = '';
@@ -289,36 +283,138 @@ const gpsPulseIcon = L.divIcon({
     iconAnchor: [12, 12]
 });
 
+// Marker Pin Merah Khusus Wilayah Pencarian / Pantauan (Bukan GPS Pengguna)
+let searchPlaceMarker = null;
+
+const searchPlaceIcon = L.divIcon({
+    className: 'custom-search-pin-icon',
+    html: `
+        <div style="display:flex; flex-direction:column; align-items:center; transform:translateY(-100%);">
+            <svg style="width:30px; height:30px; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.45));" viewBox="0 0 24 24" fill="#ea4335">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+        </div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30]
+});
+
+function createAreaPopupHTML(obj, lat, lon) {
+    const main = obj?.main || "Wilayah";
+    const admin = obj?.admin || `Wilayah ${lat.toFixed(2)}`;
+    const prov = obj?.province || "Indonesia";
+
+    const tempText = document.getElementById("weatherConditionTemp")?.innerText || "Cerah · 28 °C";
+    const now = new Date();
+    const hrs = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const timeStr = `${hrs}.${mins}`;
+
+    const places = getSavedPlaces();
+    const isSaved = places.some(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05);
+
+    const safeMain = escapeQuotes(main);
+    const safeAdmin = escapeQuotes(admin);
+    const safeProv = escapeQuotes(prov);
+
+    return `
+        <div class="popup-area-card">
+            <div class="popup-area-header">
+                <div class="popup-area-title-group">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                        <div class="popup-area-city-main">${main}</div>
+                        <button class="popup-btn-bookmark ${isSaved ? 'active' : ''}" onclick="toggleSavePlaceFromPopup('${safeMain}', '${safeAdmin}', '${safeProv}', ${lat}, ${lon}, event)" title="${isSaved ? 'Hapus dari Disimpan' : 'Simpan Wilayah Ini'}">
+                            <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor">
+                                ${isSaved ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="popup-area-sub-line">${admin}</div>
+                    <div class="popup-area-sub-line">${prov}</div>
+                    <div class="popup-area-gps-coord">GPS: ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
+                </div>
+                <div class="popup-area-right">
+                    <div class="popup-weather-box">
+                        <div class="popup-weather-cond-temp">${tempText}</div>
+                        <div class="popup-weather-time mono">${timeStr}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function toggleSavePlaceFromPopup(name, admin, prov, lat, lon, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    let places = getSavedPlaces();
+    const existingIndex = places.findIndex(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05);
+
+    if (existingIndex >= 0) {
+        places.splice(existingIndex, 1);
+        savePlacesList(places);
+    } else {
+        const tempText = document.getElementById("weatherConditionTemp")?.innerText || "28°C";
+        places.unshift({
+            id: 'place_' + Date.now(),
+            name: name,
+            admin: admin,
+            province: prov,
+            lat: lat,
+            lon: lon,
+            temp: tempText
+        });
+        savePlacesList(places);
+    }
+
+    renderSavedPlacesUI();
+    updateBookmarkIconState();
+
+    if (searchPlaceMarker && searchPlaceMarker.getPopup() && searchPlaceMarker.isPopupOpen()) {
+        const placeObj = { main: name, admin: admin, province: prov };
+        searchPlaceMarker.setPopupContent(createAreaPopupHTML(placeObj, lat, lon));
+    }
+}
+
+function showPlacePinMarker(lat, lon, name) {
+    if (!searchPlaceMarker) {
+        searchPlaceMarker = L.marker([lat, lon], { icon: searchPlaceIcon, zIndexOffset: 950 }).addTo(map);
+    } else {
+        searchPlaceMarker.setLatLng([lat, lon]);
+    }
+
+    let placeObj = viewedPlaceObj;
+    if (!placeObj || placeObj.main !== name) {
+        const match = INDONESIA_CITIES_DB.find(c => Math.abs(c.lat - lat) < 0.05 && Math.abs(c.lon - lon) < 0.05);
+        if (match) {
+            placeObj = { main: match.name, admin: match.admin, province: match.province };
+        } else {
+            placeObj = { main: name, admin: `Kota ${name}`, province: "Indonesia" };
+        }
+    }
+
+    searchPlaceMarker.bindPopup(createAreaPopupHTML(placeObj, lat, lon), {
+        maxWidth: 320,
+        className: 'custom-area-popup'
+    }).openPopup();
+}
+
 function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
     userCoords = [lat, lon];
     hasUserGPS = true;
 
-    let placeTitle = userPlaceName;
-    if (userPlaceObj && userPlaceObj.main) {
-        placeTitle = `${userPlaceObj.main} (${userPlaceObj.admin}, ${userPlaceObj.province})`;
-    }
-    const placeDisplay = placeTitle ? `<div style="font-size:13px; font-weight:700; color:#202124; margin:2px 0 4px 0;">📍 ${placeTitle}</div>` : '';
+    let placeObj = userPlaceObj || { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
+    const popupHtml = createAreaPopupHTML({
+        main: `📍 ${placeObj.main}`,
+        admin: `Lokasi Anda (GPS) • ±${Math.round(accuracy)}m`,
+        province: placeObj.province
+    }, lat, lon);
 
     if (!gpsMarker) {
         gpsMarker = L.marker([lat, lon], { icon: gpsPulseIcon, zIndexOffset: 1000 }).addTo(map);
-        gpsMarker.bindPopup(`
-            <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:#202124;">
-                <b style="color:#1a73e8;">Lokasi Anda (GPS)</b><br>
-                ${placeDisplay}
-                <div style="color:#5f6368; font-size:10px;">Koordinat: ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>
-                <div style="color:#5f6368; font-size:10px;">Akurasi: ±${Math.round(accuracy)}m</div>
-            </div>
-        `);
+        gpsMarker.bindPopup(popupHtml, { maxWidth: 320 });
     } else {
         gpsMarker.setLatLng([lat, lon]);
-        gpsMarker.getPopup() && gpsMarker.setPopupContent(`
-            <div style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; color:#202124;">
-                <b style="color:#1a73e8;">Lokasi Anda (GPS)</b><br>
-                ${placeDisplay}
-                <div style="color:#5f6368; font-size:10px;">Koordinat: ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>
-                <div style="color:#5f6368; font-size:10px;">Akurasi: ±${Math.round(accuracy)}m</div>
-            </div>
-        `);
+        gpsMarker.getPopup() && gpsMarker.setPopupContent(popupHtml);
     }
 
     if (!gpsCircle) {
@@ -346,6 +442,11 @@ function centerToUserLocation() {
     if (hasUserGPS) {
         map.flyTo(userCoords, 10, { duration: 1.2 });
         if (gpsMarker) gpsMarker.openPopup();
+        viewedCoords = [...userCoords];
+        if (userPlaceObj) {
+            renderLocationUI(userPlaceObj, userCoords[0], userCoords[1]);
+            fetchWeather(userCoords[0], userCoords[1]);
+        }
     } else {
         requestFreshGPS(true);
     }
@@ -974,13 +1075,15 @@ function selectSearchCity(name, admin, prov, lat, lon) {
 
     // Pindah fokus peta ke kota yang dicari
     map.flyTo([lat, lon], 10, { duration: 1.2 });
-    userCoords = [lat, lon];
+    viewedCoords = [lat, lon];
 
-    // Perbarui objek lokasi dan kartu area
+    // Perbarui objek lokasi dan kartu area (tanpa menimpa GPS asli pengguna)
     const placeObj = { main: name, admin: admin, province: prov };
-    userPlaceObj = placeObj;
-    userPlaceName = `${name}, ${admin}, ${prov}`;
+    viewedPlaceObj = placeObj;
     renderLocationUI(placeObj, lat, lon);
+
+    // Tampilkan Pin Merah lokasi pencarian
+    showPlacePinMarker(lat, lon, name);
 
     // Ambil cuaca kota tersebut secara real-time
     fetchWeather(lat, lon);
@@ -1209,11 +1312,11 @@ function savePlacesList(places) {
 }
 
 function toggleSaveCurrentArea() {
-    const cityName = userPlaceObj?.main || document.getElementById("areaCityMain")?.innerText || "Wilayah Terpilih";
-    const adminName = userPlaceObj?.admin || document.getElementById("areaCityAdmin")?.innerText || "";
-    const provName = userPlaceObj?.province || document.getElementById("areaProvince")?.innerText || "";
-    const lat = userCoords[0];
-    const lon = userCoords[1];
+    const cityName = viewedPlaceObj?.main || document.getElementById("areaCityMain")?.innerText || "Wilayah Terpilih";
+    const adminName = viewedPlaceObj?.admin || document.getElementById("areaCityAdmin")?.innerText || "";
+    const provName = viewedPlaceObj?.province || document.getElementById("areaProvince")?.innerText || "";
+    const lat = viewedCoords[0];
+    const lon = viewedCoords[1];
     const tempText = document.getElementById("weatherConditionTemp")?.innerText || "28°C";
 
     let places = getSavedPlaces();
@@ -1247,8 +1350,8 @@ function toggleSaveCurrentArea() {
 }
 
 function updateBookmarkIconState() {
-    const lat = userCoords[0];
-    const lon = userCoords[1];
+    const lat = viewedCoords[0];
+    const lon = viewedCoords[1];
     const places = getSavedPlaces();
     const isSaved = places.some(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05);
 
@@ -1272,11 +1375,24 @@ function removeSavedPlace(id, e) {
 
 function flyToSavedPlace(lat, lon, name) {
     map.flyTo([lat, lon], 10, { duration: 1.2 });
-    userCoords = [lat, lon];
-    fetchLocationName(lat, lon);
+    viewedCoords = [lat, lon];
+
+    // Temukan detail kota dari database lokal atau format nama
+    const match = INDONESIA_CITIES_DB.find(c => Math.abs(c.lat - lat) < 0.05 && Math.abs(c.lon - lon) < 0.05);
+    if (match) {
+        viewedPlaceObj = { main: match.name, admin: match.admin, province: match.province };
+        renderLocationUI(viewedPlaceObj, lat, lon);
+    } else {
+        fetchLocationNameForView(lat, lon);
+    }
+
+    // Tampilkan Pin Merah wilayah pantauan (bukan GPS marker)
+    showPlacePinMarker(lat, lon, name);
+
     fetchWeather(lat, lon);
     checkProximityRisk();
     addRecentSearch(name, lat, lon);
+
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     }
@@ -1579,21 +1695,17 @@ function checkProximityRisk() {
     const text = document.getElementById("riskStatusText");
     if (!text) return;
 
-    if (!hasUserGPS) {
-        if (dot) dot.className = "status-dot";
-        text.innerText = "Kondisi sekitar terpantau stabil & normal";
-        return;
-    }
+    const targetCoords = (viewedCoords && viewedCoords.length === 2) ? viewedCoords : userCoords;
 
     let closeQuake = quakesArray.find(q => {
-        let dist = calcDistance(userCoords[0], userCoords[1], q.lat, q.lon);
+        let dist = calcDistance(targetCoords[0], targetCoords[1], q.lat, q.lon);
         return q.mag >= 5.0 && dist < 350;
     });
 
     if (closeQuake) {
         if (dot) dot.className = "status-dot warning";
-        let dist = calcDistance(userCoords[0], userCoords[1], closeQuake.lat, closeQuake.lon);
-        text.innerHTML = `<b style="color:var(--accent-red)">Waspada:</b> Gempa M${closeQuake.mag} ${dist}km dari Anda!`;
+        let dist = calcDistance(targetCoords[0], targetCoords[1], closeQuake.lat, closeQuake.lon);
+        text.innerHTML = `<b style="color:var(--accent-red)">Waspada:</b> Gempa M${closeQuake.mag} ${dist}km dari wilayah ini!`;
     } else {
         if (dot) dot.className = "status-dot";
         text.innerText = "Kondisi sekitar terpantau stabil & normal";
@@ -1949,10 +2061,10 @@ async function fetchLocationName(lat, lon) {
         if (dist < 0.03) { // < ~3km
             try {
                 const cachedObj = JSON.parse(cachedObjStr);
-                // Validasi ulang cache terhadap koordinat aktual
                 const validatedObj = formatIndonesianPlace(cachedObj.main, cachedObj.admin, cachedObj.province, lat, lon);
                 userPlaceObj = validatedObj;
                 userPlaceName = `${validatedObj.main}, ${validatedObj.admin}, ${validatedObj.province}`;
+                viewedPlaceObj = validatedObj;
                 renderLocationUI(validatedObj, lat, lon);
                 if (gpsMarker) updateGPSMarker(lat, lon, parseFloat(savedAcc) || 50, false);
                 return validatedObj;
@@ -1972,6 +2084,7 @@ async function fetchLocationName(lat, lon) {
             const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
             userPlaceObj = obj;
             userPlaceName = `${obj.main}, ${obj.admin}, ${obj.province}`;
+            viewedPlaceObj = obj;
 
             localStorage.setItem('seismo_user_place_obj', JSON.stringify(obj));
             localStorage.setItem('seismo_user_place', userPlaceName);
@@ -2000,6 +2113,7 @@ async function fetchLocationName(lat, lon) {
                 const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
                 userPlaceObj = obj;
                 userPlaceName = `${obj.main}, ${obj.admin}, ${obj.province}`;
+                viewedPlaceObj = obj;
 
                 localStorage.setItem('seismo_user_place_obj', JSON.stringify(obj));
                 localStorage.setItem('seismo_user_place', userPlaceName);
@@ -2014,6 +2128,50 @@ async function fetchLocationName(lat, lon) {
     }
 
     const fallbackObj = formatIndonesianPlace("", "", "", lat, lon);
+    userPlaceObj = fallbackObj;
+    viewedPlaceObj = fallbackObj;
+    renderLocationUI(fallbackObj, lat, lon);
+}
+
+// Reverse geocoding khusus saat meninjau wilayah favorit / pencarian (tanpa menimpa GPS asli pengguna)
+async function fetchLocationNameForView(lat, lon) {
+    try {
+        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+        if (res.ok) {
+            const data = await res.json();
+            let city = data.city || data.locality || data.principalSubdivision || "";
+            let locality = data.locality || "";
+            let prov = data.principalSubdivision || "";
+
+            const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
+            viewedPlaceObj = obj;
+            renderLocationUI(obj, lat, lon);
+            return obj;
+        }
+    } catch (e) { }
+
+    try {
+        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=12&addressdetails=1`, {
+            headers: { 'Accept-Language': 'id' }
+        });
+        if (resNom.ok) {
+            const dataNom = await resNom.json();
+            if (dataNom && dataNom.address) {
+                const addr = dataNom.address;
+                let city = addr.city || addr.town || addr.municipality || addr.county || addr.state_district || "";
+                let locality = addr.suburb || addr.neighbourhood || addr.village || "";
+                let prov = addr.state || addr.region || "";
+
+                const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
+                viewedPlaceObj = obj;
+                renderLocationUI(obj, lat, lon);
+                return obj;
+            }
+        }
+    } catch (e) { }
+
+    const fallbackObj = formatIndonesianPlace("", "", "", lat, lon);
+    viewedPlaceObj = fallbackObj;
     renderLocationUI(fallbackObj, lat, lon);
 }
 
@@ -2104,6 +2262,10 @@ function applyWeatherToUI(weatherData) {
     if (condTempEl) condTempEl.innerHTML = `${desc} &middot; ${temp} &deg;C`;
     if (iconContainer) iconContainer.innerHTML = iconHtml;
     updateLiveClock();
+
+    if (searchPlaceMarker && searchPlaceMarker.getPopup() && searchPlaceMarker.isPopupOpen()) {
+        searchPlaceMarker.setPopupContent(createAreaPopupHTML(viewedPlaceObj, viewedCoords[0], viewedCoords[1]));
+    }
 }
 
 /**
@@ -2119,9 +2281,11 @@ function initLocation() {
         const acc = parseFloat(savedAcc) || 50;
 
         userCoords = [lat, lon];
+        viewedCoords = [lat, lon];
         hasUserGPS = true;
 
         if (userPlaceObj) {
+            viewedPlaceObj = userPlaceObj;
             renderLocationUI(userPlaceObj, lat, lon);
         } else {
             fetchLocationName(lat, lon);
@@ -2139,9 +2303,12 @@ function initLocation() {
             }).catch(() => { });
         }
     } else {
-        const defaultObj = { main: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara" };
-        renderLocationUI(defaultObj, 1.7428, 98.7792);
-        fetchWeather(1.7428, 98.7792);
+        const defaultObj = { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
+        userCoords = [1.1030, 104.0383];
+        viewedCoords = [1.1030, 104.0383];
+        viewedPlaceObj = defaultObj;
+        renderLocationUI(defaultObj, 1.1030, 104.0383);
+        fetchWeather(1.1030, 104.0383);
     }
 }
 

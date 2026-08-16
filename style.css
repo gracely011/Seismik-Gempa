@@ -2293,3 +2293,178 @@ button.btn-act.active {
     line-height: 17px;
 }
 
+/* ==================== GOOGLE MAPS STYLE LEAFLET POPUP ==================== */
+.leaflet-popup {
+    margin-bottom: 18px;
+}
+
+.leaflet-popup-content-wrapper {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--shadow-panel) !important;
+    padding: 0 !important;
+    color: var(--text-primary) !important;
+    font-family: "Google Sans Text", "Google Sans", "Plus Jakarta Sans", Roboto, sans-serif !important;
+    overflow: hidden;
+}
+
+.leaflet-popup-content {
+    margin: 12px 14px !important;
+    line-height: normal !important;
+    min-width: 220px;
+    max-width: 320px;
+}
+
+.leaflet-popup-tip-container {
+    overflow: visible;
+}
+
+.leaflet-popup-tip {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
+}
+
+.leaflet-popup-close-button {
+    top: 6px !important;
+    right: 6px !important;
+    width: 22px !important;
+    height: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    color: var(--text-muted) !important;
+    font-size: 15px !important;
+    font-weight: bold !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.leaflet-popup-close-button:hover {
+    background: var(--bg-card-hover) !important;
+    color: var(--text-primary) !important;
+}
+
+/* POPUP AREA CARD (IDENTIK DENGAN g-card area-gmap-card TANPA STATUS PILL) */
+.popup-area-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.popup-area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.popup-area-title-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.popup-area-city-main {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+    line-height: 24px;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popup-area-sub-line {
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popup-area-gps-coord {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.2px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.popup-area-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    flex-shrink: 0;
+    margin-top: 14px;
+}
+
+.popup-btn-bookmark {
+    background: #e8f0fe;
+    border: 1px solid #d2e3fc;
+    color: #1a73e8;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+body.theme-dark .popup-btn-bookmark {
+    background: #1e3a5f;
+    border-color: #2b4c7e;
+    color: #8ab4f8;
+}
+
+.popup-btn-bookmark:hover {
+    transform: scale(1.08);
+}
+
+.popup-btn-bookmark.active {
+    background: #1a73e8;
+    color: #ffffff;
+    border-color: #1a73e8;
+}
+
+body.theme-dark .popup-btn-bookmark.active {
+    background: #8ab4f8;
+    color: #202124;
+    border-color: #8ab4f8;
+}
+
+.popup-weather-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.popup-weather-cond-temp {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 17px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.popup-weather-time {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 1px;
+}
+
