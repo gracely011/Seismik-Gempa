@@ -2,15 +2,15 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v10.3';
+const CACHE_NAME = 'seismo-cache-v10.4';
 
 const PRECACHE_ASSETS = [
     './',
     'index.html',
     'manifest.json',
     'icon.svg',
-    'style.css?v=10.3',
-    'app.js?v=10.3',
+    'style.css?v=10.4',
+    'app.js?v=10.4',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap'
@@ -45,7 +45,7 @@ self.addEventListener('fetch', event => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
 
-    // Biarkan browser memuat tile peta & API live langsung via HTTP cache native (menghindari isu CORS)
+    // Biarkan browser memuat tile peta, API live, dan tracker analitik langsung via HTTP cache native (menghindari isu CORS/tracking)
     if (
         url.hostname.includes('bmkg.go.id') ||
         url.hostname.includes('usgs.gov') ||
@@ -55,7 +55,10 @@ self.addEventListener('fetch', event => {
         url.hostname.includes('cartocdn.com') ||
         url.hostname.includes('arcgisonline.com') ||
         url.hostname.includes('opentopomap.org') ||
-        url.hostname.includes('openstreetmap.org')
+        url.hostname.includes('openstreetmap.org') ||
+        url.hostname.includes('googletagmanager.com') ||
+        url.hostname.includes('google-analytics.com') ||
+        url.hostname.includes('histats.com')
     ) {
         return; // Native browser handling
     }
