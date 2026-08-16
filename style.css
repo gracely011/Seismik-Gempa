@@ -567,11 +567,11 @@ body.theme-dark .rail-btn.active .rail-label {
     width: 75px;
     height: 75px;
     border-radius: 12px;
-    border: 2px solid #202124;
+    border: 2px solid #ffffff;
     background-size: cover;
     background-position: center;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6), 0 0 4px rgba(255, 255, 255, 0.25);
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     overflow: hidden;
     display: flex;
@@ -583,16 +583,13 @@ body.theme-dark .rail-btn.active .rail-label {
 }
 
 body.theme-light .layer-thumbnail-card {
-    border-color: #202124;
-}
-
-body.theme-dark .layer-thumbnail-card {
-    border-color: rgba(255, 255, 255, 0.4);
+    border: 2px solid #202124;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .layer-thumbnail-card:hover {
     transform: scale(1.03);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 .layer-thumbnail-badge {
