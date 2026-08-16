@@ -219,8 +219,8 @@ function toggleMapLayer(e) {
 
 // ==================== FAULT LINES & MEGATHRUST LAYER ====================
 let faultLinesLayerGroup = L.layerGroup();
-// Baca preferensi tersimpan dari LocalStorage (default true jika belum disetel)
-let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') !== 'false';
+// Baca preferensi tersimpan dari LocalStorage (default NONAKTIF/false jika belum pernah diaktifkan secara manual)
+let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') === 'true';
 
 function initFaultLinesLayer() {
     if (typeof FAULT_LINES_DATA === 'undefined') return;
