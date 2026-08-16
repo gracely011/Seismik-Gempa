@@ -2,7 +2,7 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v12.6';
+const CACHE_NAME = 'seismo-cache-v12.7';
 
 const PRECACHE_ASSETS = [
     './',
@@ -10,7 +10,7 @@ const PRECACHE_ASSETS = [
     'manifest.json',
     'icon.svg',
     'faults.js?v=12.4',
-    'style.css?v=12.6',
+    'style.css?v=12.7',
     'app.js?v=12.4',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
