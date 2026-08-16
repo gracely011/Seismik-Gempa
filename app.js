@@ -1342,6 +1342,24 @@ function openAppInfo() {
     alert("Monitor Seismik | Gracely\nGoogle Maps Edition dengan Integrasi Real-Time BMKG & USGS Multi-Source.");
 }
 
+// ==================== HISTATS ANALYTICS TRACKER ====================
+function initHistats() {
+    try {
+        window._Hasync = window._Hasync || [];
+        window._Hasync.push(['Histats.start', '1,5045294,4,0,0,0,00010000']);
+        window._Hasync.push(['Histats.fasi', '1']);
+        window._Hasync.push(['Histats.track_hits', '']);
+
+        const hs = document.createElement('script');
+        hs.type = 'text/javascript';
+        hs.async = true;
+        hs.src = '//s10.histats.com/js15_as.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+    } catch (e) {
+        console.warn('[Analytics] Histats init warning:', e);
+    }
+}
+
 // ==================== APP INITIALIZATION ====================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1351,6 +1369,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateLiveClock();
     updateRecentQuakesUI();
     initChipsSliderInteractions();
+    initHistats();
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     } else {
