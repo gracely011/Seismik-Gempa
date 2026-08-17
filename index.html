@@ -87,8 +87,9 @@
     <link rel="dns-prefetch" href="https://api.open-meteo.com">
     <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
 
-    <!-- LEAFLET CSS (CLOUDFLARE CDN) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjZKKhypfIW20FiCa002lqZc3b7+F4GzT/8Z04eP5N1/oM1mP94G3aK8Z8M4g7F7vC7V2N1H2L4j4X9w==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- LEAFLET CSS & JS (CLOUDFLARE CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
     <!-- GOOGLE FONTS (NON-BLOCKING LOAD) -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
@@ -98,7 +99,7 @@
     </noscript>
 
     <!-- CORE STYLESHEET -->
-    <link rel="stylesheet" href="style.css?v=14.0">
+    <link rel="stylesheet" href="style.css?v=14.1">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -724,14 +725,11 @@
         </div>
     </div>
 
-    <!-- LEAFLET ENGINE (CLOUDFLARE CDN) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzSmGyk98FJCISsREV21QAwcxgRI38+9nWO39kBQDZvMA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
-
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=14.0" defer></script>
+    <script src="faults.js?v=14.1"></script>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=14.0" defer></script>
+    <script src="app.js?v=14.1"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>
