@@ -450,11 +450,11 @@
 
         <!-- GOOGLE MAPS LAYER SWITCHER WITH HOVER EXPANSION -->
         <div class="layer-switcher-wrapper" id="layerSwitcherWrap">
-            <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL -->
-            <div class="layer-thumbnail-card" id="layerCard" onclick="toggleMapLayer(event)" title="Ganti Lapisan Peta">
+            <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL (DIRECT CYCLE ON CLICK) -->
+            <div class="layer-thumbnail-card" id="layerCard" onclick="cycleNextMapLayer(event)" title="Ganti Lapisan Peta (Klik untuk Berganti)">
                 <div class="layer-thumbnail-badge">
-                    <svg class="gmap-icon" style="width: 13px; height: 13px;" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9.07l-9-7-9 7 1.63 1.27L12 16z"/></svg>
-                    <span id="layerBadgeText">Standar</span>
+                    <svg class="gmap-icon" style="width: 15px; height: 15px;" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z"/></svg>
+                    <span id="layerBadgeText">Lapisan</span>
                 </div>
             </div>
 

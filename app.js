@@ -157,6 +157,8 @@ const terrainTileLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{
     attribution: '&copy; OpenTopoMap &copy; OpenStreetMap'
 });
 
+const MAP_LAYERS_ORDER = ['light', 'sat', 'terrain', 'dark'];
+
 function applyMapLayer(layerName) {
     if (map.hasLayer(darkTileLayer)) map.removeLayer(darkTileLayer);
     if (map.hasLayer(satTileLayer)) map.removeLayer(satTileLayer);
@@ -165,32 +167,34 @@ function applyMapLayer(layerName) {
 
     const card = document.getElementById("layerCard");
     const badge = document.getElementById("layerBadgeText");
+    if (badge) badge.innerText = "Lapisan";
 
-    // Update active highlight on popup options
+    // Update active highlight on popup drawer options
     document.querySelectorAll('.layer-option-item').forEach(el => el.classList.remove('active'));
 
     if (layerName === 'sat') {
         satTileLayer.addTo(map);
-        if (card) card.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13')";
-        if (badge) badge.innerText = "Satelit";
+        // Thumbnail menampilkan preview lapisan berikutnya (Medan)
+        if (card) card.style.backgroundImage = "url('https://a.tile.opentopomap.org/4/8/6.png')";
         const opt = document.getElementById("layerOptSat");
-        if (opt) opt.classList.add('active');
-    } else if (layerName === 'dark') {
-        darkTileLayer.addTo(map);
-        if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png')";
-        if (badge) badge.innerText = "Gelap";
-        const opt = document.getElementById("layerOptDark");
         if (opt) opt.classList.add('active');
     } else if (layerName === 'terrain') {
         terrainTileLayer.addTo(map);
-        if (card) card.style.backgroundImage = "url('https://a.tile.opentopomap.org/4/8/6.png')";
-        if (badge) badge.innerText = "Medan";
+        // Thumbnail menampilkan preview lapisan berikutnya (Gelap)
+        if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png')";
         const opt = document.getElementById("layerOptTerrain");
         if (opt) opt.classList.add('active');
-    } else {
-        lightTileLayer.addTo(map);
+    } else if (layerName === 'dark') {
+        darkTileLayer.addTo(map);
+        // Thumbnail menampilkan preview lapisan berikutnya (Standar)
         if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png')";
-        if (badge) badge.innerText = "Standar";
+        const opt = document.getElementById("layerOptDark");
+        if (opt) opt.classList.add('active');
+    } else {
+        // default: light / standar
+        lightTileLayer.addTo(map);
+        // Thumbnail menampilkan preview lapisan berikutnya (Satelit) persis seperti Google Maps
+        if (card) card.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13')";
         const opt = document.getElementById("layerOptLight");
         if (opt) opt.classList.add('active');
     }
@@ -206,14 +210,16 @@ function selectMapLayer(layerName) {
     if (popup) popup.classList.remove('show');
 }
 
+function cycleNextMapLayer(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    const currentIndex = MAP_LAYERS_ORDER.indexOf(currentMapLayer);
+    const nextIndex = (currentIndex + 1) % MAP_LAYERS_ORDER.length;
+    const nextLayer = MAP_LAYERS_ORDER[nextIndex];
+    applyMapLayer(nextLayer);
+}
+
 function toggleMapLayer(e) {
-    if (e) {
-        if (e.stopPropagation) e.stopPropagation();
-    }
-    const popup = document.getElementById("layerPopupMenu");
-    if (popup) {
-        popup.classList.toggle('show');
-    }
+    cycleNextMapLayer(e);
 }
 
 // Tutup popup menu layer jika klik/sentuh di luar area
