@@ -13,9 +13,54 @@
     </script>
 
     <meta charset="utf-8">
-    <title>Monitor Seismik | Gracely</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Sistem Pemantauan Gempa Bumi Real-Time BMKG & USGS Multi-Source dengan Desain Interaktif Google Maps.">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- PRIMARY META TAGS (SEARCH ENGINES) -->
+    <title>Monitor Seismik Real-Time BMKG &amp; USGS | Peta Gempa Indonesia - Gracely</title>
+    <meta name="title" content="Monitor Seismik Real-Time BMKG &amp; USGS | Peta Gempa Indonesia - Gracely">
+    <meta name="description" content="Pantau gempa bumi terkini di Indonesia &amp; dunia secara real-time. Dilengkapi peta interaktif sesar aktif &amp; megathrust, data resmi BMKG &amp; USGS, radius jarak GPS, dan sinyal peringatan audio.">
+    <meta name="keywords" content="gempa bumi terkini, monitor seismik, info gempa bmkg, gempa usgs, seismograf online, peta gempa indonesia, gempa bumi hari ini, sesar aktif indonesia, megathrust, gracely seismik, live earthquake tracker, petrus siahaan, info tsunami bmkg, seismograph indonesia">
+    <meta name="author" content="Petrus Siahaan">
+    <meta name="publisher" content="Gracely">
+    <meta name="copyright" content="© 2026 Petrus Siahaan - Gracely">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="bingbot" content="index, follow">
+    <link rel="canonical" href="https://seismik.gracely.my.id/">
+
+    <!-- GEOTARGETING & LOCAL SEO (INDONESIA) -->
+    <meta name="geo.region" content="ID">
+    <meta name="geo.placename" content="Indonesia">
+    <meta name="geo.position" content="-0.789275;113.921327">
+    <meta name="ICBM" content="-0.789275, 113.921327">
+    <meta name="language" content="Indonesian">
+    <meta http-equiv="content-language" content="id, en">
+
+    <!-- OPEN GRAPH / FACEBOOK / WHATSAPP / TELEGRAM / THREADS -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Seismograph Gracely">
+    <meta property="og:url" content="https://seismik.gracely.my.id/">
+    <meta property="og:title" content="Monitor Seismik Real-Time BMKG &amp; USGS | Peta Gempa Indonesia">
+    <meta property="og:description" content="Pantau gempa bumi terkini dan mutakhir di Indonesia &amp; dunia secara real-time. Peta interaktif sesar aktif, data BMKG &amp; USGS, radius jarak GPS, dan sinyal audio siaga.">
+    <meta property="og:image" content="https://seismik.gracely.my.id/icon.svg">
+    <meta property="og:image:secure_url" content="https://seismik.gracely.my.id/icon.svg">
+    <meta property="og:image:type" content="image/svg+xml">
+    <meta property="og:image:alt" content="Monitor Seismik Gracely - Peta Gempa Real-Time BMKG &amp; USGS">
+    <meta property="og:locale" content="id_ID">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- TWITTER / X CARDS -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@petrusperdana1">
+    <meta name="twitter:creator" content="@petrusperdana1">
+    <meta name="twitter:url" content="https://seismik.gracely.my.id/">
+    <meta name="twitter:title" content="Monitor Seismik Real-Time BMKG &amp; USGS | Peta Gempa Indonesia">
+    <meta name="twitter:description" content="Pantau gempa bumi terkini di Indonesia &amp; dunia secara real-time. Peta interaktif sesar aktif, data BMKG &amp; USGS, dan sinyal peringatan audio.">
+    <meta name="twitter:image" content="https://seismik.gracely.my.id/icon.svg">
+    <meta name="twitter:image:alt" content="Monitor Seismik Gracely">
+
+    <!-- MOBILE & PWA APP CAPABILITIES -->
     <meta name="theme-color" content="#202124">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,6 +71,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="apple-touch-icon" href="icon.svg">
+
     <!-- RESOURCE HINTS & PRECONNECT FOR LIGHTNING FAST LOAD -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,9 +92,69 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=13.0">
+
+    <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://seismik.gracely.my.id/#webapp",
+          "name": "Monitor Seismik Gracely",
+          "alternateName": ["Seismik", "Seismograph Gracely", "Peta Gempa BMKG USGS"],
+          "url": "https://seismik.gracely.my.id/",
+          "applicationCategory": "EducationalApplication, GeospatialApplication, NewsApplication",
+          "operatingSystem": "All",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "description": "Sistem pemantauan gempa bumi real-time multi-source BMKG dan USGS dengan peta interaktif Google Maps, analisis sesar aktif & megathrust, kalkulasi jarak radius GPS, serta sistem peringatan audio.",
+          "inLanguage": "id-ID",
+          "author": {
+            "@type": "Person",
+            "name": "Petrus Siahaan",
+            "url": "https://petrus.gracely.my.id/",
+            "sameAs": [
+              "https://www.instagram.com/petrusperdana1/",
+              "https://www.facebook.com/petrusperdana1"
+            ]
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Gracely",
+            "url": "https://seismik.gracely.my.id/"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "IDR"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://seismik.gracely.my.id/#website",
+          "url": "https://seismik.gracely.my.id/",
+          "name": "Seismograph Gracely",
+          "description": "Peta Interaktif Monitor Gempa Real-Time Indonesia",
+          "inLanguage": "id-ID",
+          "publisher": {
+            "@type": "Person",
+            "name": "Petrus Siahaan"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://seismik.gracely.my.id/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
 </head>
 
 <body>
+
+    <!-- ACCESSIBILITY & SEO HEADING -->
+    <h1 class="sr-only">Monitor Seismik Real-Time BMKG &amp; USGS Indonesia - Peta Gempa Terkini Gracely</h1>
 
     <!-- FULLSCREEN LEAFLET MAP -->
     <div id="map"></div>
