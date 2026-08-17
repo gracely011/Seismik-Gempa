@@ -3,6 +3,22 @@
  * Main Application Logic (Sensor, Maps, Real-time APIs, UI)
  */
 
+function printConsoleBranding() {
+    console.log('%cseismik.gracely.my.id', 'color: black; font-size: 60px; font-weight: bold; font-family: "Montserrat", sans-serif;');
+    console.log('%cPantau Gempa & Cuaca Indonesia', 'color: black; font-size: 20px; font-weight: bold; font-family: "Montserrat", sans-serif;');
+    console.log('%cpetrus_siahaan@gracely.my.id', 'color: black; font-size: 15px; font-weight: bold; font-family: "Montserrat", sans-serif;');
+}
+printConsoleBranding();
+
+// Auto-overwrite jika ada yang memanggil console.clear()
+try {
+    const _origClear = typeof console !== 'undefined' && console.clear ? console.clear.bind(console) : null;
+    console.clear = function() {
+        if (_origClear) _origClear();
+        printConsoleBranding();
+    };
+} catch (e) {}
+
 // ==================== GLOBAL STATE ====================
 let sData = [];
 let historyLog = [];
