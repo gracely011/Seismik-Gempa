@@ -826,24 +826,55 @@ function addEarthquakeMarker(q, isLatest = false) {
         }).addTo(markerGroup);
     }
 
+    const safePlace = escapeQuotes(place);
+    const safeTime = escapeQuotes(time);
+    const safeDepth = escapeQuotes(depth || '10 km');
+    const safePotensi = escapeQuotes(potensi || 'Tidak berpotensi tsunami');
+
     let popupContent = `
-        <div style="font-family:'Plus Jakarta Sans',sans-serif; color:#202124; font-size:12px; min-width:180px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <span style="font-weight:800; color:${color}; font-size:13px;">${src} ${isLatest ? '⚡ [MUTAKHIR]' : ''}</span>
-                <span style="background:${color}; color:#fff; font-weight:800; padding:1px 6px; border-radius:4px; font-size:11px;">M ${mag.toFixed(1)}</span>
+        <div class="quake-popup-box">
+            <div class="quake-popup-header">
+                <div class="quake-popup-src" style="color:${color};">
+                    <span>${src}</span>
+                    ${isLatest ? '<span style="font-size:10px; background:rgba(234,67,53,0.15); color:#ea4335; padding:1px 5px; border-radius:4px; font-weight:800;">⚡ MUTAKHIR</span>' : ''}
+                </div>
+                <div class="quake-popup-mag-badge" style="background:${color};">M ${mag.toFixed(1)}</div>
             </div>
-            <div style="color:#5f6368; font-size:10px; margin-bottom:6px;">🕒 ${time}</div>
-            <div style="line-height:1.3; margin-bottom:4px;">📍 <b>${place}</b></div>
-            <div style="font-size:10px; color:#5f6368;">Kedalaman: <b>${depth || '-'}</b></div>
-            ${dirasakan && dirasakan !== '-' ? `<div style="font-size:10px; color:#e37400; margin-top:2px;">⚠️ Dirasakan: <b>${dirasakan}</b></div>` : ''}
-            ${potensi ? `<div style="font-size:10px; color:#137333; margin-top:2px;">🛡️ ${potensi}</div>` : ''}
-            ${dist !== null ? `<div style="font-size:10px; color:#1a73e8; margin-top:5px; font-weight:700;">📏 Jarak: ${dist} km dari lokasi Anda</div>` : ''}
-            <div style="font-size:9px; color:#80868b; margin-top:3px;">Koordinat: ${lat.toFixed(2)}, ${lon.toFixed(2)}</div>
-            <div style="margin-top:8px; padding-top:6px; border-top:1px solid #eee;">
-                <button onclick="shareQuakeInfo('${escapeQuotes(place)}', ${mag}, '${escapeQuotes(time)}', '${escapeQuotes(depth || '10 km')}', '${escapeQuotes(potensi || 'Tidak berpotensi tsunami')}', event)" style="width:100%; background:#25d366; color:#fff; border:none; border-radius:6px; padding:5px 8px; font-size:10.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
-                    <svg style="width:13px; height:13px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
-                    Bagikan ke WhatsApp
-                </button>
+            <div class="quake-popup-time">
+                <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>
+                <span>${time}</span>
+            </div>
+            <div class="quake-popup-place">📍 ${place}</div>
+            <div class="quake-popup-meta-row">Kedalaman: <b>${depth || '-'}</b></div>
+            ${dirasakan && dirasakan !== '-' ? `<div class="quake-popup-alert-felt">⚠️ Dirasakan: <b>${dirasakan}</b></div>` : ''}
+            ${potensi ? `<div class="quake-popup-alert-potensi">🛡️ ${potensi}</div>` : ''}
+            ${dist !== null ? `<div class="quake-popup-dist">📏 Jarak: ${dist} km dari lokasi Anda</div>` : ''}
+            <div class="quake-popup-coord">Koordinat: ${lat.toFixed(2)}, ${lon.toFixed(2)}</div>
+            <div class="quake-popup-divider">
+                <div class="quake-popup-share-label">
+                    <svg style="width:11px; height:11px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    Bagikan Info Gempa:
+                </div>
+                <div class="quake-popup-share-grid">
+                    <button class="btn-share-icon btn-share-wa" onclick="shareQuakeTo('wa', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Bagikan ke WhatsApp">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.58c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.12-.24-.19-.49-.31z"/></svg>
+                    </button>
+                    <button class="btn-share-icon btn-share-tg" onclick="shareQuakeTo('tg', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Bagikan ke Telegram">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.42-1.43-.88.03-.24.38-.49 1.03-.75 4.04-1.76 6.74-2.92 8.09-3.48 3.85-1.6 4.64-1.88 5.17-1.89.12 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.21-.04.37z"/></svg>
+                    </button>
+                    <button class="btn-share-icon btn-share-fb" onclick="shareQuakeTo('fb', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Bagikan ke Facebook">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95C18.05 21.45 22 17.19 22 12z"/></svg>
+                    </button>
+                    <button class="btn-share-icon btn-share-threads" onclick="shareQuakeTo('threads', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Bagikan ke Threads">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.186 24c-3.535 0-6.425-1.205-8.36-3.483C1.942 18.29.986 15.112 1 11.233c.014-4.037 1.05-7.25 3.08-9.544C6.113-.604 9.023-.003 12.186 0c3.167 0 6.077.604 8.106 1.689 2.03 2.294 3.066 5.507 3.08 9.544.014 3.879-.942 7.057-2.826 9.284C18.611 22.795 15.721 24 12.186 24zm.446-4.665c1.884 0 3.32-.58 4.307-1.74.986-1.16 1.48-2.8 1.48-4.92 0-2.12-.494-3.76-1.48-4.92-.987-1.16-2.423-1.74-4.307-1.74s-3.32.58-4.307 1.74c-.986 1.16-1.48 2.8-1.48 4.92 0 2.12.494 3.76 1.48 4.92.987 1.16 2.423 1.74 4.307 1.74z"/></svg>
+                    </button>
+                    <button class="btn-share-icon btn-share-sms" onclick="shareQuakeTo('sms', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Bagikan via SMS">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/></svg>
+                    </button>
+                    <button class="btn-share-icon btn-share-copy" onclick="shareQuakeTo('copy', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Salin Tautan / Lainnya">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
     `;
@@ -851,22 +882,64 @@ function addEarthquakeMarker(q, isLatest = false) {
     marker.bindPopup(popupContent);
 }
 
-// ==================== SHARE QUAKE INFO (WHATSAPP & WEB SHARE API) ====================
-function shareQuakeInfo(place, mag, time, depth, potensi, e) {
+// ==================== MULTI-PLATFORM SHARE QUAKE INFO ====================
+function shareQuakeTo(platform, place, mag, time, depth, potensi, e) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const magVal = typeof mag === 'number' ? mag.toFixed(1) : parseFloat(mag).toFixed(1);
-    const text = `⚠️ *INFORMASI GEMPA BUMI (BMKG / USGS)*\n\n📍 *Lokasi:* ${place}\n💥 *Magnitudo:* M ${magVal}\n🕒 *Waktu:* ${time}\n🌊 *Kedalaman:* ${depth} | ${potensi || 'Tidak berpotensi tsunami'}\n\n🌐 *Pantau Langsung Live Seismograf:*\nhttps://seismik.gracely.my.id/`;
+    const text = `⚠️ *INFORMASI GEMPA BUMI*\n📍 *Lokasi:* ${place}\n💥 *Magnitudo:* M ${magVal}\n🕒 *Waktu:* ${time}\n🌊 *Kedalaman:* ${depth} | ${potensi || 'Tidak berpotensi tsunami'}\n\n🌐 *Pantau Langsung Live Seismograf:*\nhttps://seismik.gracely.my.id/`;
+    const shareUrl = 'https://seismik.gracely.my.id/';
 
-    if (navigator.share) {
-        navigator.share({
-            title: `Info Gempa M ${magVal} - ${place}`,
-            text: text,
-            url: 'https://seismik.gracely.my.id/'
-        }).catch(() => { });
-    } else {
-        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-        window.open(waUrl, '_blank');
+    switch (platform) {
+        case 'wa': {
+            const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(waUrl, '_blank');
+            break;
+        }
+        case 'tg': {
+            const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+            window.open(tgUrl, '_blank');
+            break;
+        }
+        case 'fb': {
+            const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
+            window.open(fbUrl, '_blank');
+            break;
+        }
+        case 'threads': {
+            const thUrl = `https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`;
+            window.open(thUrl, '_blank');
+            break;
+        }
+        case 'sms': {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const smsPrefix = isIOS ? 'sms:&body=' : 'sms:?body=';
+            window.location.href = `${smsPrefix}${encodeURIComponent(text)}`;
+            break;
+        }
+        case 'copy':
+        default: {
+            if (navigator.share) {
+                navigator.share({
+                    title: `Info Gempa M ${magVal} - ${place}`,
+                    text: text,
+                    url: shareUrl
+                }).catch(() => { });
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToastNotification('📋 Informasi gempa berhasil disalin ke clipboard!');
+                }).catch(() => {
+                    showToastNotification('Gagal menyalin teks.');
+                });
+            } else {
+                showToastNotification('📋 Informasi gempa siap dibagikan!');
+            }
+            break;
+        }
     }
+}
+
+function shareQuakeInfo(place, mag, time, depth, potensi, e) {
+    shareQuakeTo('wa', place, mag, time, depth, potensi, e);
 }
 
 // ==================== INDONESIAN CITIES DATABASE & GEOCODING ====================
@@ -2359,8 +2432,18 @@ function requestFreshGPS(panToLocation = true) {
     );
 }
 
+// ==================== ABOUT & DEVELOPER MODAL ====================
 function openAppInfo() {
-    alert("Monitor Seismik | Gracely\nGoogle Maps Edition dengan Integrasi Real-Time BMKG & USGS Multi-Source.");
+    const modal = document.getElementById("modalAppInfo");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function closeAppInfo(e) {
+    if (e && e.target && e.target !== e.currentTarget) return;
+    const modal = document.getElementById("modalAppInfo");
+    if (modal) modal.style.display = "none";
 }
 
 // ==================== HISTATS ANALYTICS TRACKER ====================
@@ -2572,10 +2655,11 @@ function showToastNotification(msg) {
     }, 2800);
 }
 
-// Tutup modal panduan dengan tombol Esc
+// Tutup modal panduan & modal info dengan tombol Esc
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
         closeDisasterGuide();
+        closeAppInfo();
     }
 });
 

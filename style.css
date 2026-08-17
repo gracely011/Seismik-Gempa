@@ -2073,13 +2073,232 @@ button.btn-act.active {
     flex-direction: column;
 }
 
+.info-modal-dialog {
+    max-width: 480px;
+    width: 92%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-info-hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.app-info-logo-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(26, 115, 232, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+body.theme-dark .app-info-logo-wrap {
+    background: rgba(138, 180, 248, 0.15);
+}
+
+.app-info-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 20px;
+}
+
+.app-info-version {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.app-info-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 18px;
+    margin: 0 0 12px 0;
+}
+
+.app-feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.feature-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.dev-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
+.dev-avatar-wrap {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+
+.dev-avatar-initial {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #8ab4f8);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.5px;
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.35);
+}
+
+.dev-verified-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: #1a73e8;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-card);
+}
+
+.dev-verified-badge svg {
+    width: 10px;
+    height: 10px;
+}
+
+.dev-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.dev-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 18px;
+}
+
+.dev-role {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 16px;
+}
+
+.dev-location {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+.dev-links-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dev-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dev-link-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.dev-link-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dev-link-icon-wrap svg {
+    width: 18px;
+    height: 18px;
+}
+
+.dev-link-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.dev-link-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 16px;
+}
+
+.dev-link-val {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dev-link-arrow {
+    width: 15px;
+    height: 15px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.dev-link-btn:hover .dev-link-arrow {
+    color: var(--accent-blue);
+    transform: translateX(2px);
+}
+
 .modal-body-scroll {
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px 18px;
     display: flex;
     flex-direction: column;
     gap: 14px;
     max-height: calc(90vh - 75px);
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .modal-body-scroll::-webkit-scrollbar {
@@ -2116,6 +2335,8 @@ button.btn-act.active {
     border: 1px solid var(--border-subtle);
     border-radius: 12px;
     padding: 14px 16px;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .guide-section-title {
@@ -2143,6 +2364,7 @@ button.btn-act.active {
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-sizing: border-box;
 }
 
 .step-num {
@@ -2191,7 +2413,7 @@ button.btn-act.active {
 
 .tsb-chips-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 8px;
 }
 
@@ -2200,17 +2422,18 @@ button.btn-act.active {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 8px 10px;
-    font-size: 12.5px;
+    font-size: 12px;
     color: var(--text-primary);
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 6px;
+    box-sizing: border-box;
 }
 
 .emergency-contacts-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 10px;
 }
 
@@ -2225,6 +2448,8 @@ button.btn-act.active {
     text-decoration: none;
     transition: all 0.2s ease;
     cursor: pointer;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .contact-card:hover {
@@ -2256,15 +2481,93 @@ button.btn-act.active {
     font-size: 13px;
     font-weight: 700;
     color: var(--text-primary);
+    line-height: 17px;
 }
 
 .contact-desc {
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* ==================== MODAL MOBILE RESPONSIVENESS ==================== */
+@media (max-width: 580px) {
+    .modal-backdrop {
+        padding: 10px;
+    }
+
+    .guide-modal-dialog,
+    .info-modal-dialog {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92vh !important;
+        border-radius: 14px !important;
+    }
+
+    .modal-header {
+        padding: 12px 14px;
+    }
+
+    .modal-title {
+        font-size: 15px;
+        line-height: 20px;
+    }
+
+    .modal-sub {
+        font-size: 11px;
+    }
+
+    .modal-body-scroll {
+        padding: 12px 12px;
+        gap: 10px;
+        max-height: calc(92vh - 65px);
+    }
+
+    .guide-card-section {
+        padding: 12px 12px;
+        border-radius: 10px;
+    }
+
+    .guide-section-title {
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .step-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .step-box {
+        flex-direction: row;
+        text-align: left;
+        gap: 10px;
+        padding: 10px 12px;
+        align-items: flex-start;
+    }
+
+    .step-num {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .emergency-contacts-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+    }
+
+    .tsb-chips-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+}
+
+@media (max-width: 360px) {
+    .tsb-chips-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 /* ==================== FAULT LINES POPUP STYLES ==================== */
@@ -2347,6 +2650,219 @@ button.btn-act.active {
 .leaflet-popup-close-button:hover {
     background: var(--bg-card-hover) !important;
     color: var(--text-primary) !important;
+}
+
+/* ==================== LEAFLET EARTHQUAKE POPUP CARD ==================== */
+.quake-popup-box {
+    font-family: "Google Sans Text", "Google Sans", "Plus Jakarta Sans", Roboto, sans-serif;
+    color: var(--text-primary);
+    font-size: 12px;
+    min-width: 220px;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.quake-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 26px; /* Safe-zone agar tidak tertutup tombol close Leaflet */
+    margin-bottom: 2px;
+}
+
+.quake-popup-src {
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: -0.2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.quake-popup-mag-badge {
+    color: #ffffff !important;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+.quake-popup-time {
+    color: var(--text-secondary);
+    font-size: 10.5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+}
+
+.quake-popup-place {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.quake-popup-meta-row {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.quake-popup-meta-row b {
+    color: var(--text-primary);
+}
+
+.quake-popup-alert-felt {
+    font-size: 10.5px;
+    color: #f29900;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+body.theme-light .quake-popup-alert-felt {
+    color: #b06000;
+}
+
+.quake-popup-alert-potensi {
+    font-size: 10.5px;
+    color: #34a853;
+    margin-top: 2px;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+body.theme-light .quake-popup-alert-potensi {
+    color: #137333;
+}
+
+.quake-popup-dist {
+    font-size: 11px;
+    color: var(--accent-blue);
+    margin-top: 4px;
+    font-weight: 700;
+}
+
+.quake-popup-coord {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.2px;
+}
+
+.quake-popup-divider {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.quake-popup-share-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.quake-popup-share-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+}
+
+.btn-share-icon {
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-share-icon svg {
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+}
+
+.btn-share-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.12);
+}
+
+.btn-share-icon:active {
+    transform: translateY(0);
+}
+
+/* Brand Colors */
+.btn-share-wa {
+    background: #25d366;
+}
+.btn-share-wa:hover {
+    background: #20ba59;
+}
+
+.btn-share-tg {
+    background: #229ed9;
+}
+.btn-share-tg:hover {
+    background: #1e8dc2;
+}
+
+.btn-share-fb {
+    background: #1877f2;
+}
+.btn-share-fb:hover {
+    background: #1466d1;
+}
+
+.btn-share-threads {
+    background: #181818;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+body.theme-light .btn-share-threads {
+    background: #101010;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #ffffff;
+}
+.btn-share-threads:hover {
+    background: #000000;
+}
+
+.btn-share-sms {
+    background: #ff6f00;
+}
+.btn-share-sms:hover {
+    background: #e65100;
+}
+
+.btn-share-copy {
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+.btn-share-copy:hover {
+    background: var(--border-color);
+    color: var(--accent-blue);
 }
 
 /* POPUP AREA CARD (IDENTIK DENGAN g-card area-gmap-card TANPA STATUS PILL) */
