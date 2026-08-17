@@ -236,7 +236,7 @@ function initFaultLinesLayer() {
         const popupContent = `
             <div class="fault-popup-content">
                 <div class="fault-popup-title">${f.isMegathrust ? '🌊 ' : '⚡ '}${f.name}</div>
-                <div class="fault-popup-sub">📍 Wilayah: ${f.region} • ${f.type}</div>
+                <div class="fault-popup-sub"><span class="icon-pin-svg"></span> Wilayah: ${f.region} • ${f.type}</div>
                 <div class="fault-popup-desc">${f.desc}</div>
             </div>
         `;
@@ -300,7 +300,8 @@ const searchPlaceIcon = L.divIcon({
 });
 
 function createAreaPopupHTML(obj, lat, lon) {
-    const main = obj?.main || "Wilayah";
+    const rawMain = obj?.main || "Wilayah";
+    const main = String(rawMain).replace(/^📍\s*/, '').trim();
     const admin = obj?.admin || `Wilayah ${lat.toFixed(2)}`;
     const prov = obj?.province || "Indonesia";
 
@@ -322,7 +323,7 @@ function createAreaPopupHTML(obj, lat, lon) {
             <div class="popup-area-header">
                 <div class="popup-area-title-group">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-                        <div class="popup-area-city-main">${main}</div>
+                        <div class="popup-area-city-main"><span class="icon-pin-svg"></span> ${main}</div>
                         <button class="popup-btn-bookmark ${isSaved ? 'active' : ''}" onclick="toggleSavePlaceFromPopup('${safeMain}', '${safeAdmin}', '${safeProv}', ${lat}, ${lon}, event)" title="${isSaved ? 'Hapus dari Disimpan' : 'Simpan Wilayah Ini'}">
                             <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor">
                                 ${isSaved ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
@@ -404,7 +405,7 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
 
     let placeObj = userPlaceObj || { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
     const popupHtml = createAreaPopupHTML({
-        main: `📍 ${placeObj.main}`,
+        main: placeObj.main,
         admin: `Lokasi Anda (GPS) • ±${Math.round(accuracy)}m`,
         province: placeObj.province
     }, lat, lon);
@@ -844,7 +845,7 @@ function addEarthquakeMarker(q, isLatest = false) {
                 <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>
                 <span>${time}</span>
             </div>
-            <div class="quake-popup-place">📍 ${place}</div>
+            <div class="quake-popup-place"><span class="icon-pin-svg"></span> ${place}</div>
             <div class="quake-popup-meta-row">Kedalaman: <b>${depth || '-'}</b></div>
             ${dirasakan && dirasakan !== '-' ? `<div class="quake-popup-alert-felt">⚠️ Dirasakan: <b>${dirasakan}</b></div>` : ''}
             ${potensi ? `<div class="quake-popup-alert-potensi">🛡️ ${potensi}</div>` : ''}
@@ -1509,7 +1510,7 @@ function renderSavedPlacesUI() {
         return `
             <div class="saved-place-card" onclick="flyToSavedPlace(${p.lat}, ${p.lon}, '${safeName}')">
                 <div class="saved-place-info">
-                    <div class="saved-place-name">📍 ${p.name}</div>
+                    <div class="saved-place-name"><span class="icon-pin-svg"></span> ${p.name}</div>
                     <div class="saved-place-sub">
                         <span class="saved-place-status-dot ${isWarning ? 'warning' : ''}"></span>
                         <span>${statusLabel}</span>

@@ -1287,6 +1287,9 @@ button.btn-act.active {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .saved-place-sub {
@@ -2227,6 +2230,9 @@ body.theme-dark .app-info-logo-wrap {
     font-size: 10.5px;
     color: var(--text-muted);
     margin-top: 1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .dev-links-grid {
@@ -2721,6 +2727,13 @@ body.theme-dark .app-info-logo-wrap {
     line-height: 1.35;
     margin-bottom: 4px;
     word-break: break-word;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.quake-popup-place .icon-pin-svg {
+    margin-top: 1.5px;
 }
 
 .quake-popup-meta-row {
@@ -2906,6 +2919,14 @@ body.theme-light .btn-share-threads {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.popup-area-city-main .icon-pin-svg {
+    width: 18px;
+    height: 18px;
 }
 
 .popup-area-sub-line {
@@ -2995,5 +3016,20 @@ body.theme-dark .popup-btn-bookmark.active {
     font-weight: 400;
     color: var(--text-secondary);
     margin-top: 1px;
+}
+
+/* ==========================================================================
+   CUSTOM SVG LOCATION PIN
+   ========================================================================== */
+.icon-pin-svg {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    vertical-align: -2px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='m256 0c-104.9 0-190 85.1-190 190s190 322 190 322 190-217.1 190-322-85.1-190-190-190z' fill='%23ff2e39'/%3E%3Cpath d='m256 287c-52.5 0-95-42.5-95-95s42.5-95 95-95 95 42.5 95 95-42.5 95-95 95z' fill='%23fff'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    flex-shrink: 0;
 }
 
