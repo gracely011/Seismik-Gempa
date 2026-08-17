@@ -61,10 +61,10 @@
     <meta name="twitter:image:alt" content="Monitor Seismik Gracely">
 
     <!-- MOBILE & PWA APP CAPABILITIES -->
-    <meta name="theme-color" content="#202124">
+    <meta name="theme-color" content="#ffffff">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Seismik">
 
     <!-- PWA MANIFEST & APP ICONS -->
@@ -73,25 +73,32 @@
     <link rel="apple-touch-icon" href="icon.svg">
 
     <!-- RESOURCE HINTS & PRECONNECT FOR LIGHTNING FAST LOAD -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
     <link rel="preconnect" href="https://b.basemaps.cartocdn.com" crossorigin>
     <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
-    <link rel="preconnect" href="https://s10.histats.com">
-    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://s10.histats.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://www.google-analytics.com">
     <link rel="dns-prefetch" href="https://data.bmkg.go.id">
     <link rel="dns-prefetch" href="https://earthquake.usgs.gov">
     <link rel="dns-prefetch" href="https://api.open-meteo.com">
     <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
-    <link rel="dns-prefetch" href="https://sstatic1.histats.com">
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=13.0">
+    <!-- LEAFLET CSS (CLOUDFLARE CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjZKKhypfIW20FiCa002lqZc3b7+F4GzT/8Z04eP5N1/oM1mP94G3aK8Z8M4g7F7vC7V2N1H2L4j4X9w==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <!-- GOOGLE FONTS (NON-BLOCKING LOAD) -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+    </noscript>
+
+    <!-- CORE STYLESHEET -->
+    <link rel="stylesheet" href="style.css?v=14.0">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -151,7 +158,7 @@
     </script>
 </head>
 
-<body>
+<body class="theme-light">
 
     <!-- ACCESSIBILITY & SEO HEADING -->
     <h1 class="sr-only">Monitor Seismik Real-Time BMKG &amp; USGS Indonesia - Peta Gempa Terkini Gracely</h1>
@@ -717,11 +724,14 @@
         </div>
     </div>
 
+    <!-- LEAFLET ENGINE (CLOUDFLARE CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzSmGyk98FJCISsREV21QAwcxgRI38+9nWO39kBQDZvMA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=13.0"></script>
+    <script src="faults.js?v=14.0" defer></script>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=13.0"></script>
+    <script src="app.js?v=14.0" defer></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>

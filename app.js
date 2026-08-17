@@ -38,9 +38,9 @@ let quakesArray = [];
 let currentFilter = 'all';
 let searchQuery = '';
 
-// LocalStorage Persistent Settings
+// LocalStorage Persistent Settings (Default: Tema Terang Google Maps)
 let currentTheme = localStorage.getItem('seismo_theme') || 'light';
-let currentMapLayer = localStorage.getItem('seismo_layer') || (currentTheme === 'light' ? 'light' : 'dark');
+let currentMapLayer = localStorage.getItem('seismo_layer') || 'light';
 
 // SVG Icons for Light / Dark Mode
 const SVG_MOON = '<svg class="gmap-icon" id="themeIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>';
@@ -55,14 +55,14 @@ function updateThemeIcon(isLight) {
 
 // ==================== THEME INITIALIZATION ====================
 function initTheme() {
-    if (currentTheme === 'light') {
+    if (currentTheme === 'dark') {
+        document.body.classList.remove('theme-light');
+        updateThemeIcon(false);
+        if (currentMapLayer === 'light') currentMapLayer = 'dark';
+    } else {
         document.body.classList.add('theme-light');
         updateThemeIcon(true);
-        if (!localStorage.getItem('seismo_layer') || currentMapLayer === 'dark') {
-            currentMapLayer = 'light';
-        }
-    } else {
-        updateThemeIcon(false);
+        if (currentMapLayer === 'dark') currentMapLayer = 'light';
     }
 }
 
@@ -2464,30 +2464,44 @@ function initHistats() {
     }
 }
 
-// ==================== APP INITIALIZATION ====================
+// ==================== APP INITIALIZATION (INSTANT UI FIRST) ====================
 
-document.addEventListener("DOMContentLoaded", () => {
+function bootApp() {
+    // 1. Instan Visual UI & Tema Terang Bawaan (Milidetik ke-0)
     initTheme();
     applyMapLayer(currentMapLayer);
-    initLocation();
     updateLiveClock();
-    updateRecentQuakesUI();
     initChipsSliderInteractions();
-    initHistats();
     updateBookmarkIconState();
     renderSavedPlacesUI();
     renderBookmarkedQuakesUI();
     renderRecentSearchesUI();
+    updateRecentQuakesUI();
+
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     } else {
         document.body.classList.remove("panel-collapsed");
     }
+
+    // 2. Invalidate Map & Resize Canvas
     setTimeout(() => {
-        map.invalidateSize();
+        if (typeof map !== 'undefined' && map) map.invalidateSize();
         resizeCanvas();
-    }, 150);
-});
+    }, 40);
+
+    // 3. Background Non-Blocking Initializers (Milidetik ke-100+)
+    setTimeout(() => {
+        initLocation();
+        initHistats();
+    }, 100);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", bootApp);
+} else {
+    bootApp();
+}
 
 // ==================== SIMULASI GEMPA (SEISMOGRAPH EXPERIMENT) ====================
 let isSimulating = false;
