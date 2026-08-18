@@ -75,9 +75,10 @@
     <!-- RESOURCE HINTS & PRECONNECT FOR LIGHTNING FAST LOAD -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
     <link rel="preconnect" href="https://b.basemaps.cartocdn.com" crossorigin>
+    <link rel="preconnect" href="https://c.basemaps.cartocdn.com" crossorigin>
+    <link rel="preconnect" href="https://d.basemaps.cartocdn.com" crossorigin>
     <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
     <link rel="dns-prefetch" href="https://s10.histats.com">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
@@ -87,13 +88,11 @@
     <link rel="dns-prefetch" href="https://api.open-meteo.com">
     <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
 
-    <!-- LEAFLET CSS & JS (CLOUDFLARE CDN) -->
+    <!-- LEAFLET STYLESHEET (NON-BLOCKING) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
-    <!-- GOOGLE FONTS & GOOGLE SYMBOLS LOCAL PRELOAD -->
+    <!-- GOOGLE SYMBOLS MICRO-SUBSET & FONT PRELOAD -->
     <link rel="preload" as="font" type="font/woff2" href="google-symbols.woff2" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
     <noscript>
@@ -101,7 +100,7 @@
     </noscript>
 
     <!-- CORE STYLESHEET -->
-    <link rel="stylesheet" href="style.css?v=14.4">
+    <link rel="stylesheet" href="style.css?v=14.5">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -729,11 +728,14 @@
         </div>
     </div>
 
+    <!-- LEAFLET JS ENGINE (DEFERRED & OPTIMIZED) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=14.4"></script>
+    <script src="faults.js?v=14.5"></script>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=14.4"></script>
+    <script src="app.js?v=14.5"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>
