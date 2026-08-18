@@ -116,12 +116,23 @@ body.theme-light #map {
 @font-face {
     font-family: 'Google Symbols';
     font-style: normal;
-    font-weight: 400;
-    src: url('https://fonts.gstatic.com/s/materialsymbolsoutlined/v205/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpbC_1v-p_4MrImHCIJIZrDCvHOej.woff2') format('woff2');
+    font-weight: 100 700;
+    src: url('google-symbols.woff2') format('woff2'),
+         url('https://fonts.gstatic.com/s/materialsymbolsoutlined/v367/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2') format('woff2');
     font-display: block; /* Mencegah FOUT / Teks Bocor */
 }
 
-.google-symbols {
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 100 700;
+    src: url('google-symbols.woff2') format('woff2'),
+         url('https://fonts.gstatic.com/s/materialsymbolsoutlined/v367/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2') format('woff2');
+    font-display: block;
+}
+
+.google-symbols,
+.material-symbols-outlined {
     font-family: 'Google Symbols', 'Material Symbols Outlined', sans-serif;
     font-weight: 400;
     font-style: normal;
@@ -136,6 +147,7 @@ body.theme-light #map {
     word-wrap: normal;
     direction: ltr;
     font-optical-sizing: none;
+    -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
