@@ -2,19 +2,20 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v14.3';
+const CACHE_NAME = 'seismo-cache-v14.4';
 
 const PRECACHE_ASSETS = [
     './',
     'index.html',
     'manifest.json',
     'icon.svg',
-    'faults.js?v=14.3',
-    'style.css?v=14.3',
-    'app.js?v=14.3',
+    'faults.js?v=14.4',
+    'style.css?v=14.4',
+    'app.js?v=14.4',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap'
+    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap',
+    'https://fonts.gstatic.com/s/materialsymbolsoutlined/v205/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpbC_1v-p_4MrImHCIJIZrDCvHOej.woff2'
 ];
 
 // 1. INSTALLATION: Pre-cache essential app shell assets

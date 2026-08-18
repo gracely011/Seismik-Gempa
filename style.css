@@ -112,18 +112,48 @@ body.theme-light #map {
     backface-visibility: hidden;
 }
 
-/* ==================== GOOGLE MATERIAL ICONS (INLINE SVG) ==================== */
+/* ==================== GOOGLE SYMBOLS FONT (GOOGLE MAPS OFFICIAL SPEC) ==================== */
+@font-face {
+    font-family: 'Google Symbols';
+    font-style: normal;
+    font-weight: 400;
+    src: url('https://fonts.gstatic.com/s/materialsymbolsoutlined/v205/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpbC_1v-p_4MrImHCIJIZrDCvHOej.woff2') format('woff2');
+    font-display: block; /* Mencegah FOUT / Teks Bocor */
+}
+
+.google-symbols {
+    font-family: 'Google Symbols', 'Material Symbols Outlined', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-optical-sizing: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    vertical-align: middle;
+    user-select: none;
+    flex-shrink: 0;
+    pointer-events: none;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+/* Backward compatibility utility */
 .gmap-icon {
-    width: 20px;
-    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     vertical-align: middle;
-    fill: currentColor;
     flex-shrink: 0;
     pointer-events: none;
-    transition: fill 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .leaflet-tile-container {

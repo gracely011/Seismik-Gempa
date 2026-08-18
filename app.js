@@ -58,14 +58,14 @@ let searchQuery = '';
 let currentTheme = localStorage.getItem('seismo_theme') || 'light';
 let currentMapLayer = localStorage.getItem('seismo_layer') || 'light';
 
-// SVG Icons for Light / Dark Mode
-const SVG_MOON = '<svg class="gmap-icon" id="themeIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>';
-const SVG_SUN = '<svg class="gmap-icon" id="themeIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>';
+// Google Symbols Icons for Light / Dark Mode (Unicode PUA)
+const SYM_MOON = '<span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe51c;</span>';
+const SYM_SUN = '<span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe518;</span>';
 
 function updateThemeIcon(isLight) {
     const indicator = document.getElementById('themeIconIndicator');
     if (indicator) {
-        indicator.innerHTML = isLight ? SVG_SUN : SVG_MOON;
+        indicator.innerHTML = isLight ? SYM_SUN : SYM_MOON;
     }
 }
 
@@ -345,11 +345,11 @@ function createAreaPopupHTML(obj, lat, lon) {
             <div class="popup-area-header">
                 <div class="popup-area-title-group">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-                        <div class="popup-area-city-main"><span class="icon-pin-svg"></span> ${main}</div>
+                        <div class="popup-area-city-main"><span class="google-symbols" style="font-size: 14px; color: #ea4335;">&#xe0c8;</span> ${main}</div>
                         <button class="popup-btn-bookmark ${isSaved ? 'active' : ''}" onclick="toggleSavePlaceFromPopup('${safeMain}', '${safeAdmin}', '${safeProv}', ${lat}, ${lon}, event)" title="${isSaved ? 'Hapus dari Disimpan' : 'Simpan Wilayah Ini'}">
-                            <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor">
-                                ${isSaved ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
-                            </svg>
+                            <span class="google-symbols" style="font-size: 15px;">
+                                ${isSaved ? '&#xe866;' : '&#xe867;'}
+                            </span>
                         </button>
                     </div>
                     <div class="popup-area-sub-line">${admin}</div>
@@ -866,10 +866,10 @@ function addEarthquakeMarker(q, isLatest = false) {
                 <div class="quake-popup-mag-badge" style="background:${color};">M ${mag.toFixed(1)}</div>
             </div>
             <div class="quake-popup-time">
-                <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>
+                <span class="google-symbols" style="font-size: 13px;">&#xe8b5;</span>
                 <span>${time}</span>
             </div>
-            <div class="quake-popup-place"><span class="icon-pin-svg"></span> ${place}</div>
+            <div class="quake-popup-place"><span class="google-symbols" style="font-size: 14px; color: #ea4335;">&#xe0c8;</span> ${place}</div>
             <div class="quake-popup-meta-row">Kedalaman: <b>${depth || '-'}</b></div>
             ${dirasakan && dirasakan !== '-' ? `<div class="quake-popup-alert-felt">⚠️ Dirasakan: <b>${dirasakan}</b></div>` : ''}
             ${potensi ? `<div class="quake-popup-alert-potensi">🛡️ ${potensi}</div>` : ''}
@@ -877,7 +877,7 @@ function addEarthquakeMarker(q, isLatest = false) {
             <div class="quake-popup-coord">Koordinat: ${lat.toFixed(2)}, ${lon.toFixed(2)}</div>
             <div class="quake-popup-divider">
                 <div class="quake-popup-share-label">
-                    <svg style="width:11px; height:11px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    <span class="google-symbols" style="font-size: 13px;">&#xe80d;</span>
                     Bagikan Info Gempa:
                 </div>
                 <div class="quake-popup-share-grid">
@@ -897,7 +897,7 @@ function addEarthquakeMarker(q, isLatest = false) {
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/></svg>
                     </button>
                     <button class="btn-share-icon btn-share-copy" onclick="shareQuakeTo('copy', '${safePlace}', ${mag}, '${safeTime}', '${safeDepth}', '${safePotensi}', event)" title="Salin Tautan / Lainnya">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                        <span class="google-symbols" style="font-size: 16px;">&#xe80d;</span>
                     </button>
                 </div>
             </div>
@@ -1146,7 +1146,7 @@ function renderSearchSuggestions(cities) {
     dropdown.innerHTML = cities.map(c => `
         <div class="search-suggestion-item" onclick="selectSearchCity('${escapeQuotes(c.name)}', '${escapeQuotes(c.admin)}', '${escapeQuotes(c.province)}', ${c.lat}, ${c.lon})">
             <div class="suggestion-icon">
-                <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <span class="google-symbols" style="font-size: 18px; color: var(--text-muted);">&#xe0c8;</span>
             </div>
             <div class="suggestion-text-group">
                 <div class="suggestion-main-name">${c.name}</div>
@@ -1319,12 +1319,12 @@ function updateRecentQuakesUI() {
                 </div>
                 <div style="display: flex; align-items: center; gap: 2px;">
                     <button class="btn-quake-share" onclick="shareQuakeInfo('${safePlace}', ${q.mag}, '${humanTime || q.time}', '${q.depth || '10 km'}', '${escapeQuotes(q.potensi || 'Tidak berpotensi tsunami')}', event)" title="Bagikan Info Gempa (WhatsApp)">
-                        <svg class="gmap-icon" style="width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                        <span class="google-symbols" style="font-size: 15px;">&#xe80d;</span>
                     </button>
                     <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
-                        <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
-                            ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
-                        </svg>
+                        <span class="google-symbols" style="font-size: 16px;">
+                            ${isBookmarked ? '&#xe866;' : '&#xe867;'}
+                        </span>
                     </button>
                 </div>
             </div>
@@ -1543,7 +1543,7 @@ function renderSavedPlacesUI() {
                 <div class="saved-place-right">
                     <div class="saved-place-weather">${p.temp || '28°C'}</div>
                     <button class="btn-item-delete" onclick="removeSavedPlace('${p.id}', event)" title="Hapus dari Disimpan">
-                        <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <span class="google-symbols" style="font-size: 15px;">&#xe872;</span>
                     </button>
                 </div>
             </div>
@@ -1628,10 +1628,10 @@ function renderBookmarkedQuakesUI() {
                 </div>
                 <div style="display: flex; align-items: center; gap: 2px;">
                     <button class="btn-quake-share" onclick="shareQuakeInfo('${safePlace}', ${q.mag}, '${escapeQuotes(q.time)}', '${escapeQuotes(q.depth || '10 km')}', 'Tidak berpotensi tsunami', event)" title="Bagikan Info Gempa (WhatsApp)">
-                        <svg class="gmap-icon" style="width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                        <span class="google-symbols" style="font-size: 15px;">&#xe80d;</span>
                     </button>
                     <button class="btn-item-delete" style="color:var(--accent-red);" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, time:'${q.time}'}, event)" title="Hapus Bookmark">
-                        <svg class="gmap-icon" style="width:14px; height:14px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <span class="google-symbols" style="font-size: 15px;">&#xe872;</span>
                     </button>
                 </div>
             </div>
@@ -1697,7 +1697,7 @@ function renderRecentSearchesUI() {
         return `
             <div class="recent-search-card" onclick="flyToSavedPlace(${s.lat}, ${s.lon}, '${safeName}')">
                 <div class="recent-search-left">
-                    <svg class="gmap-icon" style="width:14px; height:14px; color:var(--text-muted);" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                    <span class="google-symbols" style="font-size: 15px; color:var(--text-muted);">&#xe8b5;</span>
                     <div class="recent-search-text">${s.name}</div>
                 </div>
                 <span class="recent-search-time">${s.time}</span>
@@ -1775,12 +1775,12 @@ function render24hTimelineUI() {
                 </div>
                 <div style="display: flex; align-items: center; gap: 2px;">
                     <button class="btn-quake-share" onclick="shareQuakeInfo('${safePlace}', ${q.mag}, '${humanTime || q.time}', '${q.depth || '10 km'}', '${escapeQuotes(q.potensi || 'Tidak berpotensi tsunami')}', event)" title="Bagikan Info Gempa (WhatsApp)">
-                        <svg class="gmap-icon" style="width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                        <span class="google-symbols" style="font-size: 15px;">&#xe80d;</span>
                     </button>
                     <button class="btn-item-delete" style="color:${isBookmarked ? 'var(--accent-blue)' : 'var(--text-muted)'};" onclick="toggleBookmarkQuake({lat:${q.lat}, lon:${q.lon}, mag:${q.mag}, place:'${safePlace}', time:'${q.time}', depth:'${q.depth || '-'}'}, event)" title="${isBookmarked ? 'Hapus Bookmark' : 'Tandai Gempa'}">
-                        <svg class="gmap-icon" style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
-                            ${isBookmarked ? '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>' : '<path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/>'}
-                        </svg>
+                        <span class="google-symbols" style="font-size: 16px;">
+                            ${isBookmarked ? '&#xe866;' : '&#xe867;'}
+                        </span>
                     </button>
                 </div>
             </div>
@@ -2665,7 +2665,7 @@ function updateAutoBroadcastUI() {
         txt.innerText = "SIARAN OTOMATIS: ON";
         btn.title = "Mode Siaga Aktif: Suara otomatis menyiarkan gempa baru seketika saat terdeteksi (Klik untuk Nonaktifkan)";
         if (icon) {
-            icon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+            icon.innerHTML = '&#xe050;';
         }
     } else {
         btn.classList.remove("active-mode");
@@ -2673,7 +2673,7 @@ function updateAutoBroadcastUI() {
         txt.innerText = "SIARAN OTOMATIS: OFF";
         btn.title = "Mode Siaga Nonaktif: Klik untuk Aktifkan Siaran Suara Otomatis";
         if (icon) {
-            icon.innerHTML = '<path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 4.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-4h2l5 3V5L11 8H4zm9 4.38L10.3 12H4v-2h6.3L13 8.62v4.76z"/>';
+            icon.innerHTML = '&#xe7f0;';
         }
     }
 }
@@ -2790,6 +2790,8 @@ function broadcastQuakeEvent(q, isAutoTrigger = false) {
     if (btn) {
         btn.classList.add("speaking");
         if (txt) txt.innerText = "MENYIARKAN SUARA...";
+        const icon = document.getElementById("autoBroadcastIcon");
+        if (icon) icon.innerHTML = '&#xe047;';
     }
 
     // 5. Eksekusi SpeechSynthesis

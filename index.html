@@ -91,7 +91,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
-    <!-- GOOGLE FONTS (NON-BLOCKING LOAD) -->
+    <!-- GOOGLE FONTS & GOOGLE SYMBOLS PRELOAD (NON-BLOCKING LOAD) -->
+    <link rel="preload" as="font" type="font/woff2" href="https://fonts.gstatic.com/s/materialsymbolsoutlined/v205/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpbC_1v-p_4MrImHCIJIZrDCvHOej.woff2" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
     <noscript>
@@ -99,7 +100,7 @@
     </noscript>
 
     <!-- CORE STYLESHEET -->
-    <link rel="stylesheet" href="style.css?v=14.3">
+    <link rel="stylesheet" href="style.css?v=14.4">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -173,15 +174,15 @@
     <!-- GOOGLE MAPS BOTTOM-RIGHT MAP CONTROLS GROUP (GPS LOCATE + ZOOM +/-) -->
     <div class="gmap-map-controls" id="gmapControlsGroup">
         <button class="gmap-ctrl-btn gmap-locate-btn" onclick="centerToUserLocation()" title="Pusatkan ke Titik Lokasi Saya (GPS)" aria-label="Lokasi Saya">
-            <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+            <span class="google-symbols" style="font-size: 20px;">&#xe55c;</span>
         </button>
         <div class="gmap-zoom-group">
             <button class="gmap-ctrl-btn gmap-zoom-in" onclick="map.zoomIn()" title="Perbesar Peta" aria-label="Perbesar">
-                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span class="google-symbols" style="font-size: 20px;">&#xe145;</span>
             </button>
             <div class="gmap-zoom-divider"></div>
             <button class="gmap-ctrl-btn gmap-zoom-out" onclick="map.zoomOut()" title="Perkecil Peta" aria-label="Perkecil">
-                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
+                <span class="google-symbols" style="font-size: 20px;">&#xe15b;</span>
             </button>
         </div>
     </div>
@@ -192,13 +193,13 @@
         <div class="rail-top">
             <!-- HAMBURGER MENU / TAB MONITOR -->
             <button class="rail-btn rail-menu-btn active" id="railMenuBtn" onclick="switchNavTab('monitor')" title="Menu / Panel Seismograf" aria-label="Menu">
-                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                <span class="google-symbols" style="font-size: 24px;">&#xe5d2;</span>
             </button>
 
             <!-- DISIMPAN (BOOKMARK) -->
             <button class="rail-btn" id="railBtnSaved" onclick="switchNavTab('saved')" title="Wilayah &amp; Gempa Disimpan">
                 <div class="rail-icon-indicator">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                    <span class="google-symbols" style="font-size: 24px;">&#xe866;</span>
                 </div>
                 <span class="rail-label">Disimpan</span>
             </button>
@@ -206,7 +207,7 @@
             <!-- TERBARU (RECENT) -->
             <button class="rail-btn" id="railBtnRecent" onclick="switchNavTab('recent')" title="Aktivitas &amp; Gempa Terbaru">
                 <div class="rail-icon-indicator">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                    <span class="google-symbols" style="font-size: 24px;">&#xe8b5;</span>
                 </div>
                 <span class="rail-label">Terbaru</span>
             </button>
@@ -216,7 +217,7 @@
             <!-- DARK / LIGHT MODE SWITCH -->
             <button class="rail-btn" onclick="toggleThemeMode()" id="btnTheme" title="Ganti Mode Gelap / Terang">
                 <div class="rail-icon-indicator" id="themeIconIndicator">
-                    <svg class="gmap-icon" id="themeIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+                    <span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe518;</span>
                 </div>
                 <span class="rail-label">Mode</span>
             </button>
@@ -224,7 +225,7 @@
             <!-- ABOUT / INFO -->
             <button class="rail-btn" id="railBtnInfo" onclick="openAppInfo()" title="Tentang Seismograf">
                 <div class="rail-icon-indicator">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    <span class="google-symbols" style="font-size: 24px;">&#xe88e;</span>
                 </div>
                 <span class="rail-label">Info</span>
             </button>
@@ -232,7 +233,7 @@
             <!-- PANDUAN SIAGA BENCANA -->
             <button class="rail-btn" id="railBtnGuide" onclick="openDisasterGuide()" title="Panduan Siaga &amp; Kontak Darurat">
                 <div class="rail-icon-indicator" style="color: #ea4335;">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
+                    <span class="google-symbols" style="font-size: 24px; color: #ea4335;">&#xe002;</span>
                 </div>
                 <span class="rail-label">Siaga</span>
             </button>
@@ -244,15 +245,15 @@
         <!-- GOOGLE MAPS SEARCH BAR -->
         <div class="search-box-card" id="searchBoxCard">
             <button class="search-icon-btn" onclick="document.getElementById('searchInput').focus()" title="Cari">
-                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span class="google-symbols" style="font-size: 20px;">&#xe8b6;</span>
             </button>
             <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)" autocomplete="off">
             <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Hapus Pencarian">
-                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
             </button>
             <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
             <button class="directions-btn" onclick="triggerSearchCity()" title="Cari Kota / Arahkan">
-                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 10.59l-7.99-8c-.78-.78-2.05-.78-2.83 0l-8 8c-.78.78-.78 2.05 0 2.83l8 8c.78.78 2.05.78 2.83 0l7.99-8c.79-.79.79-2.05 0-2.83zM13.5 14.5V12H10v3H8v-4c0-.55.45-1 1-1h4.5V7.5L17 11l-3.5 3.5z"/></svg>
+                <span class="google-symbols" style="font-size: 20px;">&#xe52e;</span>
             </button>
         </div>
 
@@ -285,7 +286,7 @@
                             <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
                                 <h2 class="area-city-main" id="areaCityMain">Sibolga</h2>
                                 <button class="btn-bookmark-action" id="btnBookmarkArea" onclick="toggleSaveCurrentArea()" title="Simpan Lokasi Ini">
-                                    <svg class="gmap-icon" id="bookmarkAreaIcon" style="width: 17px; height: 17px;" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                                    <span class="google-symbols" id="bookmarkAreaIcon" style="font-size: 17px;">&#xe867;</span>
                                 </button>
                             </div>
                             <div class="area-sub-line" id="areaCityAdmin">Kota Sibolga</div>
@@ -333,9 +334,7 @@
 
                     <!-- TOMBOL MODE SIAGA SIARAN SUARA GEMPA REAL-TIME OTOMATIS -->
                     <button class="btn-broadcast-alert" id="btnAutoBroadcast" onclick="toggleAutoBroadcastAlert()" title="Mode Siaga: Siarkan suara peringatan otomatis seketika saat terdeteksi gempa bumi baru">
-                        <svg class="gmap-icon" id="autoBroadcastIcon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 4.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-4h2l5 3V5L11 8H4zm9 4.38L10.3 12H4v-2h6.3L13 8.62v4.76z"/>
-                        </svg>
+                        <span class="google-symbols" id="autoBroadcastIcon" style="font-size: 18px;">&#xe7f0;</span>
                         <span id="autoBroadcastText">SIARAN OTOMATIS: OFF</span>
                     </button>
 
@@ -375,7 +374,7 @@
                 <div class="g-card saved-header-card">
                     <div class="tab-header-top">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <svg class="gmap-icon" style="width: 18px; height: 18px; color: var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                            <span class="google-symbols" style="font-size: 18px; color: var(--accent-blue);">&#xe866;</span>
                             <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Tempat Pantauan &amp; Bookmark</span>
                         </div>
                         <button class="btn-tab-action" onclick="toggleSaveCurrentArea()" title="Simpan Wilayah Saat Ini">＋ Simpan Wilayah Ini</button>
@@ -388,7 +387,7 @@
                 <!-- SAVED PLACES LIST -->
                 <div class="g-card">
                     <div class="quake-header-row">
-                        <span style="display:inline-flex; align-items:center; gap:5px;"><span class="icon-pin-svg"></span> Wilayah Favorit</span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;"><span class="google-symbols" style="font-size: 14px; color: #ea4335;">&#xe0c8;</span> Wilayah Favorit</span>
                         <span id="savedPlacesCountBadge" style="font-size: 9px; color: var(--text-muted);">0 disimpan</span>
                     </div>
                     <div class="saved-items-container" id="savedPlacesList">
@@ -414,7 +413,7 @@
                 <div class="g-card recent-header-card">
                     <div class="tab-header-top">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <svg class="gmap-icon" style="width: 18px; height: 18px; color: var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                            <span class="google-symbols" style="font-size: 18px; color: var(--accent-blue);">&#xe8b5;</span>
                             <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Aktivitas &amp; Linimasa 24 Jam</span>
                         </div>
                         <button class="btn-tab-action" onclick="clearRecentSearches()" title="Hapus Riwayat Penelusuran">Hapus Riwayat</button>
@@ -461,7 +460,7 @@
             <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL (DIRECT CYCLE ON CLICK) -->
             <div class="layer-thumbnail-card" id="layerCard" onclick="cycleNextMapLayer(event)" title="Ganti Lapisan Peta (Klik untuk Berganti)">
                 <div class="layer-thumbnail-badge">
-                    <svg class="gmap-icon" style="width: 15px; height: 15px;" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z"/></svg>
+                    <span class="google-symbols" style="font-size: 15px;">&#xe53b;</span>
                     <span id="layerBadgeText">Lapisan</span>
                 </div>
             </div>
@@ -495,7 +494,7 @@
                 <!-- 5. SESAR AKTIF & MEGATHRUST OVERLAY TOGGLE -->
                 <div class="layer-option-item" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Garis Patahan Sesar &amp; Megathrust (Klik untuk Aktifkan)">
                     <div class="layer-thumb-preview" style="background: linear-gradient(135deg, #1e293b, #b91c1c); display:flex; align-items:center; justify-content:center;">
-                        <svg style="width:18px; height:18px; color:#f87171;" viewBox="0 0 24 24" fill="currentColor"><path d="M14 6l-3.75 5 2.85 3.8L11.5 16l-4-5.33L10 7.33 8.5 6 3 13.33 6.5 18h11l3.5-4.67L14 6z"/></svg>
+                        <span class="google-symbols" style="font-size: 18px; color: #f87171;">&#xe002;</span>
                     </div>
                     <span class="layer-opt-label">Sesar Aktif</span>
                 </div>
@@ -509,7 +508,7 @@
             <div class="modal-header">
                 <div class="modal-title-wrap">
                     <div class="modal-icon-badge" style="background: rgba(234, 67, 53, 0.12); color: #ea4335;">
-                        <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
+                        <span class="google-symbols" style="font-size: 22px;">&#xe002;</span>
                     </div>
                     <div>
                         <h3 class="modal-title">Panduan Siaga Bencana Gempa</h3>
@@ -517,7 +516,7 @@
                     </div>
                 </div>
                 <button class="modal-close-btn" onclick="closeDisasterGuide()" title="Tutup">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
                 </button>
             </div>
 
@@ -630,7 +629,7 @@
             <div class="modal-header">
                 <div class="modal-title-wrap">
                     <div class="modal-icon-badge" style="background: rgba(26, 115, 232, 0.12); color: var(--accent-blue);">
-                        <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        <span class="google-symbols" style="font-size: 22px;">&#xe88e;</span>
                     </div>
                     <div>
                         <h3 class="modal-title">Tentang Seismograf</h3>
@@ -638,7 +637,7 @@
                     </div>
                 </div>
                 <button class="modal-close-btn" onclick="closeAppInfo()" title="Tutup">
-                    <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
                 </button>
             </div>
 
@@ -647,9 +646,7 @@
                 <div class="guide-card-section">
                     <div class="app-info-hero">
                         <div class="app-info-logo-wrap">
-                            <svg class="gmap-icon" style="width: 26px; height: 26px; color: var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                            </svg>
+                            <span class="google-symbols" style="font-size: 28px; color: var(--accent-blue);">&#xe80b;</span>
                         </div>
                         <div>
                             <div class="app-info-name">Seismograph Gracely</div>
@@ -671,22 +668,20 @@
                 <!-- 2. KARTU DEVELOPER / PENGEMBANG -->
                 <div class="guide-card-section">
                     <h4 class="guide-section-title">
-                        <svg class="gmap-icon" style="width: 17px; height: 17px; color: var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                        </svg>
+                        <span class="google-symbols" style="font-size: 18px; color: var(--accent-blue);">&#xe7fd;</span>
                         Pengembang Aplikasi
                     </h4>
                     <div class="dev-profile-card">
                         <div class="dev-avatar-wrap">
                             <div class="dev-avatar-initial">PS</div>
                             <div class="dev-verified-badge" title="Verified Developer">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                                <span class="google-symbols" style="font-size: 14px; color: #1a73e8;">&#xe86c;</span>
                             </div>
                         </div>
                         <div class="dev-info">
                             <div class="dev-name">Petrus Siahaan</div>
                             <div class="dev-role">Full-Stack Web &amp; GIS Developer</div>
-                            <div class="dev-location"><span class="icon-pin-svg"></span> Indonesia</div>
+                            <div class="dev-location"><span class="google-symbols" style="font-size: 14px; color: #ea4335;">&#xe0c8;</span> Indonesia</div>
                         </div>
                     </div>
 
@@ -695,37 +690,37 @@
                         <!-- SITUS RESMI -->
                         <a href="https://petrus.gracely.my.id/" target="_blank" rel="noopener noreferrer" class="dev-link-btn" title="Kunjungi Situs Resmi Petrus Siahaan">
                             <div class="dev-link-icon-wrap" style="background: rgba(26, 115, 232, 0.15); color: #1a73e8;">
-                                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 3.95-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.74 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+                                <span class="google-symbols" style="font-size: 20px;">&#xe80b;</span>
                             </div>
                             <div class="dev-link-text">
                                 <div class="dev-link-label">Situs Web</div>
                                 <div class="dev-link-val">petrus.gracely.my.id</div>
                             </div>
-                            <svg class="dev-link-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                            <span class="google-symbols dev-link-arrow" style="font-size: 18px;">&#xe895;</span>
                         </a>
 
                         <!-- INSTAGRAM -->
                         <a href="https://www.instagram.com/petrusperdana1/" target="_blank" rel="noopener noreferrer" class="dev-link-btn" title="Kunjungi Instagram @petrusperdana1">
                             <div class="dev-link-icon-wrap" style="background: rgba(225, 48, 108, 0.15); color: #e1306c;">
-                                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                <span class="google-symbols" style="font-size: 20px;">&#xe39e;</span>
                             </div>
                             <div class="dev-link-text">
                                 <div class="dev-link-label">Instagram</div>
                                 <div class="dev-link-val">@petrusperdana1</div>
                             </div>
-                            <svg class="dev-link-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                            <span class="google-symbols dev-link-arrow" style="font-size: 18px;">&#xe895;</span>
                         </a>
 
                         <!-- FACEBOOK -->
                         <a href="https://www.facebook.com/petrusperdana1" target="_blank" rel="noopener noreferrer" class="dev-link-btn" title="Kunjungi Facebook Petrus Perdana">
                             <div class="dev-link-icon-wrap" style="background: rgba(24, 119, 242, 0.15); color: #1877f2;">
-                                <svg class="gmap-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95C18.05 21.45 22 17.19 22 12z"/></svg>
+                                <span class="google-symbols" style="font-size: 20px;">&#xe80d;</span>
                             </div>
                             <div class="dev-link-text">
                                 <div class="dev-link-label">Facebook</div>
                                 <div class="dev-link-val">petrusperdana1</div>
                             </div>
-                            <svg class="dev-link-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                            <span class="google-symbols dev-link-arrow" style="font-size: 18px;">&#xe895;</span>
                         </a>
                     </div>
                 </div>
@@ -734,10 +729,10 @@
     </div>
 
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=14.3"></script>
+    <script src="faults.js?v=14.4"></script>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=14.3"></script>
+    <script src="app.js?v=14.4"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>
