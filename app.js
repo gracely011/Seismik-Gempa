@@ -803,6 +803,8 @@ async function loadMapData(silent = false) {
 
     // Masukkan ke quakesArray dan pasang marker di Leaflet
     quakesArray = uniqueQuakes;
+    checkForNewEarthquakeEvent(uniqueQuakes);
+
     quakesArray.forEach((q, idx) => {
         addEarthquakeMarker(q, idx === 0);
     });
@@ -2500,6 +2502,7 @@ function bootApp() {
     renderBookmarkedQuakesUI();
     renderRecentSearchesUI();
     updateRecentQuakesUI();
+    updateAutoBroadcastUI();
 
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
@@ -2543,9 +2546,22 @@ function simulateEarthquake(mag) {
     // Bunyikan sirene darurat jika alarm aktif dan M >= 5.0
     if (isAlarmOn) {
         playEmergencySiren();
-        if (mag >= 5.0) {
+        if (mag >= 5.0 && !isAutoBroadcastOn) {
             speakAlert(`Peringatan getaran gempa magnitudo ${mag.toFixed(1)} terdeteksi`);
         }
+    }
+
+    // Jika mode siaran otomatis sedang ON, jalankan uji coba siaran suara simulasi
+    if (isAutoBroadcastOn && !isMuted) {
+        broadcastQuakeEvent({
+            mag: mag,
+            place: viewedPlaceObj?.main ? `Wilayah ${viewedPlaceObj.main}` : "Wilayah Indonesia",
+            depth: `${Math.round(mag * 4)} km`,
+            potensi: mag >= 7.0 ? "Berpotensi tsunami (Uji Simulasi)" : "Tidak berpotensi tsunami",
+            time: "Baru saja",
+            lat: viewedCoords[0],
+            lon: viewedCoords[1]
+        }, true);
     }
 
     const durationMs = 8000;
@@ -2631,6 +2647,180 @@ function speakAlert(text) {
             window.speechSynthesis.speak(utterance);
         }
     } catch (e) { }
+}
+
+// ==================== MODE SIAGA SIARAN SUARA GEMPA REAL-TIME (AUTO BROADCAST) ====================
+let isAutoBroadcastOn = localStorage.getItem('seismo_auto_broadcast') === 'true';
+let lastKnownQuakeSignature = localStorage.getItem('seismo_last_sig') || '';
+let isBroadcastingAlert = false;
+
+function updateAutoBroadcastUI() {
+    const btn = document.getElementById("btnAutoBroadcast");
+    const txt = document.getElementById("autoBroadcastText");
+    const icon = document.getElementById("autoBroadcastIcon");
+    if (!btn || !txt) return;
+
+    if (isAutoBroadcastOn) {
+        btn.classList.add("active-mode");
+        txt.innerText = "SIARAN OTOMATIS: ON";
+        btn.title = "Mode Siaga Aktif: Suara otomatis menyiarkan gempa baru seketika saat terdeteksi (Klik untuk Nonaktifkan)";
+        if (icon) {
+            icon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+        }
+    } else {
+        btn.classList.remove("active-mode");
+        btn.classList.remove("speaking");
+        txt.innerText = "SIARAN OTOMATIS: OFF";
+        btn.title = "Mode Siaga Nonaktif: Klik untuk Aktifkan Siaran Suara Otomatis";
+        if (icon) {
+            icon.innerHTML = '<path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 4.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-4h2l5 3V5L11 8H4zm9 4.38L10.3 12H4v-2h6.3L13 8.62v4.76z"/>';
+        }
+    }
+}
+
+function toggleAutoBroadcastAlert() {
+    isAutoBroadcastOn = !isAutoBroadcastOn;
+    try {
+        localStorage.setItem('seismo_auto_broadcast', isAutoBroadcastOn ? 'true' : 'false');
+    } catch (e) { }
+
+    updateAutoBroadcastUI();
+
+    if (isAutoBroadcastOn) {
+        // Inisialisasi Audio Context agar tidak diblokir autoplay policy
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (e) { }
+
+        // Simpan signature gempa yang sedang ada saat ini sebagai baseline (agar tidak menyiarkan gempa lama)
+        if (quakesArray && quakesArray.length > 0) {
+            const latest = quakesArray[0];
+            lastKnownQuakeSignature = (latest.iso || latest.time) + '_' + latest.lat.toFixed(2) + '_' + latest.lon.toFixed(2);
+            try { localStorage.setItem('seismo_last_sig', lastKnownQuakeSignature); } catch (e) { }
+        }
+
+        showToastNotification("🔊 Siaran Suara Otomatis: AKTIF (Siaga Gempa Baru)");
+        speakAlert("Mode siaga siaran suara gempa otomatis diaktifkan. Sistem akan otomatis bersuara saat ada gempa baru terdeteksi.");
+    } else {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        isBroadcastingAlert = false;
+        showToastNotification("📢 Siaran Suara Otomatis: NONAKTIF");
+        speakAlert("Mode siaga suara dinonaktifkan.");
+    }
+}
+
+function checkForNewEarthquakeEvent(uniqueQuakes) {
+    if (!uniqueQuakes || uniqueQuakes.length === 0) return;
+
+    const latest = uniqueQuakes[0];
+    const currentSig = (latest.iso || latest.time) + '_' + latest.lat.toFixed(2) + '_' + latest.lon.toFixed(2);
+
+    if (!lastKnownQuakeSignature) {
+        // Inisialisasi awal saat buka aplikasi agar gempa lama tidak disiarkan ulang
+        lastKnownQuakeSignature = currentSig;
+        try { localStorage.setItem('seismo_last_sig', currentSig); } catch (e) { }
+        return;
+    }
+
+    // Terdeteksi gempa baru secara real-time!
+    if (currentSig !== lastKnownQuakeSignature) {
+        lastKnownQuakeSignature = currentSig;
+        try { localStorage.setItem('seismo_last_sig', currentSig); } catch (e) { }
+
+        if (isAutoBroadcastOn && !isMuted) {
+            broadcastQuakeEvent(latest, true);
+        }
+    }
+}
+
+function broadcastQuakeEvent(q, isAutoTrigger = false) {
+    if (!q || isMuted) return;
+
+    const btn = document.getElementById("btnAutoBroadcast");
+    const txt = document.getElementById("autoBroadcastText");
+
+    const mag = q.mag ? q.mag.toFixed(1) : "0";
+    let placeSpeech = q.place || "Wilayah Indonesia";
+
+    // Optimasi teks tempat untuk pelafalan suara Indonesia yang fasih
+    placeSpeech = placeSpeech
+        .replace(/\bkm\b/gi, 'kilometer')
+        .replace(/\bS of\b/gi, 'Selatan')
+        .replace(/\bN of\b/gi, 'Utara')
+        .replace(/\bW of\b/gi, 'Barat')
+        .replace(/\bE of\b/gi, 'Timur')
+        .replace(/\bSW of\b/gi, 'Barat Daya')
+        .replace(/\bNW of\b/gi, 'Barat Laut')
+        .replace(/\bSE of\b/gi, 'Tenggara')
+        .replace(/\bNE of\b/gi, 'Timur Laut');
+
+    let depthSpeech = q.depth ? String(q.depth).replace(/\bkm\b/gi, 'kilometer') : "10 kilometer";
+    let timeSpeech = q.time || "baru saja";
+    let potensiSpeech = q.potensi || "Tidak berpotensi tsunami";
+
+    const latDeg = Math.abs(q.lat).toFixed(2);
+    const lonDeg = Math.abs(q.lon).toFixed(2);
+    const latDir = q.lat >= 0 ? "Lintang Utara" : "Lintang Selatan";
+    const lonDir = q.lon >= 0 ? "Bujur Timur" : "Bujur Barat";
+    const coordSpeech = `${latDeg} derajat ${latDir}, dan ${lonDeg} derajat ${lonDir}`;
+
+    const dist = hasUserGPS ? calcDistance(userCoords[0], userCoords[1], q.lat, q.lon) : null;
+
+    // 1. Bunyikan sirene peringatan awal
+    playEmergencySiren();
+
+    // 2. Arahkan peta ke lokasi gempa
+    focusQuake(q.lat, q.lon);
+
+    // 3. Rangkai naskah siaran suara
+    let speechText = isAutoTrigger ? `Peringatan gempa bumi baru terdeteksi! ` : `Peringatan gempa bumi terkini! `;
+    speechText += `Gempa bermagnitudo ${mag} mengguncang ${placeSpeech}. `;
+    speechText += `Waktu kejadian: ${timeSpeech}. `;
+    speechText += `Kedalaman gempa: ${depthSpeech}. `;
+    speechText += `Koordinat pusat gempa: ${coordSpeech}. `;
+    speechText += `Status: ${potensiSpeech}. `;
+    if (dist !== null) {
+        speechText += `Pusat gempa berjarak sekitar ${dist} kilometer dari lokasi Anda saat ini. `;
+    }
+    speechText += `Warga dihimbau tetap tenang dan waspada terhadap kemungkinan gempa susulan.`;
+
+    // 4. Update visual tombol
+    isBroadcastingAlert = true;
+    if (btn) {
+        btn.classList.add("speaking");
+        if (txt) txt.innerText = "MENYIARKAN SUARA...";
+    }
+
+    // 5. Eksekusi SpeechSynthesis
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(speechText);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.98;
+        utterance.pitch = 1.0;
+
+        const resetBtnState = () => {
+            isBroadcastingAlert = false;
+            if (btn) btn.classList.remove("speaking");
+            updateAutoBroadcastUI();
+        };
+
+        utterance.onend = resetBtnState;
+        utterance.onerror = resetBtnState;
+
+        // Beri jeda 1.2 detik agar sirene peringatan awal terdengar sebelum suara berbicara
+        setTimeout(() => {
+            if (isBroadcastingAlert) {
+                window.speechSynthesis.speak(utterance);
+            }
+        }, 1200);
+    } else {
+        showToastNotification("Perangkat tidak mendukung suara sintesis web.");
+        isBroadcastingAlert = false;
+        if (btn) btn.classList.remove("speaking");
+        updateAutoBroadcastUI();
+    }
 }
 
 // ==================== PANDUAN SIAGA MITIGASI MODAL ====================

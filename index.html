@@ -99,7 +99,7 @@
     </noscript>
 
     <!-- CORE STYLESHEET -->
-    <link rel="stylesheet" href="style.css?v=14.2">
+    <link rel="stylesheet" href="style.css?v=14.3">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -330,6 +330,14 @@
                         <button class="btn-act" id="btnAlarm" onclick="toggleAlarm()">ALARM: OFF</button>
                         <button class="btn-act" onclick="loadMapData()">REFRESH PETA</button>
                     </div>
+
+                    <!-- TOMBOL MODE SIAGA SIARAN SUARA GEMPA REAL-TIME OTOMATIS -->
+                    <button class="btn-broadcast-alert" id="btnAutoBroadcast" onclick="toggleAutoBroadcastAlert()" title="Mode Siaga: Siarkan suara peringatan otomatis seketika saat terdeteksi gempa bumi baru">
+                        <svg class="gmap-icon" id="autoBroadcastIcon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 4.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-4h2l5 3V5L11 8H4zm9 4.38L10.3 12H4v-2h6.3L13 8.62v4.76z"/>
+                        </svg>
+                        <span id="autoBroadcastText">SIARAN OTOMATIS: OFF</span>
+                    </button>
 
                     <!-- SIMULASI GETARAN GEMPA (EDUKASI SEISMOLOGI) -->
                     <div class="simulation-section">
@@ -726,10 +734,10 @@
     </div>
 
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=14.2"></script>
+    <script src="faults.js?v=14.3"></script>
 
     <!-- MAIN APP SCRIPT -->
-    <script src="app.js?v=14.2"></script>
+    <script src="app.js?v=14.3"></script>
 
     <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
     <script>
