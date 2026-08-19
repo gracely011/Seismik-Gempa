@@ -582,44 +582,87 @@ function setDrawerSnapState(state) {
 
 function handleMenuBtnClick() {
     if (window.innerWidth > 768) {
-        toggleSidebar();
+        if (isPanelCollapsed) {
+            toggleSidebar(true);
+        } else {
+            toggleSidebar(false);
+        }
     } else {
         switchNavTab('monitor');
     }
 }
 
-function toggleSidebar() {
+function updateDesktopNavRailActiveState() {
+    const menuBtn = document.getElementById("railMenuBtn");
+    const savedBtn = document.getElementById("railBtnSaved");
+    const infoBtn = document.getElementById("railBtnInfo");
+    const recentBtn = document.getElementById("railBtnRecent");
+    const guideBtn = document.getElementById("railBtnGuide");
+
+    if (isPanelCollapsed) {
+        // Jika sidebar ditutup, bersihkan status aktif dari SEMUA tombol nav rail desktop
+        if (menuBtn) menuBtn.classList.remove("active");
+        if (savedBtn) savedBtn.classList.remove("active");
+        if (infoBtn) infoBtn.classList.remove("active");
+        if (recentBtn) recentBtn.classList.remove("active");
+        if (guideBtn) guideBtn.classList.remove("active");
+    } else {
+        // Jika sidebar terbuka, aktifkan tombol sesuai tab aktif
+        if (menuBtn) menuBtn.classList.toggle("active", currentNavTab === 'monitor');
+        if (savedBtn) savedBtn.classList.toggle("active", currentNavTab === 'saved');
+        if (infoBtn) infoBtn.classList.toggle("active", currentNavTab === 'contribution');
+        if (recentBtn) recentBtn.classList.toggle("active", currentNavTab === 'recent');
+        if (guideBtn) guideBtn.classList.toggle("active", currentNavTab === 'guide');
+    }
+}
+
+function toggleSidebar(forceOpen = null) {
     if (window.innerWidth <= 768) {
         toggleMobileDrawer();
         return;
     }
     const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
-    const menuBtn = document.getElementById("railMenuBtn");
 
-    isPanelCollapsed = !isPanelCollapsed;
+    if (forceOpen !== null) {
+        isPanelCollapsed = !forceOpen;
+    } else {
+        isPanelCollapsed = !isPanelCollapsed;
+    }
+
     if (panel) panel.classList.toggle("collapsed", isPanelCollapsed);
-    if (menuBtn && currentNavTab === 'monitor') menuBtn.classList.toggle("active", !isPanelCollapsed);
     document.body.classList.toggle("panel-collapsed", isPanelCollapsed);
 
+    updateDesktopNavRailActiveState();
+
     setTimeout(() => {
-        map.invalidateSize();
-        resizeCanvas();
+        if (map) map.invalidateSize();
+        if (typeof resizeCanvas === 'function') resizeCanvas();
     }, 360);
 }
 
 function switchNavTab(tabName) {
-    // Jika mengklik tab yang sama di mobile
-    if (tabName === currentNavTab) {
-        if (window.innerWidth <= 768) {
+    if (window.innerWidth > 768) {
+        // Desktop: Jika sidebar tertutup, klik tab apapun SELALU membuka sidebar ke tab tersebut
+        if (isPanelCollapsed) {
+            currentNavTab = tabName;
+            toggleSidebar(true);
+        } else if (tabName === currentNavTab) {
+            // Jika klik tab yang sama saat sidebar terbuka, tutup sidebar
+            toggleSidebar(false);
+            return;
+        } else {
+            currentNavTab = tabName;
+        }
+    } else {
+        // Mobile behavior
+        if (tabName === currentNavTab) {
             if (tabName === 'saved' || tabName === 'contribution' || tabName === 'guide') {
-                // Tab Anda / Kontribusi / Siaga: toggle antara 100 dan 0
                 if (currentDrawerSnapState === '100') {
                     setDrawerSnapState('0');
                 } else {
                     setDrawerSnapState('100');
                 }
             } else if (tabName === 'monitor') {
-                // Tab Jelajahi: toggle 0 -> 30 -> 100 -> 30
                 if (currentDrawerSnapState === '0') {
                     setDrawerSnapState('30');
                 } else if (currentDrawerSnapState === '30') {
@@ -628,26 +671,10 @@ function switchNavTab(tabName) {
                     setDrawerSnapState('30');
                 }
             }
-        } else {
-            toggleSidebar();
+            return;
         }
-        return;
+        currentNavTab = tabName;
     }
-
-    currentNavTab = tabName;
-
-    // Perbarui status aktif pada tombol navigasi rail
-    const menuBtn = document.getElementById("railMenuBtn");
-    const savedBtn = document.getElementById("railBtnSaved");
-    const infoBtn = document.getElementById("railBtnInfo");
-    const recentBtn = document.getElementById("railBtnRecent");
-    const guideBtn = document.getElementById("railBtnGuide");
-
-    if (menuBtn) menuBtn.classList.toggle("active", tabName === 'monitor');
-    if (savedBtn) savedBtn.classList.toggle("active", tabName === 'saved');
-    if (infoBtn) infoBtn.classList.toggle("active", tabName === 'contribution');
-    if (recentBtn) recentBtn.classList.toggle("active", tabName === 'recent');
-    if (guideBtn) guideBtn.classList.toggle("active", tabName === 'guide');
 
     // Tampilkan panel tab yang sesuai
     const tabMonitor = document.getElementById("viewMonitor");
@@ -671,17 +698,27 @@ function switchNavTab(tabName) {
         render24hTimelineUI();
     }
 
-    // Perilaku pembukaan seragam di mobile
     if (window.innerWidth <= 768) {
+        // Perbarui status aktif pada tombol navigasi rail mobile
+        const menuBtn = document.getElementById("railMenuBtn");
+        const savedBtn = document.getElementById("railBtnSaved");
+        const infoBtn = document.getElementById("railBtnInfo");
+        const recentBtn = document.getElementById("railBtnRecent");
+        const guideBtn = document.getElementById("railBtnGuide");
+
+        if (menuBtn) menuBtn.classList.toggle("active", tabName === 'monitor');
+        if (savedBtn) savedBtn.classList.toggle("active", tabName === 'saved');
+        if (infoBtn) infoBtn.classList.toggle("active", tabName === 'contribution');
+        if (recentBtn) recentBtn.classList.toggle("active", tabName === 'recent');
+        if (guideBtn) guideBtn.classList.toggle("active", tabName === 'guide');
+
         if (tabName === 'saved' || tabName === 'contribution' || tabName === 'guide') {
             setDrawerSnapState('100');
         } else if (tabName === 'monitor') {
             setDrawerSnapState('30');
         }
     } else {
-        if (isPanelCollapsed) {
-            toggleSidebar();
-        }
+        updateDesktopNavRailActiveState();
     }
 }
 

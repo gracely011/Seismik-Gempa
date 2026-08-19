@@ -2494,11 +2494,11 @@ button.btn-act.active {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 20px;
+        height: 24px;
         width: 100%;
         cursor: grab;
         flex-shrink: 0;
-        padding-top: 4px;
+        padding: 8px 0 6px 0 !important;
         touch-action: none;
         user-select: none;
     }
@@ -2587,7 +2587,7 @@ button.btn-act.active {
 
     /* GOOGLE MAPS SEAMLESS HEADER STYLING */
     .area-gmap-header-seamless {
-        padding: 4px 0 8px 0;
+        padding: 6px 0 8px 0 !important;
     }
 
     .area-title-weather-row {
@@ -2639,28 +2639,43 @@ button.btn-act.active {
         background: #2d2f31;
     }
 
-    .assistant-title {
+    .gmap-ai-assistant-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .gmap-ai-sparkle-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #c2e7ff;
+        color: #001d35;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    body.theme-dark .gmap-ai-sparkle-icon {
+        background: #004a77;
+        color: #c2e7ff;
+    }
+
+    .gmap-ai-assistant-text {
         font-size: 13px;
         font-weight: 600;
         color: var(--text-primary);
-        margin-bottom: 4px;
+        line-height: 1.2;
     }
 
-    .assistant-pill-input {
-        background: var(--bg-card);
-        border-radius: 14px;
-        padding: 6px 10px;
+    .gmap-ai-assistant-sub {
         font-size: 11px;
         color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        gap: 6px;
     }
 
-    .assistant-avatars-cluster {
-        display: flex;
-        align-items: center;
-        gap: -6px;
+    .gmap-ai-arrow {
+        color: var(--text-muted);
         font-size: 18px;
     }
 
@@ -2677,6 +2692,7 @@ button.btn-act.active {
         display: flex;
         align-items: center;
         justify-content: center;
+        margin: 10px 0 4px 0;
     }
 
     body.theme-dark .gmap-pill-action-btn {
@@ -2689,7 +2705,7 @@ button.btn-act.active {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 4px 0 14px 0;
+        padding: 8px 0 14px 0 !important;
     }
 
     .tab-screen-title {
@@ -3120,10 +3136,12 @@ button.btn-act.active {
         display: none !important;
     }
 
-    /* LEVEL 100: 100% (SETINGGI SEARCH BAR, JANGKAR DI BOTTOM 60px) */
+    /* LEVEL 100: 100% (SETINGGI SEARCH BAR, MENUTUPI SEARCH BAR DI TOP: 12px) */
     .cards-scroll-wrap.state-100 {
-        height: calc(100vh - 70px) !important;
-        max-height: calc(100vh - 70px) !important;
+        height: calc(100vh - 72px) !important;
+        height: calc(100dvh - 72px) !important;
+        max-height: calc(100vh - 72px) !important;
+        max-height: calc(100dvh - 72px) !important;
         opacity: 1 !important;
         overflow-y: auto !important;
         z-index: 1005 !important;
