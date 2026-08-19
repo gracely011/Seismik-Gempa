@@ -677,59 +677,6 @@ function handleSettingsNav(tabName) {
     switchNavTab(tabName);
 }
 
-// ==================== MODAL SHARE / EMBED MAP ====================
-function openShareModal() {
-    closeDesktopSettings();
-    const modal = document.getElementById("modalShareEmbed");
-    if (modal) modal.style.display = "flex";
-}
-
-function closeShareModal(e) {
-    if (e && e.target && e.target !== e.currentTarget) return;
-    const modal = document.getElementById("modalShareEmbed");
-    if (modal) modal.style.display = "none";
-}
-
-function switchShareTab(tab) {
-    const btnLink = document.getElementById("tabShareLink");
-    const btnEmbed = document.getElementById("tabShareEmbed");
-    const paneLink = document.getElementById("paneShareLink");
-    const paneEmbed = document.getElementById("paneShareEmbed");
-
-    if (btnLink && btnEmbed && paneLink && paneEmbed) {
-        btnLink.classList.toggle("active", tab === 'link');
-        btnEmbed.classList.toggle("active", tab === 'embed');
-        paneLink.style.display = tab === 'link' ? 'block' : 'none';
-        paneEmbed.style.display = tab === 'embed' ? 'block' : 'none';
-    }
-}
-
-function copyShareUrl() {
-    const input = document.getElementById("shareUrlInput");
-    if (input) {
-        input.select();
-        navigator.clipboard.writeText(input.value).then(() => {
-            showNotification("Link peta berhasil disalin ke papan klip!");
-        }).catch(() => {
-            document.execCommand('copy');
-            showNotification("Link peta berhasil disalin!");
-        });
-    }
-}
-
-function copyEmbedIframe() {
-    const input = document.getElementById("shareEmbedInput");
-    if (input) {
-        input.select();
-        navigator.clipboard.writeText(input.value).then(() => {
-            showNotification("Kode embed peta berhasil disalin!");
-        }).catch(() => {
-            document.execCommand('copy');
-            showNotification("Kode embed peta berhasil disalin!");
-        });
-    }
-}
-
 let prePrintMapState = null;
 
 function printMapPage() {
@@ -873,158 +820,6 @@ window.addEventListener('afterprint', () => {
 
 
 
-// ==================== MULTI-LANGUAGE (i18n SYSTEM & MODAL) ====================
-let currentAppLanguage = localStorage.getItem("seismik_lang") || "id";
-
-const i18nDictionary = {
-    id: {
-        brandSub: "Maps",
-        sidebar: "Tampilkan sidebar",
-        saved: "Disimpan",
-        recent: "Terbaru",
-        contrib: "Kontribusi Anda",
-        shareLoc: "Berbagi lokasi",
-        globalQuakes: "Peta Gempa Seluruh Dunia",
-        timeline: "Linimasa Anda",
-        guide: "Panduan Siaga Bencana",
-        theme: "Mode Gelap / Terang",
-        shareMap: "Bagikan atau sematkan peta",
-        print: "Cetak",
-        appInfo: "Informasi Pengembang & Aplikasi",
-        tips: "Tips dan trik siaga gempa",
-        help: "Dapatkan bantuan",
-        lang: "Bahasa",
-        searchPlaceholder: "Cari kota, wilayah, atau sesar..."
-    },
-    en: {
-        brandSub: "Maps",
-        sidebar: "Show sidebar",
-        saved: "Saved",
-        recent: "Recents",
-        contrib: "Your contributions",
-        shareLoc: "Location sharing",
-        globalQuakes: "Global Earthquake Map",
-        timeline: "Your timeline",
-        guide: "Disaster Preparedness Guide",
-        theme: "Dark / Light Mode",
-        shareMap: "Share or embed map",
-        print: "Print",
-        appInfo: "Developer & App Information",
-        tips: "Earthquake safety tips",
-        help: "Get help",
-        lang: "Language",
-        searchPlaceholder: "Search city, region, or fault..."
-    }
-};
-
-function openLanguageModal() {
-    closeDesktopSettings();
-    const modal = document.getElementById("modalLanguagePicker");
-    if (modal) modal.style.display = "flex";
-}
-
-function closeLanguageModal(e) {
-    if (e && e.target && e.target !== e.currentTarget) return;
-    const modal = document.getElementById("modalLanguagePicker");
-    if (modal) modal.style.display = "none";
-}
-
-function setAppLanguage(langCode, langName) {
-    currentAppLanguage = langCode;
-    localStorage.setItem("seismik_lang", langCode);
-    closeLanguageModal();
-
-    // 1. Atur Cookie googtrans untuk Google Translate
-    if (langCode === 'id') {
-        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "googtrans=/id/id; path=/;";
-        try {
-            if (window.location.hostname) {
-                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
-                document.cookie = "googtrans=/id/id; path=/; domain=" + window.location.hostname;
-            }
-        } catch (e) {}
-    } else {
-        document.cookie = `googtrans=/id/${langCode}; path=/;`;
-        try {
-            if (window.location.hostname) {
-                document.cookie = `googtrans=/id/${langCode}; path=/; domain=${window.location.hostname}`;
-                document.cookie = `googtrans=/id/${langCode}; path=/; domain=.${window.location.hostname}`;
-            }
-        } catch (e) {}
-    }
-
-    // 2. Memicu Mesin Penerjemah Google Translate (.goog-te-combo) secara Real-Time
-    triggerGoogleTranslate(langCode);
-
-    // 3. Terapkan pembaruan visual UI
-    applyLanguage(langCode);
-
-    if (typeof showNotification === 'function') {
-        showNotification(`Bahasa diubah ke ${langName}`);
-    }
-}
-
-function triggerGoogleTranslate(langCode) {
-    const targetCode = (langCode === 'zh-cn' ? 'zh-CN' : (langCode === 'zh-tw' ? 'zh-TW' : langCode));
-    const combo = document.querySelector('.goog-te-combo');
-    if (combo) {
-        combo.value = (langCode === 'id' ? 'id' : targetCode);
-        combo.dispatchEvent(new Event('change'));
-    } else {
-        let attempts = 0;
-        const interval = setInterval(() => {
-            attempts++;
-            const c = document.querySelector('.goog-te-combo');
-            if (c) {
-                clearInterval(interval);
-                c.value = (langCode === 'id' ? 'id' : targetCode);
-                c.dispatchEvent(new Event('change'));
-            } else if (attempts > 20) {
-                clearInterval(interval);
-            }
-        }, 150);
-    }
-}
-
-function applyLanguage(langCode) {
-    const dict = i18nDictionary[langCode] || i18nDictionary.id;
-
-    // Update labels in desktop settings drawer
-    const globalQuakesEl = document.getElementById("i18nGlobalQuakes");
-    const shareEl = document.getElementById("i18nShareMap");
-    const printEl = document.getElementById("i18nPrint");
-    const appInfoEl = document.getElementById("i18nAppInfo");
-    const tipsEl = document.getElementById("i18nTips");
-    const helpEl = document.getElementById("i18nHelp");
-    const langEl = document.getElementById("i18nLang");
-    const searchInput = document.getElementById("searchInput");
-
-    if (globalQuakesEl) globalQuakesEl.textContent = dict.globalQuakes;
-    if (shareEl) shareEl.textContent = dict.shareMap;
-    if (printEl) printEl.textContent = dict.print;
-    if (appInfoEl) appInfoEl.textContent = dict.appInfo;
-    if (tipsEl) tipsEl.textContent = dict.tips;
-    if (helpEl) helpEl.textContent = dict.help;
-    if (langEl) langEl.textContent = dict.lang;
-    if (searchInput) searchInput.setAttribute("placeholder", dict.searchPlaceholder);
-
-    // Update active class in language modal
-    document.querySelectorAll(".lang-item").forEach(el => {
-        const isSelected = el.getAttribute("data-lang") === langCode;
-        el.classList.toggle("active-lang", isSelected);
-        if (isSelected) {
-            if (!el.querySelector(".QxsAAd")) {
-                const text = el.textContent;
-                el.innerHTML = `<span class="QxsAAd">${text}</span>`;
-            }
-        } else {
-            const span = el.querySelector(".QxsAAd");
-            if (span) el.textContent = span.textContent;
-        }
-    });
-}
-
 function handleMenuBtnClick() {
     if (window.innerWidth > 768) {
         openDesktopSettings();
@@ -1162,10 +957,6 @@ function switchNavTab(tabName) {
     } else {
         updateDesktopNavRailActiveState();
     }
-}
-
-function openDisasterGuide() {
-    switchNavTab('guide');
 }
 
 function ratePlace(stars) {
@@ -3209,20 +3000,6 @@ function requestFreshGPS(panToLocation = true) {
     );
 }
 
-// ==================== ABOUT & DEVELOPER MODAL ====================
-function openAppInfo() {
-    const modal = document.getElementById("modalAppInfo");
-    if (modal) {
-        modal.style.display = "flex";
-    }
-}
-
-function closeAppInfo(e) {
-    if (e && e.target && e.target !== e.currentTarget) return;
-    const modal = document.getElementById("modalAppInfo");
-    if (modal) modal.style.display = "none";
-}
-
 // ==================== HISTATS ANALYTICS TRACKER ====================
 function initHistats() {
     if (location.protocol === 'file:') return;
@@ -3661,73 +3438,6 @@ function broadcastQuakeEvent(q, isAutoTrigger = false) {
         updateAutoBroadcastUI();
     }
 }
-
-// ==================== PANDUAN SIAGA MITIGASI MODAL ====================
-function openDisasterGuide() {
-    const modal = document.getElementById("modalDisasterGuide");
-    if (modal) {
-        modal.style.display = "flex";
-    }
-}
-
-function closeDisasterGuide(e) {
-    if (e && e.target && e.target !== e.currentTarget) return;
-    const modal = document.getElementById("modalDisasterGuide");
-    if (modal) modal.style.display = "none";
-}
-
-function handleContactClick(number, name, e) {
-    try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(number);
-        }
-    } catch (err) { }
-    showToastNotification(`📞 Nomor ${name} (${number}) siap dipanggil / disalin ke clipboard!`);
-}
-
-function showToastNotification(msg) {
-    let toast = document.getElementById("seismoToast");
-    if (!toast) {
-        toast = document.createElement("div");
-        toast.id = "seismoToast";
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #202124;
-            color: #ffffff;
-            font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 10px 18px;
-            border-radius: 24px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.15);
-            z-index: 1000000;
-            opacity: 0;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-        `;
-        document.body.appendChild(toast);
-    }
-    toast.innerText = msg;
-    toast.style.opacity = "1";
-    toast.style.transform = "translateX(-50%) translateY(0)";
-
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateX(-50%) translateY(20px)";
-    }, 2800);
-}
-
-// Tutup modal panduan & modal info dengan tombol Esc
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-        closeDisasterGuide();
-        closeAppInfo();
-    }
-});
 
 // ==================== PWA INSTALL PROMPT CONTROLLER ====================
 let deferredPrompt = null;

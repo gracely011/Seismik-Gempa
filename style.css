@@ -431,7 +431,20 @@ body.theme-light #map {
         display: flex !important;
     }
 
-    body.nav-rail-disabled #searchIconBtn {
+    body:not(.nav-rail-disabled) #searchMenuBtn {
+        display: none !important;
+    }
+
+    /* Di desktop: Kaca pembesar di kiri disembunyikan, kaca pembesar selalu di kanan sesuai Google Maps asli */
+    #searchIconBtn {
+        display: none !important;
+    }
+
+    #searchSubmitBtn {
+        display: flex !important;
+    }
+
+    #searchDividerVertical {
         display: none !important;
     }
 
@@ -439,14 +452,6 @@ body.theme-light #map {
     body.nav-rail-disabled:not(.panel-collapsed) .search-box-card {
         border-radius: 16px 16px 0 0 !important;
         border-bottom: 1px solid var(--border-color) !important;
-    }
-
-    body.nav-rail-disabled #searchSubmitBtn {
-        display: flex !important;
-    }
-
-    body.nav-rail-disabled #searchDividerVertical {
-        display: block !important;
     }
 
     body.nav-rail-disabled .cards-scroll-wrap {
@@ -474,14 +479,6 @@ body.theme-light #map {
         border-radius: 24px !important;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 -1px 0px rgba(0, 0, 0, 0.02) !important;
         pointer-events: auto !important;
-    }
-
-    .panel-container.collapsed #searchSubmitBtn {
-        display: flex !important;
-    }
-
-    .panel-container.collapsed #searchDividerVertical {
-        display: block !important;
     }
 
     .panel-container .cards-scroll-wrap {
@@ -1476,7 +1473,7 @@ body.theme-dark .weather-pill-gmap {
     .layer-switcher-wrapper {
         position: fixed !important;
         bottom: 20px !important;
-        left: calc(var(--rail-width) + var(--panel-width) + 16px) !important;
+        left: calc(var(--rail-width) + 12px + var(--panel-width) + 16px) !important;
         right: auto !important;
         top: auto !important;
         z-index: 1000 !important;
