@@ -1007,38 +1007,7 @@ async function loadMapData(silent = false) {
         console.warn("BMKG Gempadirasakan fetch error:", e);
     }
 
-    // 4. Failover Mirror (sesmograp.my.id/?data=1)
-    try {
-        const resMirror = await fetch("https://sesmograp.my.id/?data=1", { cache: "no-store" });
-        if (resMirror.ok) {
-            const dataMirror = await resMirror.json();
-            if (dataMirror.bmkg && dataMirror.bmkg.Infogempa && dataMirror.bmkg.Infogempa.gempa) {
-                dataMirror.bmkg.Infogempa.gempa.forEach(g => {
-                    let lat = 0, lon = 0;
-                    if (g.Coordinates) {
-                        [lat, lon] = g.Coordinates.split(',').map(v => parseFloat(v.trim()));
-                    } else {
-                        lat = parseFloat(g.Lintang) * (g.Lintang.includes("LS") ? -1 : 1);
-                        lon = parseFloat(g.Bujur) * (g.Bujur.includes("BB") ? -1 : 1);
-                    }
-                    let mag = parseFloat(g.Magnitude) || 0;
-                    let timeStr = g.Tanggal + " " + g.Jam;
-                    rawQuakes.push({
-                        lat, lon, mag,
-                        time: timeStr,
-                        iso: g.DateTime,
-                        place: g.Wilayah,
-                        depth: g.Kedalaman || "-",
-                        potensi: g.Potensi || "Tidak berpotensi tsunami",
-                        src: "BMKG Mirror",
-                        priority: 4
-                    });
-                });
-            }
-        }
-    } catch (e) { }
-
-    // 5. USGS Real-time API (Rentang 30 Hari Terakhir Wilayah Indonesia)
+    // 4. USGS Real-time API (Rentang 30 Hari Terakhir Wilayah Indonesia)
     try {
         const now = new Date();
         const pastDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));

@@ -2,16 +2,16 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v14.9';
+const CACHE_NAME = 'seismo-cache-v15.0';
 
 const PRECACHE_ASSETS = [
     './',
     'index.html',
     'manifest.json',
     'icon.svg',
-    'faults.js?v=14.9',
-    'style.css?v=14.9',
-    'app.js?v=14.9',
+    'faults.js?v=15.0',
+    'style.css?v=15.0',
+    'app.js?v=15.0',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
     'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap',
@@ -53,10 +53,8 @@ self.addEventListener('fetch', event => {
         url.hostname.includes('usgs.gov') ||
         url.hostname.includes('open-meteo.com') ||
         url.hostname.includes('bigdatacloud.net') ||
-        url.hostname.includes('sesmograp.my.id') ||
         url.hostname.includes('cartocdn.com') ||
         url.hostname.includes('arcgisonline.com') ||
-        url.hostname.includes('opentopomap.org') ||
         url.hostname.includes('openstreetmap.org') ||
         url.hostname.includes('googletagmanager.com') ||
         url.hostname.includes('google-analytics.com') ||
