@@ -73,9 +73,11 @@ function updateThemeIcon(isLight) {
 function initTheme() {
     if (currentTheme === 'dark') {
         document.body.classList.remove('theme-light');
+        document.body.classList.add('theme-dark');
         updateThemeIcon(false);
         if (currentMapLayer === 'light') currentMapLayer = 'dark';
     } else {
+        document.body.classList.remove('theme-dark');
         document.body.classList.add('theme-light');
         updateThemeIcon(true);
         if (currentMapLayer === 'dark') currentMapLayer = 'light';
@@ -85,11 +87,13 @@ function initTheme() {
 function toggleThemeMode() {
     if (document.body.classList.contains('theme-light')) {
         document.body.classList.remove('theme-light');
+        document.body.classList.add('theme-dark');
         localStorage.setItem('seismo_theme', 'dark');
         currentTheme = 'dark';
         updateThemeIcon(false);
         applyMapLayer('dark');
     } else {
+        document.body.classList.remove('theme-dark');
         document.body.classList.add('theme-light');
         localStorage.setItem('seismo_theme', 'light');
         currentTheme = 'light';
@@ -117,8 +121,8 @@ const map = L.map("map", {
     zoomAnimation: true,
     fadeAnimation: true,
     markerZoomAnimation: true,
-    zoomSnap: 1,
-    zoomDelta: 1,
+    zoomSnap: 0.1,
+    zoomDelta: 0.5,
     wheelPxPerZoomLevel: 120,
     inertia: true,
     inertiaDeceleration: 3000
@@ -580,21 +584,440 @@ function setDrawerSnapState(state) {
     if (infoBtn) infoBtn.classList.toggle("active", currentNavTab === 'contribution' && state !== '0');
 }
 
+// State preferensi Nav Rail Desktop ("Tampilkan sidebar" di Settings Drawer)
+let isNavRailEnabled = (localStorage.getItem('gmap_sidebar_enabled') !== '0');
+
+// State preferensi Mode Gempa Seluruh Dunia (USGS Global Real-time)
+let isGlobalQuakeMode = (localStorage.getItem('seismo_global_mode') === '1');
+
+// ==================== DESKTOP SETTINGS DRAWER (MENU SAMPING GOOGLE MAPS) ====================
+function openDesktopSettings() {
+    const wrap = document.getElementById("gmapSettingsWrapper");
+    const sw = document.getElementById("settingsSidebarSwitch");
+    const gSw = document.getElementById("settingsGlobalQuakeSwitch");
+    if (wrap) wrap.classList.add("open");
+    if (sw) sw.setAttribute("aria-checked", isNavRailEnabled ? "true" : "false");
+    if (gSw) gSw.setAttribute("aria-checked", isGlobalQuakeMode ? "true" : "false");
+}
+
+function closeDesktopSettings() {
+    const wrap = document.getElementById("gmapSettingsWrapper");
+    if (wrap) wrap.classList.remove("open");
+}
+
+function toggleDesktopSettings() {
+    const wrap = document.getElementById("gmapSettingsWrapper");
+    if (wrap) {
+        if (wrap.classList.contains("open")) {
+            closeDesktopSettings();
+        } else {
+            openDesktopSettings();
+        }
+    }
+}
+
+function toggleSidebarFromSettings() {
+    if (window.innerWidth <= 768) return;
+    isNavRailEnabled = !isNavRailEnabled;
+    const sw = document.getElementById("settingsSidebarSwitch");
+    if (sw) sw.setAttribute("aria-checked", isNavRailEnabled ? "true" : "false");
+    document.body.classList.toggle("nav-rail-disabled", !isNavRailEnabled);
+    try { localStorage.setItem("gmap_sidebar_enabled", isNavRailEnabled ? "1" : "0"); } catch(e){}
+
+    const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+    if (!isNavRailEnabled) {
+        // Saat nav rail dimatikan, mulai dari kondisi floating search bar mandiri (collapsed)
+        isPanelCollapsed = true;
+        document.body.classList.add("panel-collapsed");
+        if (panel) panel.classList.add("collapsed");
+    } else {
+        // Saat nav rail dihidupkan kembali, buka panel samping normal
+        isPanelCollapsed = false;
+        document.body.classList.remove("panel-collapsed");
+        if (panel) panel.classList.remove("collapsed");
+    }
+    updateDesktopNavRailActiveState();
+    
+    // Invalidate map size
+    if (typeof map !== 'undefined' && map) {
+        setTimeout(() => map.invalidateSize(), 300);
+    }
+}
+
+function toggleGlobalEarthquakeMode() {
+    isGlobalQuakeMode = !isGlobalQuakeMode;
+    const gSw = document.getElementById("settingsGlobalQuakeSwitch");
+    if (gSw) gSw.setAttribute("aria-checked", isGlobalQuakeMode ? "true" : "false");
+    try { localStorage.setItem("seismo_global_mode", isGlobalQuakeMode ? "1" : "0"); } catch(e){}
+
+    if (typeof showNotification === 'function') {
+        showNotification(isGlobalQuakeMode 
+            ? "Peta Gempa Seluruh Dunia Aktif (USGS Global & BMKG)" 
+            : "Mode Gempa Wilayah Indonesia Aktif (BMKG & USGS)");
+    }
+
+    // Refresh realtime earthquakes with new scope
+    if (typeof loadMapData === 'function') {
+        loadMapData(false);
+    }
+}
+
+function handleSettingsNav(tabName) {
+    closeDesktopSettings();
+    switchNavTab(tabName);
+}
+
+// ==================== MODAL SHARE / EMBED MAP ====================
+function openShareModal() {
+    closeDesktopSettings();
+    const modal = document.getElementById("modalShareEmbed");
+    if (modal) modal.style.display = "flex";
+}
+
+function closeShareModal(e) {
+    if (e && e.target && e.target !== e.currentTarget) return;
+    const modal = document.getElementById("modalShareEmbed");
+    if (modal) modal.style.display = "none";
+}
+
+function switchShareTab(tab) {
+    const btnLink = document.getElementById("tabShareLink");
+    const btnEmbed = document.getElementById("tabShareEmbed");
+    const paneLink = document.getElementById("paneShareLink");
+    const paneEmbed = document.getElementById("paneShareEmbed");
+
+    if (btnLink && btnEmbed && paneLink && paneEmbed) {
+        btnLink.classList.toggle("active", tab === 'link');
+        btnEmbed.classList.toggle("active", tab === 'embed');
+        paneLink.style.display = tab === 'link' ? 'block' : 'none';
+        paneEmbed.style.display = tab === 'embed' ? 'block' : 'none';
+    }
+}
+
+function copyShareUrl() {
+    const input = document.getElementById("shareUrlInput");
+    if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            showNotification("Link peta berhasil disalin ke papan klip!");
+        }).catch(() => {
+            document.execCommand('copy');
+            showNotification("Link peta berhasil disalin!");
+        });
+    }
+}
+
+function copyEmbedIframe() {
+    const input = document.getElementById("shareEmbedInput");
+    if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            showNotification("Kode embed peta berhasil disalin!");
+        }).catch(() => {
+            document.execCommand('copy');
+            showNotification("Kode embed peta berhasil disalin!");
+        });
+    }
+}
+
+let prePrintMapState = null;
+
+function printMapPage() {
+    closeDesktopSettings();
+    if (typeof closeLanguageModal === 'function') closeLanguageModal();
+    if (typeof closeShareModal === 'function') closeShareModal();
+    if (typeof closeLayerBottomSheet === 'function') closeLayerBottomSheet();
+
+    // 1. Rekam batas geografis (bounds) dan titik pusat aktif di layar
+    if (map) {
+        prePrintMapState = {
+            bounds: map.getBounds(),
+            center: map.getCenter(),
+            zoom: map.getZoom()
+        };
+    }
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    const hours = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const printTimeStr = `${day}/${month}/${year}, ${hours}.${mins}`;
+
+    const timeEl = document.getElementById("printBrowserTime");
+    if (timeEl) timeEl.textContent = printTimeStr;
+
+    const totalQuakes = Array.isArray(quakesArray) ? quakesArray.length : 0;
+    const latestQuake = Array.isArray(quakesArray) && quakesArray.length > 0 ? quakesArray[0] : null;
+
+    const syncEl = document.getElementById("printSyncSummary");
+    if (syncEl) {
+        syncEl.textContent = `${totalQuakes} Gempa Tersinkronisasi (BMKG & USGS)`;
+    }
+
+    const footerLeftEl = document.getElementById("printFooterLeft");
+    if (footerLeftEl) {
+        if (latestQuake) {
+            const magVal = (latestQuake.mag || 0).toFixed(1);
+            const locVal = latestQuake.place || 'Wilayah Indonesia';
+            footerLeftEl.textContent = `⚡ Mutakhir: M ${magVal} · ${locVal} (${latestQuake.time || '-'})`;
+        } else {
+            footerLeftEl.textContent = `📍 Area: ${userPlaceName || 'Indonesia'}`;
+        }
+    }
+
+    const notesInput = document.getElementById("printUserNotesInput");
+    if (notesInput) notesInput.value = '';
+    const notesPrintedText = document.getElementById("printNotesPrintedText");
+    if (notesPrintedText) notesPrintedText.textContent = '';
+
+    // 2. Beralih ke Halaman Pratinjau Cetak Interaktif Google Maps
+    document.body.classList.add('print-preview-mode');
+
+    // 3. Sesuaikan ukuran kanvas & hitung fitBounds agar seluruh area yang dilihat pengguna di layar muat utuh di bingkai cetak lanskap
+    setTimeout(() => {
+        if (map && prePrintMapState) {
+            map.invalidateSize({ animate: false });
+            map.fitBounds(prePrintMapState.bounds, {
+                animate: false,
+                padding: [15, 15],
+                maxZoom: prePrintMapState.zoom
+            });
+        }
+        if (notesInput) notesInput.focus();
+    }, 120);
+}
+
+function closePrintPreview() {
+    document.body.classList.remove('print-preview-mode');
+    setTimeout(() => {
+        if (map && prePrintMapState) {
+            map.invalidateSize({ animate: false });
+            map.setView(prePrintMapState.center, prePrintMapState.zoom, { animate: false });
+            prePrintMapState = null;
+        }
+    }, 120);
+}
+
+function executeBrowserPrint() {
+    const notesInput = document.getElementById("printUserNotesInput");
+    const notesPrintedText = document.getElementById("printNotesPrintedText");
+    if (notesInput && notesPrintedText) {
+        const text = notesInput.value.trim();
+        notesPrintedText.textContent = text ? `Catatan: ${text}` : '';
+    }
+
+    if (map && prePrintMapState) {
+        map.invalidateSize({ animate: false });
+        map.fitBounds(prePrintMapState.bounds, {
+            animate: false,
+            padding: [10, 10]
+        });
+    }
+
+    setTimeout(() => {
+        window.print();
+    }, 150);
+}
+
+// Keyboard shortcut: Enter untuk Cetak, Escape untuk Batal di Mode Pratinjau
+document.addEventListener('keydown', (e) => {
+    if (!document.body.classList.contains('print-preview-mode')) return;
+    if (e.key === 'Escape') {
+        closePrintPreview();
+    } else if (e.key === 'Enter' && e.target && e.target.id === 'printUserNotesInput') {
+        e.preventDefault();
+        executeBrowserPrint();
+    }
+});
+
+// Lifecycle Listener browser print
+window.addEventListener('beforeprint', () => {
+    const notesInput = document.getElementById("printUserNotesInput");
+    const notesPrintedText = document.getElementById("printNotesPrintedText");
+    if (notesInput && notesPrintedText && !notesPrintedText.textContent) {
+        const text = notesInput.value.trim();
+        notesPrintedText.textContent = text ? `Catatan: ${text}` : '';
+    }
+    if (map && prePrintMapState) {
+        map.invalidateSize({ animate: false });
+        map.fitBounds(prePrintMapState.bounds, {
+            animate: false,
+            padding: [10, 10]
+        });
+    }
+});
+
+window.addEventListener('afterprint', () => {
+    if (map && prePrintMapState) {
+        map.invalidateSize({ animate: false });
+        map.fitBounds(prePrintMapState.bounds, {
+            animate: false,
+            padding: [15, 15]
+        });
+    }
+});
+
+
+
+
+
+// ==================== MULTI-LANGUAGE (i18n SYSTEM & MODAL) ====================
+let currentAppLanguage = localStorage.getItem("seismik_lang") || "id";
+
+const i18nDictionary = {
+    id: {
+        brandSub: "Maps",
+        sidebar: "Tampilkan sidebar",
+        saved: "Disimpan",
+        recent: "Terbaru",
+        contrib: "Kontribusi Anda",
+        shareLoc: "Berbagi lokasi",
+        globalQuakes: "Peta Gempa Seluruh Dunia",
+        timeline: "Linimasa Anda",
+        guide: "Panduan Siaga Bencana",
+        theme: "Mode Gelap / Terang",
+        shareMap: "Bagikan atau sematkan peta",
+        print: "Cetak",
+        appInfo: "Informasi Pengembang & Aplikasi",
+        tips: "Tips dan trik siaga gempa",
+        help: "Dapatkan bantuan",
+        lang: "Bahasa",
+        searchPlaceholder: "Cari kota, wilayah, atau sesar..."
+    },
+    en: {
+        brandSub: "Maps",
+        sidebar: "Show sidebar",
+        saved: "Saved",
+        recent: "Recents",
+        contrib: "Your contributions",
+        shareLoc: "Location sharing",
+        globalQuakes: "Global Earthquake Map",
+        timeline: "Your timeline",
+        guide: "Disaster Preparedness Guide",
+        theme: "Dark / Light Mode",
+        shareMap: "Share or embed map",
+        print: "Print",
+        appInfo: "Developer & App Information",
+        tips: "Earthquake safety tips",
+        help: "Get help",
+        lang: "Language",
+        searchPlaceholder: "Search city, region, or fault..."
+    }
+};
+
+function openLanguageModal() {
+    closeDesktopSettings();
+    const modal = document.getElementById("modalLanguagePicker");
+    if (modal) modal.style.display = "flex";
+}
+
+function closeLanguageModal(e) {
+    if (e && e.target && e.target !== e.currentTarget) return;
+    const modal = document.getElementById("modalLanguagePicker");
+    if (modal) modal.style.display = "none";
+}
+
+function setAppLanguage(langCode, langName) {
+    currentAppLanguage = langCode;
+    localStorage.setItem("seismik_lang", langCode);
+    closeLanguageModal();
+
+    // 1. Atur Cookie googtrans untuk Google Translate
+    if (langCode === 'id') {
+        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "googtrans=/id/id; path=/;";
+        try {
+            if (window.location.hostname) {
+                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
+                document.cookie = "googtrans=/id/id; path=/; domain=" + window.location.hostname;
+            }
+        } catch (e) {}
+    } else {
+        document.cookie = `googtrans=/id/${langCode}; path=/;`;
+        try {
+            if (window.location.hostname) {
+                document.cookie = `googtrans=/id/${langCode}; path=/; domain=${window.location.hostname}`;
+                document.cookie = `googtrans=/id/${langCode}; path=/; domain=.${window.location.hostname}`;
+            }
+        } catch (e) {}
+    }
+
+    // 2. Memicu Mesin Penerjemah Google Translate (.goog-te-combo) secara Real-Time
+    triggerGoogleTranslate(langCode);
+
+    // 3. Terapkan pembaruan visual UI
+    applyLanguage(langCode);
+
+    if (typeof showNotification === 'function') {
+        showNotification(`Bahasa diubah ke ${langName}`);
+    }
+}
+
+function triggerGoogleTranslate(langCode) {
+    const targetCode = (langCode === 'zh-cn' ? 'zh-CN' : (langCode === 'zh-tw' ? 'zh-TW' : langCode));
+    const combo = document.querySelector('.goog-te-combo');
+    if (combo) {
+        combo.value = (langCode === 'id' ? 'id' : targetCode);
+        combo.dispatchEvent(new Event('change'));
+    } else {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            const c = document.querySelector('.goog-te-combo');
+            if (c) {
+                clearInterval(interval);
+                c.value = (langCode === 'id' ? 'id' : targetCode);
+                c.dispatchEvent(new Event('change'));
+            } else if (attempts > 20) {
+                clearInterval(interval);
+            }
+        }, 150);
+    }
+}
+
+function applyLanguage(langCode) {
+    const dict = i18nDictionary[langCode] || i18nDictionary.id;
+
+    // Update labels in desktop settings drawer
+    const globalQuakesEl = document.getElementById("i18nGlobalQuakes");
+    const shareEl = document.getElementById("i18nShareMap");
+    const printEl = document.getElementById("i18nPrint");
+    const appInfoEl = document.getElementById("i18nAppInfo");
+    const tipsEl = document.getElementById("i18nTips");
+    const helpEl = document.getElementById("i18nHelp");
+    const langEl = document.getElementById("i18nLang");
+    const searchInput = document.getElementById("searchInput");
+
+    if (globalQuakesEl) globalQuakesEl.textContent = dict.globalQuakes;
+    if (shareEl) shareEl.textContent = dict.shareMap;
+    if (printEl) printEl.textContent = dict.print;
+    if (appInfoEl) appInfoEl.textContent = dict.appInfo;
+    if (tipsEl) tipsEl.textContent = dict.tips;
+    if (helpEl) helpEl.textContent = dict.help;
+    if (langEl) langEl.textContent = dict.lang;
+    if (searchInput) searchInput.setAttribute("placeholder", dict.searchPlaceholder);
+
+    // Update active class in language modal
+    document.querySelectorAll(".lang-item").forEach(el => {
+        const isSelected = el.getAttribute("data-lang") === langCode;
+        el.classList.toggle("active-lang", isSelected);
+        if (isSelected) {
+            if (!el.querySelector(".QxsAAd")) {
+                const text = el.textContent;
+                el.innerHTML = `<span class="QxsAAd">${text}</span>`;
+            }
+        } else {
+            const span = el.querySelector(".QxsAAd");
+            if (span) el.textContent = span.textContent;
+        }
+    });
+}
+
 function handleMenuBtnClick() {
     if (window.innerWidth > 768) {
-        if (isPanelCollapsed) {
-            // Jika sidebar tertutup, buka langsung ke menu utama Jelajahi (Monitor)
-            switchNavTab('monitor');
-            toggleSidebar(true);
-        } else {
-            if (currentNavTab !== 'monitor') {
-                // Jika sedang di tab lain (Kontribusi, Siaga, Anda, Terbaru), kembali ke menu Jelajahi
-                switchNavTab('monitor');
-            } else {
-                // Jika sudah berada di Jelajahi, tutup sidebar
-                toggleSidebar(false);
-            }
-        }
+        openDesktopSettings();
     } else {
         switchNavTab('monitor');
     }
@@ -707,18 +1130,14 @@ function switchNavTab(tabName) {
     }
 
     if (window.innerWidth <= 768) {
-        // Perbarui status aktif pada tombol navigasi rail mobile
-        const menuBtn = document.getElementById("railMenuBtn");
-        const savedBtn = document.getElementById("railBtnSaved");
-        const infoBtn = document.getElementById("railBtnInfo");
-        const recentBtn = document.getElementById("railBtnRecent");
-        const guideBtn = document.getElementById("railBtnGuide");
+        // Perbarui status aktif pada tombol navigasi bawah mobile
+        const mobMonitor = document.getElementById("mobileNavBtnMonitor");
+        const mobSaved = document.getElementById("mobileNavBtnSaved");
+        const mobInfo = document.getElementById("mobileNavBtnInfo");
 
-        if (menuBtn) menuBtn.classList.toggle("active", tabName === 'monitor');
-        if (savedBtn) savedBtn.classList.toggle("active", tabName === 'saved');
-        if (infoBtn) infoBtn.classList.toggle("active", tabName === 'contribution');
-        if (recentBtn) recentBtn.classList.toggle("active", tabName === 'recent');
-        if (guideBtn) guideBtn.classList.toggle("active", tabName === 'guide');
+        if (mobMonitor) mobMonitor.classList.toggle("active", tabName === 'monitor');
+        if (mobSaved) mobSaved.classList.toggle("active", tabName === 'saved');
+        if (mobInfo) mobInfo.classList.toggle("active", tabName === 'contribution');
 
         if (tabName === 'saved' || tabName === 'contribution' || tabName === 'guide') {
             setDrawerSnapState('100');
@@ -1007,32 +1426,87 @@ async function loadMapData(silent = false) {
         console.warn("BMKG Gempadirasakan fetch error:", e);
     }
 
-    // 4. USGS Real-time API (Rentang 30 Hari Terakhir Wilayah Indonesia)
+    // 4. USGS Real-time API (Mode Global Seluruh Dunia vs Wilayah Indonesia)
     try {
-        const now = new Date();
-        const pastDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-        const startTimeStr = pastDate.toISOString().split('T')[0];
-        const usgsUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTimeStr}&minmagnitude=1.0&minlatitude=-11&maxlatitude=6&minlongitude=95&maxlongitude=141`;
+        if (isGlobalQuakeMode) {
+            // Mode Seluruh Dunia: Ambil Feed Global Real-time USGS (M 2.5+ 24 jam & M 4.5+ 7 hari)
+            const [resGlobalDay, resGlobalWeek] = await Promise.allSettled([
+                fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"),
+                fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson")
+            ]);
 
-        const resUSGS = await fetch(usgsUrl);
-        if (resUSGS.ok) {
-            const dataUSGS = await resUSGS.json();
-            if (dataUSGS.features && dataUSGS.features.length > 0) {
-                dataUSGS.features.forEach(f => {
-                    let [lon, lat, depth] = f.geometry.coordinates;
-                    let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
-                    let mag = parseFloat(f.properties.mag) || 0;
-                    let place = f.properties.place || "Wilayah Indonesia";
-                    rawQuakes.push({
-                        lat, lon, mag,
-                        time: timeStr,
-                        iso: new Date(f.properties.time).toISOString(),
-                        place: place,
-                        depth: `${Math.round(depth || 10)} km`,
-                        src: "USGS",
-                        priority: 5
-                    });
+            const globalFeatures = [];
+            if (resGlobalDay.status === 'fulfilled' && resGlobalDay.value.ok) {
+                const dataDay = await resGlobalDay.value.json();
+                if (dataDay.features) globalFeatures.push(...dataDay.features);
+            }
+            if (resGlobalWeek.status === 'fulfilled' && resGlobalWeek.value.ok) {
+                const dataWeek = await resGlobalWeek.value.json();
+                if (dataWeek.features) globalFeatures.push(...dataWeek.features);
+            }
+
+            globalFeatures.forEach(f => {
+                if (!f.geometry || !f.geometry.coordinates) return;
+                let [lon, lat, depth] = f.geometry.coordinates;
+                let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
+                let mag = parseFloat(f.properties.mag) || 0;
+                let place = f.properties.place || "Global Region";
+                rawQuakes.push({
+                    lat, lon, mag,
+                    time: timeStr,
+                    iso: new Date(f.properties.time).toISOString(),
+                    place: place,
+                    depth: `${Math.round(depth || 10)} km`,
+                    src: "USGS Global",
+                    priority: 5
                 });
+            });
+        } else {
+            // Mode Wilayah Indonesia (Default): Rentang 30 Hari Terakhir Khusus Teritori Indonesia
+            const now = new Date();
+            const pastDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            const startTimeStr = pastDate.toISOString().split('T')[0];
+            const usgsUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTimeStr}&minmagnitude=1.0&minlatitude=-11&maxlatitude=6&minlongitude=95&maxlongitude=141`;
+
+            const resUSGS = await fetch(usgsUrl);
+            if (resUSGS.ok) {
+                const dataUSGS = await resUSGS.json();
+                if (dataUSGS.features && dataUSGS.features.length > 0) {
+                    dataUSGS.features.forEach(f => {
+                        if (!f.geometry || !f.geometry.coordinates) return;
+                        let [lon, lat, depth] = f.geometry.coordinates;
+                        let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
+                        let mag = parseFloat(f.properties.mag) || 0;
+                        let place = f.properties.place || "";
+
+                        // Filter ketat: Jangan masukkan gempa negara tetangga (Filipina, Malaysia, PNG, dll) saat mode Indonesia
+                        const pLow = place.toLowerCase();
+                        const isForeign = [
+                            "philippines", "mindanao", "sarangani", "davao", "cotabato", "zamboanga", "manila", "visayas", "luzon", "generalsantos",
+                            "malaysia", "sabah", "sarawak", "kuala lumpur", "penang", "johor",
+                            "papua new guinea", "new britain", "bougainville", "port moresby",
+                            "timor-leste", "east timor", "dili",
+                            "brunei", "singapore", "australia", "thailand", "vietnam"
+                        ].some(country => pLow.includes(country));
+
+                        if (isForeign) return;
+
+                        // Pengecekan batas utara: Mindanao/Sarangani berada di lat > 4.5 dan lon 120-128
+                        if (lat > 4.5 && lon >= 120 && lon <= 128 && !pLow.includes("indonesia") && !pLow.includes("talaud") && !pLow.includes("sangihe")) {
+                            return;
+                        }
+
+                        rawQuakes.push({
+                            lat, lon, mag,
+                            time: timeStr,
+                            iso: new Date(f.properties.time).toISOString(),
+                            place: place || "Wilayah Indonesia",
+                            depth: `${Math.round(depth || 10)} km`,
+                            src: "USGS",
+                            priority: 5
+                        });
+                    });
+                }
             }
         }
     } catch (err) {
@@ -1062,7 +1536,11 @@ async function loadMapData(silent = false) {
         return tB - tA;
     });
 
-    // Masukkan ke quakesArray dan pasang marker di Leaflet
+    // Bersihkan marker lama dan render ulang marker di Leaflet
+    if (typeof markerGroup !== 'undefined' && markerGroup) {
+        markerGroup.clearLayers();
+    }
+
     quakesArray = uniqueQuakes;
     checkForNewEarthquakeEvent(uniqueQuakes);
 
@@ -2762,11 +3240,23 @@ function bootApp() {
     renderRecentSearchesUI();
     updateRecentQuakesUI();
     updateAutoBroadcastUI();
+    applyLanguage(currentAppLanguage);
 
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     } else {
-        document.body.classList.remove("panel-collapsed");
+        if (!isNavRailEnabled) {
+            document.body.classList.add("nav-rail-disabled");
+            isPanelCollapsed = true;
+            document.body.classList.add("panel-collapsed");
+            const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+            if (panel) panel.classList.add("collapsed");
+        } else {
+            document.body.classList.remove("nav-rail-disabled");
+            document.body.classList.remove("panel-collapsed");
+            const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+            if (panel) panel.classList.remove("collapsed");
+        }
     }
 
     // 2. Invalidate Map & Resize Canvas
@@ -2779,6 +3269,78 @@ function bootApp() {
     setTimeout(() => {
         initLocation();
         initHistats();
+
+        if (currentAppLanguage && currentAppLanguage !== 'id') {
+            triggerGoogleTranslate(currentAppLanguage);
+        }
+
+        // Listener fokus & klik pencarian desktop untuk auto-switch ke viewMonitor dan auto-expand dropdown panel
+        const searchInputEl = document.getElementById("searchInput");
+        const searchBoxCardEl = document.getElementById("searchBoxCard");
+
+        function switchToMonitorAndExpand() {
+            if (window.innerWidth > 768) {
+                if (currentNavTab !== 'monitor') {
+                    switchNavTab('monitor');
+                }
+                if (isPanelCollapsed) {
+                    toggleSidebar(true);
+                }
+                const wrap = document.getElementById("cardsScrollWrap");
+                if (wrap) wrap.scrollTop = 0;
+            }
+        }
+
+        if (searchInputEl) {
+            searchInputEl.addEventListener("focus", () => {
+                switchToMonitorAndExpand();
+            });
+            searchInputEl.addEventListener("click", (e) => {
+                e.stopPropagation();
+                switchToMonitorAndExpand();
+            });
+        }
+
+        if (searchBoxCardEl) {
+            searchBoxCardEl.addEventListener("click", (e) => {
+                if (window.innerWidth > 768) {
+                    if (!e.target.closest('#searchMenuBtn') && !e.target.closest('#searchSubmitBtn')) {
+                        switchToMonitorAndExpand();
+                        if (searchInputEl) searchInputEl.focus();
+                    }
+                }
+            });
+        }
+
+        // Listener klik di luar area (Click Outside) untuk menutup cards-scroll-wrap saat mode nav-rail mati
+        document.addEventListener("pointerdown", (e) => {
+            if (window.innerWidth <= 768) return;
+            if (!isNavRailEnabled && !isPanelCollapsed) {
+                const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+                const settingsDrawer = document.getElementById("gmapSettingsWrapper");
+                const isInsidePanel = panel && panel.contains(e.target);
+                const isInsideSettings = settingsDrawer && settingsDrawer.contains(e.target);
+                const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.leaflet-popup') || e.target.closest('.toast');
+
+                if (!isInsidePanel && !isInsideSettings && !isInsideModal) {
+                    toggleSidebar(false);
+                    if (searchInputEl) searchInputEl.blur();
+                }
+            }
+        });
+
+        // Listener tombol ESC keyboard untuk menutup Settings Drawer dan Modal
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeDesktopSettings();
+                closeShareModal();
+                closeLanguageModal();
+                if (!isNavRailEnabled && !isPanelCollapsed) {
+                    toggleSidebar(false);
+                    if (searchInputEl) searchInputEl.blur();
+                }
+            }
+        });
     }, 100);
 }
 

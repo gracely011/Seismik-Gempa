@@ -165,8 +165,67 @@
     <!-- ACCESSIBILITY & SEO HEADING -->
     <h1 class="sr-only">Monitor Seismik Real-Time BMKG &amp; USGS Indonesia - Peta Gempa Terkini Gracely</h1>
 
-    <!-- FULLSCREEN LEAFLET MAP -->
-    <div id="map"></div>
+    <!-- FULLSCREEN LEAFLET MAP & PRINT CONTAINER (GOOGLE MAPS PRINT VIEW) -->
+    <div class="gmap-print-wrapper" id="gmapPrintWrapper">
+        <!-- TOP BROWSER PRINT HEADER (WAKTU & SITE URL) -->
+        <header class="print-top-browser-bar">
+            <span class="print-browser-time" id="printBrowserTime">--/--/--, --.--</span>
+            <span class="print-browser-title">seismik.gracely.my.id</span>
+        </header>
+
+        <!-- PRINT BRAND & ACTION HEADER (PERSIS GOOGLE MAPS PRINT VIEW) -->
+        <div class="print-brand-header">
+            <div class="print-site-logo">
+                <svg class="print-site-icon" viewBox="0 0 24 24" fill="none" stroke="#ea4335" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <div class="print-site-title-box">
+                    <div class="print-site-main-title">
+                        <span class="site-brand-blue">SEISMIK</span> <span class="site-brand-dark">GRACELY</span>
+                    </div>
+                    <span class="print-site-sub">Monitor Gempa &amp; Cuaca Indonesia Real-Time</span>
+                </div>
+            </div>
+
+            <!-- GOOGLE MAPS PRINT NOTES INPUT (TENGAH) -->
+            <div class="print-notes-container">
+                <input type="text" id="printUserNotesInput" class="print-notes-input" placeholder="Anda dapat memasukkan catatan di sini." maxlength="120" autocomplete="off">
+                <div class="print-notes-printed-text" id="printNotesPrintedText"></div>
+            </div>
+
+            <!-- GOOGLE MAPS PRINT ACTIONS (KANAN) -->
+            <div class="print-header-actions">
+                <div class="print-sync-summary" id="printSyncSummary">
+                    <!-- Diisi otomatis oleh JavaScript -->
+                </div>
+                <div class="print-btn-group">
+                    <button type="button" class="print-nav-btn print-btn-cancel" onclick="closePrintPreview()" title="Kembali ke Peta Utama">Batal</button>
+                    <button type="button" class="print-nav-btn print-btn-submit" onclick="executeBrowserPrint()" title="Cetak Peta Sekarang">Cetak</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FULLSCREEN LEAFLET MAP -->
+        <div id="map">
+            <div class="print-map-watermark" aria-hidden="true">
+                <span class="site-wm-bold">seismik</span>.gracely.my.id
+            </div>
+        </div>
+
+        <!-- PRINT MAP FOOTER (CREDIT DATA & SCALE BAR) -->
+        <footer class="print-map-footer">
+            <div class="print-footer-left" id="printFooterLeft">
+                <!-- Status gempa mutakhir atau koordinat -->
+            </div>
+            <div class="print-footer-right">
+                <span class="print-credit-text">Data gempa ©2026 BMKG &amp; USGS · Dipantau langsung via https://seismik.gracely.my.id</span>
+                <div class="print-scale-bar">
+                    <span class="print-scale-label">200 km</span>
+                    <div class="print-scale-line"></div>
+                </div>
+            </div>
+        </footer>
+    </div>
 
     <!-- SYNC BADGE -->
     <div id="loading">SINKRONISASI DATA...</div>
@@ -191,75 +250,247 @@
         </div>
     </div>
 
-    <!-- ==================== LEFT NAVIGATION RAIL (DESKTOP) / BOTTOM BAR (MOBILE) ==================== -->
-    <nav class="nav-rail">
-        <div class="rail-top">
-            <!-- 1. JELAJAHI / MENU (DESKTOP: HAMBURGER, MOBILE: PIN) -->
-            <button class="rail-btn rail-menu-btn active" id="railMenuBtn" onclick="handleMenuBtnClick()" title="Menu / Jelajahi" aria-label="Menu">
-                <div class="rail-icon-indicator">
-                    <span class="rail-desktop-icon google-symbols" style="font-size: 24px;">&#xe5d2;</span>
-                    <span class="rail-mobile-icon">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                    </span>
-                </div>
-                <span class="rail-label rail-mobile-icon">Jelajahi</span>
-            </button>
+    <!-- ==================== DESKTOP NAVIGATION RAIL (DESKTOP ONLY 72PX) ==================== -->
+    <nav class="desktop-nav-rail" id="desktopNavRail">
+        <ul class="ODXihb Hk4XGb" role="list">
+            <!-- 1. MENU (HAMBURGER) -->
+            <li>
+                <button class="wR3cXd rail-menu-btn active" id="railMenuBtn" onclick="handleMenuBtnClick()" title="Menu / Setelan" aria-label="Menu">
+                    <div class="NP7r5c o0KWTd">
+                        <div class="OyjIsf"></div>
+                        <span class="cc4Ofc google-symbols" aria-hidden="true" style="font-size: 24px;">&#xe5d2;</span>
+                    </div>
+                </button>
+            </li>
 
-            <!-- 2. ANDA (DISIMPAN / BOOKMARK) -->
-            <button class="rail-btn" id="railBtnSaved" onclick="switchNavTab('saved')" title="Disimpan (Anda)" aria-label="Anda">
-                <div class="rail-icon-indicator">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
-                </div>
-                <span class="rail-label">Anda</span>
-            </button>
+            <!-- 2. DISIMPAN (ANDA) -->
+            <li>
+                <button class="wR3cXd fontLabelMedium" id="railBtnSaved" onclick="switchNavTab('saved')" title="Disimpan (Anda)" aria-label="Disimpan">
+                    <div class="NP7r5c deIIj">
+                        <div class="OyjIsf"></div>
+                        <span class="cc4Ofc avo2Le google-symbols" aria-hidden="true" style="font-size: 24px;">&#xe866;</span>
+                    </div>
+                    <div class="d0UoQ">
+                        <div class="cGRe9e tujHCe">Disimpan</div>
+                    </div>
+                </button>
+            </li>
 
-            <!-- TERBARU (RECENT) - DESKTOP ONLY -->
-            <button class="rail-btn rail-btn-desktop-only" id="railBtnRecent" onclick="switchNavTab('recent')" title="Aktivitas &amp; Gempa Terbaru">
-                <div class="rail-icon-indicator">
-                    <span class="google-symbols" style="font-size: 24px;">&#xe8b5;</span>
-                </div>
-                <span class="rail-label">Terbaru</span>
-            </button>
-        </div>
+            <!-- 3. TERBARU (RECENT) -->
+            <li>
+                <button class="wR3cXd fontLabelMedium" id="railBtnRecent" onclick="switchNavTab('recent')" title="Aktivitas &amp; Gempa Terbaru" aria-label="Terbaru">
+                    <div class="NP7r5c deIIj">
+                        <div class="OyjIsf"></div>
+                        <span class="cc4Ofc avo2Le google-symbols" aria-hidden="true" style="font-size: 24px;">&#xe8b5;</span>
+                    </div>
+                    <div class="d0UoQ">
+                        <div class="cGRe9e">Terbaru</div>
+                    </div>
+                </button>
+            </li>
 
-        <div class="rail-bottom">
-            <!-- DARK / LIGHT MODE SWITCH - DESKTOP ONLY -->
-            <button class="rail-btn rail-btn-desktop-only" onclick="toggleThemeMode()" id="btnTheme" title="Ganti Mode Gelap / Terang">
-                <div class="rail-icon-indicator" id="themeIconIndicator">
-                    <span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe518;</span>
-                </div>
-                <span class="rail-label">Mode</span>
-            </button>
-
-            <!-- 3. KONTRIBUSI (INFO / ABOUT) -->
-            <button class="rail-btn" id="railBtnInfo" onclick="switchNavTab('contribution')" title="Kontribusi &amp; Info Aplikasi" aria-label="Kontribusi">
-                <div class="rail-icon-indicator">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-4H7v-2h4V7h2v4h4v2h-4v4z"/></svg>
-                </div>
-                <span class="rail-label">Kontribusi</span>
-            </button>
-
-            <!-- PANDUAN SIAGA BENCANA - DESKTOP ONLY -->
-            <button class="rail-btn rail-btn-desktop-only" id="railBtnGuide" onclick="switchNavTab('guide')" title="Panduan Siaga &amp; Kontak Darurat">
-                <div class="rail-icon-indicator" style="color: #ea4335;">
-                    <span class="google-symbols" style="font-size: 24px; color: #ea4335;">&#xe002;</span>
-                </div>
-                <span class="rail-label">Siaga</span>
-            </button>
-        </div>
+            <div class="G6LvEb"></div>
+        </ul>
     </nav>
+
+    <!-- ==================== MOBILE BOTTOM BAR (MOBILE ONLY 60PX) ==================== -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <!-- 1. JELAJAHI -->
+        <button class="mobile-nav-btn active" id="mobileNavBtnMonitor" onclick="switchNavTab('monitor')" title="Jelajahi" aria-label="Jelajahi">
+            <div class="mobile-icon-indicator">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+            <span class="mobile-nav-label">Jelajahi</span>
+        </button>
+
+        <!-- 2. ANDA -->
+        <button class="mobile-nav-btn" id="mobileNavBtnSaved" onclick="switchNavTab('saved')" title="Anda" aria-label="Anda">
+            <div class="mobile-icon-indicator">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+            </div>
+            <span class="mobile-nav-label">Anda</span>
+        </button>
+
+        <!-- 3. KONTRIBUSI -->
+        <button class="mobile-nav-btn" id="mobileNavBtnInfo" onclick="switchNavTab('contribution')" title="Kontribusi" aria-label="Kontribusi">
+            <div class="mobile-icon-indicator">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-4H7v-2h4V7h2v4h4v2h-4v4z"/></svg>
+            </div>
+            <span class="mobile-nav-label">Kontribusi</span>
+        </button>
+    </nav>
+
+    <!-- ==================== DESKTOP SETTINGS DRAWER (MENU SAMPING GOOGLE MAPS) ==================== -->
+    <div class="gmap-settings-wrapper" id="gmapSettingsWrapper">
+        <div class="desktop-settings-backdrop EkxGXe" id="desktopSettingsBackdrop" onclick="closeDesktopSettings()"></div>
+        <div class="desktop-settings-drawer dB19De" id="desktopSettingsDrawer">
+            <ul class="lTfMvb" role="menu" aria-label="Setelan">
+                <div tabindex="0" jsaction="focus:settings.focus.top"></div>
+                <!-- Header: Logo & Tombol Close -->
+                <div class="lWsJId">
+                    <div class="settings-brand-wrap">
+                        <span class="settings-brand-title">Seismik <span class="settings-brand-sub">Maps</span></span>
+                    </div>
+                    <button class="settings-close-btn UHOsgd" onclick="closeDesktopSettings()" aria-label="Tutup" title="Tutup">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Section 1: Tampilkan sidebar (Switch Toggle) -->
+                <div class="tGLDjb QGvUHe">
+                    <li class="AJqepd">
+                        <div class="IpXlkd T2ozWe" onclick="toggleSidebarFromSettings()">
+                            <span class="tIuFw b4mHNe">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-7 14H5V6h7v12zm7 0h-5V6h5v12z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Tampilkan sidebar</label>
+                            <button role="switch" class="Ud5kdf LdO2ac" id="settingsSidebarSwitch" aria-checked="true" aria-label="Tampilkan sidebar">
+                                <div class="JbUHGd"></div>
+                            </button>
+                        </div>
+                    </li>
+                </div>
+
+                <!-- Section 2: Disimpan, Terbaru, Kontribusi Anda -->
+                <div class="QGvUHe">
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="handleSettingsNav('saved')" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Disimpan</label>
+                        </button>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="handleSettingsNav('recent')" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Terbaru</label>
+                        </button>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="handleSettingsNav('contribution')" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Kontribusi Anda</label>
+                        </button>
+                    </li>
+                </div>
+
+                <!-- Section 3: Peta Gempa Seluruh Dunia, Berbagi lokasi, Linimasa Anda, Panduan Siaga, Tema -->
+                <div class="QGvUHe">
+                    <li class="AJqepd">
+                        <div class="IpXlkd T2ozWe" onclick="toggleGlobalEarthquakeMode()">
+                            <span class="tIuFw wch72" style="color: #1a73e8;">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e" id="i18nGlobalQuakes">Peta Gempa Seluruh Dunia</label>
+                            <button role="switch" class="Ud5kdf LdO2ac" id="settingsGlobalQuakeSwitch" aria-checked="false" aria-label="Peta Gempa Seluruh Dunia">
+                                <div class="JbUHGd"></div>
+                            </button>
+                        </div>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="focusUserGPS(); closeDesktopSettings();" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Berbagi lokasi</label>
+                        </button>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="handleSettingsNav('recent')" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-.51-.07l-3.56 3.55c.05.16.07.34.07.52 0 1.1-.9 2-2 2s-2-.9-2-2c0-.18.02-.36.07-.52l-2.55-2.55c-.16.05-.34.07-.52.07s-.36-.02-.52-.07l-4.55 4.56c.05.16.07.33.07.51 0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.18 0 .35.02.51.07l4.56-4.55C8.02 9.36 8 9.18 8 9c0-1.1.9-2 2-2s2 .9 2 2c0 .18-.02.36-.07.52l2.55 2.55c.16-.05.34-.07.52-.07s.36.02.52.07l3.55-3.56C18.02 8.35 18 8.18 18 8c0-1.1.9-2 2-2s2 .9 2 2z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Linimasa Anda</label>
+                        </button>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="handleSettingsNav('guide')" role="menuitem">
+                            <span class="tIuFw wch72" style="color: #ea4335;">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Panduan Siaga Bencana</label>
+                        </button>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="toggleThemeMode()" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e">Mode Gelap / Terang</label>
+                        </button>
+                    </li>
+                </div>
+
+                <!-- Section 4: Bagikan atau sematkan peta, Cetak -->
+                <div class="QGvUHe">
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="openShareModal()" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e" id="i18nShareMap">Bagikan atau sematkan peta</label>
+                        </button>
+                    </li>
+                    <li class="AJqepd">
+                        <button class="T2ozWe" onclick="printMapPage()" role="menuitem">
+                            <span class="tIuFw wch72">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                            </span>
+                            <label class="fontBodyMedium gFio1e" id="i18nPrint">Cetak</label>
+                        </button>
+                    </li>
+                </div>
+
+                <!-- Section 5: Menu Tanpa Ikon (Informasi Pengembang & Aplikasi, Tips Siaga, Bantuan) -->
+                <div class="QGvUHe">
+                    <li class="AJqepd"><button class="fontBodyMedium T2ozWe text-only-item" onclick="openAppInfo(); closeDesktopSettings();" role="menuitem" id="i18nAppInfo">Informasi Pengembang &amp; Aplikasi</button></li>
+                    <li class="AJqepd"><button class="fontBodyMedium T2ozWe text-only-item" onclick="openDisasterGuide(); closeDesktopSettings();" role="menuitem" id="i18nTips">Tips dan trik siaga gempa</button></li>
+                    <li class="AJqepd"><button class="fontBodyMedium T2ozWe text-only-item" onclick="openAppInfo(); closeDesktopSettings();" role="menuitem" id="i18nHelp">Dapatkan bantuan</button></li>
+                </div>
+
+                <!-- Section 6: Bahasa -->
+                <div class="QGvUHe">
+                    <li class="AJqepd">
+                        <button class="aAaxGf T2ozWe" onclick="openLanguageModal()" role="menuitem" style="cursor: pointer; justify-content: flex-start; padding-left: 24px;">
+                            <span class="fontBodyMedium" id="i18nLang" style="flex: none;">Bahasa</span>
+                            <span class="tIuFw wch72 pKQ3pb" style="margin-left: 6px;">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.08c1.74-1.94 2.98-4.17 3.71-6.49H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+                            </span>
+                        </button>
+                    </li>
+                </div>
+                <div tabindex="0" jsaction="focus:settings.focus.bottom"></div>
+            </ul>
+        </div>
+    </div>
 
     <!-- ==================== UNIFIED SOLID SEARCH & CARDS PANEL (GOOGLE MAPS SIDEBAR) ==================== -->
     <div class="panel-container" id="mainPanel">
         <!-- GOOGLE MAPS SEARCH BAR -->
         <div class="search-box-card" id="searchBoxCard">
-            <button class="search-icon-btn" onclick="document.getElementById('searchInput').focus()" title="Cari">
+            <!-- MENU HAMBURGER BUTTON (VISIBLE WHEN SIDEBAR/NAV-RAIL IS COLLAPSED) -->
+            <button class="search-menu-btn" id="searchMenuBtn" onclick="toggleDesktopSettings()" aria-label="Menu" title="Menu">
+                <span class="google-symbols" style="font-size: 24px;">&#xe5d2;</span>
+            </button>
+            <!-- SEARCH ICON BUTTON (VISIBLE WHEN SIDEBAR IS OPEN & ON MOBILE) -->
+            <button class="search-icon-btn" id="searchIconBtn" onclick="document.getElementById('searchInput').focus()" title="Cari">
                 <span class="google-symbols" style="font-size: 20px;">&#xe8b6;</span>
             </button>
             <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)" autocomplete="off">
             <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Hapus Pencarian">
                 <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
             </button>
+            <!-- SEARCH SUBMIT BUTTON (MAGNIFYING GLASS NEXT TO INPUT ON COLLAPSED STATE) -->
+            <button class="search-submit-btn" id="searchSubmitBtn" onclick="triggerSearchCity()" title="Telusuri">
+                <span class="google-symbols" style="font-size: 22px;">&#xe8b6;</span>
+            </button>
+            <!-- VERTICAL DIVIDER -->
+            <div class="search-divider-vertical" id="searchDividerVertical"></div>
             <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
             <button class="directions-btn" onclick="triggerSearchCity()" title="Cari Kota / Arahkan">
                 <span class="google-symbols" style="font-size: 20px;">&#xe52e;</span>
@@ -1012,6 +1243,150 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL SHARE / EMBED MAP (GOOGLE MAPS STYLE) ==================== -->
+    <div class="modal-backdrop" id="modalShareEmbed" style="display: none;" onclick="closeShareModal(event)">
+        <div class="modal-dialog share-embed-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <div class="share-modal-tabs">
+                    <button class="share-tab-btn active" id="tabShareLink" onclick="switchShareTab('link')">Kirim link</button>
+                    <button class="share-tab-btn" id="tabShareEmbed" onclick="switchShareTab('embed')">Sematkan peta</button>
+                </div>
+                <button class="modal-close-icon-btn" onclick="closeShareModal()" title="Tutup">
+                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <!-- TAB 1: KIRIM LINK -->
+                <div class="share-pane active" id="paneShareLink">
+                    <div class="share-input-group">
+                        <input type="text" class="share-url-input" id="shareUrlInput" readonly value="https://seismik.gracely.my.id/">
+                        <button class="share-copy-btn" onclick="copyShareUrl()">Salin link</button>
+                    </div>
+                </div>
+                <!-- TAB 2: SEMATKAN PETA -->
+                <div class="share-pane" id="paneShareEmbed" style="display: none;">
+                    <div class="share-input-group">
+                        <input type="text" class="share-url-input" id="shareEmbedInput" readonly value='&lt;iframe src="https://seismik.gracely.my.id/" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"&gt;&lt;/iframe&gt;'>
+                        <button class="share-copy-btn" onclick="copyEmbedIframe()">Salin HTML</button>
+                    </div>
+                    <div class="embed-preview-note">Preview peta disematkan responsif untuk situs web & blog Anda.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL PILIH BAHASA (GOOGLE MAPS STYLE) ==================== -->
+    <div class="gmap-lang-modal-backdrop" id="modalLanguagePicker" style="display: none;" onclick="closeLanguageModal(event)">
+        <div class="sYmAxe" aria-modal="true" role="dialog" onclick="event.stopPropagation()">
+            <div class="uiuFBf" tabindex="0" jsaction="focus:modal.focus.top"></div>
+            <button class="OyzoZb" aria-label="Tutup" onclick="closeLanguageModal()" title="Tutup">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+            <div class="yFnP6d">
+                <div class="kARmKf">
+                    <div class="ZsCMfd">
+                        <div class="NVacAd">
+                            <div class="yb2Rh">Pilih bahasa</div>
+                            <div class="qMgSKe JAILI" style="border-top:none; padding-bottom: 8px;">
+                                <div class="Vn3gGd" style="width: 100%;">
+                                    <div><a class="jf99xf lang-item" data-lang="en" href="javascript:void(0)" onclick="setAppLanguage('en', 'English (United States)')">&#x202A;English (United States)&#x202C;</a></div>
+                                </div>
+                            </div>
+                            <div class="JAILI">
+                                <div class="Vn3gGd">
+                                    <div><a class="jf99xf lang-item" data-lang="af" href="javascript:void(0)" onclick="setAppLanguage('af', 'Afrikaans')">&#x202A;Afrikaans&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="az" href="javascript:void(0)" onclick="setAppLanguage('az', 'azərbaycan')">&#x202A;azərbaycan&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item active-lang" data-lang="id" href="javascript:void(0)" onclick="setAppLanguage('id', 'Bahasa Indonesia')"><span class="QxsAAd">&#x202A;Bahasa Indonesia&#x202C;</span></a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ms" href="javascript:void(0)" onclick="setAppLanguage('ms', 'Bahasa Melayu')">&#x202A;Bahasa Melayu&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="bs" href="javascript:void(0)" onclick="setAppLanguage('bs', 'bosanski')">&#x202A;bosanski&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ca" href="javascript:void(0)" onclick="setAppLanguage('ca', 'català')">&#x202A;català&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="cs" href="javascript:void(0)" onclick="setAppLanguage('cs', 'Čeština')">&#x202A;Čeština&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="da" href="javascript:void(0)" onclick="setAppLanguage('da', 'Dansk')">&#x202A;Dansk&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="de" href="javascript:void(0)" onclick="setAppLanguage('de', 'Deutsch (Deutschland)')">&#x202A;Deutsch (Deutschland)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="et" href="javascript:void(0)" onclick="setAppLanguage('et', 'eesti')">&#x202A;eesti&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="en-us" href="javascript:void(0)" onclick="setAppLanguage('en', 'English (United States)')">&#x202A;English (United States)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="es" href="javascript:void(0)" onclick="setAppLanguage('es', 'Español (España)')">&#x202A;Español (España)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="es-419" href="javascript:void(0)" onclick="setAppLanguage('es-419', 'Español (Latinoamérica)')">&#x202A;Español (Latinoamérica)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="eu" href="javascript:void(0)" onclick="setAppLanguage('eu', 'euskara')">&#x202A;euskara&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="fil" href="javascript:void(0)" onclick="setAppLanguage('fil', 'Filipino')">&#x202A;Filipino&#x202C;</a></div>
+                                </div>
+                                <div class="Vn3gGd">
+                                    <div><a class="jf99xf lang-item" data-lang="fr" href="javascript:void(0)" onclick="setAppLanguage('fr', 'Français (France)')">&#x202A;Français (France)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="gl" href="javascript:void(0)" onclick="setAppLanguage('gl', 'galego')">&#x202A;galego&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="hr" href="javascript:void(0)" onclick="setAppLanguage('hr', 'Hrvatski')">&#x202A;Hrvatski&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="zu" href="javascript:void(0)" onclick="setAppLanguage('zu', 'isiZulu')">&#x202A;isiZulu&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="is" href="javascript:void(0)" onclick="setAppLanguage('is', 'íslenska')">&#x202A;íslenska&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="it" href="javascript:void(0)" onclick="setAppLanguage('it', 'Italiano')">&#x202A;Italiano&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="sw" href="javascript:void(0)" onclick="setAppLanguage('sw', 'Kiswahili')">&#x202A;Kiswahili&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="lv" href="javascript:void(0)" onclick="setAppLanguage('lv', 'latviešu')">&#x202A;latviešu&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="lt" href="javascript:void(0)" onclick="setAppLanguage('lt', 'lietuvių')">&#x202A;lietuvių&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="hu" href="javascript:void(0)" onclick="setAppLanguage('hu', 'magyar')">&#x202A;magyar&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="nl" href="javascript:void(0)" onclick="setAppLanguage('nl', 'Nederlands')">&#x202A;Nederlands&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="no" href="javascript:void(0)" onclick="setAppLanguage('no', 'norsk')">&#x202A;norsk&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="uz" href="javascript:void(0)" onclick="setAppLanguage('uz', 'oʻzbekcha')">&#x202A;oʻzbekcha&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="pl" href="javascript:void(0)" onclick="setAppLanguage('pl', 'polski')">&#x202A;polski&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="pt-br" href="javascript:void(0)" onclick="setAppLanguage('pt-br', 'Português (Brasil)')">&#x202A;Português (Brasil)&#x202C;</a></div>
+                                </div>
+                                <div class="Vn3gGd">
+                                    <div><a class="jf99xf lang-item" data-lang="pt-pt" href="javascript:void(0)" onclick="setAppLanguage('pt-pt', 'Português (Portugal)')">&#x202A;Português (Portugal)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ro" href="javascript:void(0)" onclick="setAppLanguage('ro', 'română')">&#x202A;română&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="sq" href="javascript:void(0)" onclick="setAppLanguage('sq', 'shqip')">&#x202A;shqip&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="sk" href="javascript:void(0)" onclick="setAppLanguage('sk', 'Slovenčina')">&#x202A;Slovenčina&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="sl" href="javascript:void(0)" onclick="setAppLanguage('sl', 'slovenščina')">&#x202A;slovenščina&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="fi" href="javascript:void(0)" onclick="setAppLanguage('fi', 'Suomi')">&#x202A;Suomi&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="sv" href="javascript:void(0)" onclick="setAppLanguage('sv', 'Svenska')">&#x202A;Svenska&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="vi" href="javascript:void(0)" onclick="setAppLanguage('vi', 'Tiếng Việt')">&#x202A;Tiếng Việt&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="tr" href="javascript:void(0)" onclick="setAppLanguage('tr', 'Türkçe')">&#x202A;Türkçe&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="el" href="javascript:void(0)" onclick="setAppLanguage('el', 'Ελληνικά')">&#x202A;Ελληνικά&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="bg" href="javascript:void(0)" onclick="setAppLanguage('bg', 'български')">&#x202A;български&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ky" href="javascript:void(0)" onclick="setAppLanguage('ky', 'кыргызча')">&#x202A;кыргызча&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="kk" href="javascript:void(0)" onclick="setAppLanguage('kk', 'қазақ тілі')">&#x202A;қазақ тілі&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="mk" href="javascript:void(0)" onclick="setAppLanguage('mk', 'македонски')">&#x202A;македонски&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="mn" href="javascript:void(0)" onclick="setAppLanguage('mn', 'монгол')">&#x202A;монгол&#x202C;</a></div>
+                                </div>
+                                <div class="Vn3gGd">
+                                    <div><a class="jf99xf lang-item" data-lang="ru" href="javascript:void(0)" onclick="setAppLanguage('ru', 'Русский')">&#x202A;Русский&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="sr" href="javascript:void(0)" onclick="setAppLanguage('sr', 'српски (ћирилица)')">&#x202A;српски (ћирилица)&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="uk" href="javascript:void(0)" onclick="setAppLanguage('uk', 'Українська')">&#x202A;Українська&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ka" href="javascript:void(0)" onclick="setAppLanguage('ka', 'ქართული')">&#x202A;ქართული&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="hy" href="javascript:void(0)" onclick="setAppLanguage('hy', 'հայերեն')">&#x202A;հայերեն&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="iw" href="javascript:void(0)" onclick="setAppLanguage('iw', 'עברית')"><span dir="rtl">&#x202B;עברית&#x202C;</span></a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ur" href="javascript:void(0)" onclick="setAppLanguage('ur', 'اردو')"><span dir="rtl">&#x202B;اردو&#x202C;</span></a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ar" href="javascript:void(0)" onclick="setAppLanguage('ar', 'العربية')"><span dir="rtl">&#x202B;العربية&#x202C;</span></a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="fa" href="javascript:void(0)" onclick="setAppLanguage('fa', 'فارسی')"><span dir="rtl">&#x202B;فارسی&#x202C;</span></a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="am" href="javascript:void(0)" onclick="setAppLanguage('am', 'አማርኛ')">&#x202A;አማርኛ&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ne" href="javascript:void(0)" onclick="setAppLanguage('ne', 'नेपाली')">&#x202A;नेपाली&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="hi" href="javascript:void(0)" onclick="setAppLanguage('hi', 'हिन्दी')">&#x202A;हिन्दी&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="mr" href="javascript:void(0)" onclick="setAppLanguage('mr', 'मराठी')">&#x202A;मराठी&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="bn" href="javascript:void(0)" onclick="setAppLanguage('bn', 'বাংলা')">&#x202A;বাংলা&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="pa" href="javascript:void(0)" onclick="setAppLanguage('pa', 'ਪੰਜਾਬੀ')">&#x202A;ਪੰਜਾਬੀ&#x202C;</a></div>
+                                </div>
+                                <div class="Vn3gGd">
+                                    <div><a class="jf99xf lang-item" data-lang="gu" href="javascript:void(0)" onclick="setAppLanguage('gu', 'ગુજરાતી')">&#x202A;ગુજરાતી&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ta" href="javascript:void(0)" onclick="setAppLanguage('ta', 'தமிழ்')">&#x202A;தமிழ்&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="te" href="javascript:void(0)" onclick="setAppLanguage('te', 'తెలుగు')">&#x202A;తెలుగు&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="kn" href="javascript:void(0)" onclick="setAppLanguage('kn', 'ಕನ್ನಡ')">&#x202A;ಕನ್ನಡ&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ml" href="javascript:void(0)" onclick="setAppLanguage('ml', 'മലയാളം')">&#x202A;മലയാളം&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="si" href="javascript:void(0)" onclick="setAppLanguage('si', 'සිංහල')">&#x202A;සිංහල&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="th" href="javascript:void(0)" onclick="setAppLanguage('th', 'ไทย')">&#x202A;ไทย&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="lo" href="javascript:void(0)" onclick="setAppLanguage('lo', 'ລາວ')">&#x202A;ລາວ&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="my" href="javascript:void(0)" onclick="setAppLanguage('my', 'ဗမာ')">&#x202A;ဗမာ&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="km" href="javascript:void(0)" onclick="setAppLanguage('km', 'ខ្មែរ')">&#x202A;ខ្មែរ&#x202C;</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ko" href="javascript:void(0)" onclick="setAppLanguage('ko', '한국어')">&#x202A;한국어</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="ja" href="javascript:void(0)" onclick="setAppLanguage('ja', '日本語')">&#x202A;日本語</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="zh-cn" href="javascript:void(0)" onclick="setAppLanguage('zh-cn', '简体中文')">&#x202A;简体中文</a></div>
+                                    <div><a class="jf99xf lang-item" data-lang="zh-tw" href="javascript:void(0)" onclick="setAppLanguage('zh-tw', '繁體中文')">&#x202A;繁體中文</a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="uiuFBf" tabindex="0" jsaction="focus:modal.focus.bottom"></div>
+            <div class="mIzEMb"></div>
+        </div>
+    </div>
+
     <!-- LEAFLET JS ENGINE (DEFERRED & OPTIMIZED) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
@@ -1021,18 +1396,21 @@
     <!-- MAIN APP SCRIPT -->
     <script src="app.js?v=15.0"></script>
 
-    <!-- SERVICE WORKER REGISTRATION (OFFLINE & ASSET CACHE) -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('[SW] Registered with scope:', reg.scope);
-                }).catch(err => {
-                    console.log('[SW] Registration failed:', err);
-                });
-            });
+    <!-- GOOGLE TRANSLATE CLIENT ENGINE (INVISIBLE BACKGROUND ENGINE) -->
+    <div id="google_translate_element" style="display: none !important;"></div>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            try {
+                new google.translate.TranslateElement({
+                    pageLanguage: 'id',
+                    autoDisplay: false
+                }, 'google_translate_element');
+            } catch (e) {
+                console.warn('[i18n] Google Translate init warning:', e);
+            }
         }
     </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 </body>
 
 </html>
