@@ -583,9 +583,17 @@ function setDrawerSnapState(state) {
 function handleMenuBtnClick() {
     if (window.innerWidth > 768) {
         if (isPanelCollapsed) {
+            // Jika sidebar tertutup, buka langsung ke menu utama Jelajahi (Monitor)
+            switchNavTab('monitor');
             toggleSidebar(true);
         } else {
-            toggleSidebar(false);
+            if (currentNavTab !== 'monitor') {
+                // Jika sedang di tab lain (Kontribusi, Siaga, Anda, Terbaru), kembali ke menu Jelajahi
+                switchNavTab('monitor');
+            } else {
+                // Jika sudah berada di Jelajahi, tutup sidebar
+                toggleSidebar(false);
+            }
         }
     } else {
         switchNavTab('monitor');

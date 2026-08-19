@@ -2,16 +2,16 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v14.8';
+const CACHE_NAME = 'seismo-cache-v14.9';
 
 const PRECACHE_ASSETS = [
     './',
     'index.html',
     'manifest.json',
     'icon.svg',
-    'faults.js?v=14.8',
-    'style.css?v=14.8',
-    'app.js?v=14.8',
+    'faults.js?v=14.9',
+    'style.css?v=14.9',
+    'app.js?v=14.9',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
     'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap',
