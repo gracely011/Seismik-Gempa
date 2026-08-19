@@ -135,39 +135,53 @@ const tileCommonOptions = {
     updateWhenZooming: true
 };
 
-const darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    ...tileCommonOptions,
-    maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; CartoDB &copy; OpenStreetMap'
-});
+const tileLayersCache = {};
+let activeTileLayerInstance = null;
 
-const satTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    ...tileCommonOptions,
-    maxZoom: 18,
-    attribution: '&copy; Esri &copy; Earthstar Geographics'
-});
-
-const lightTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    ...tileCommonOptions,
-    maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; CartoDB &copy; OpenStreetMap'
-});
-
-const terrainTileLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-    ...tileCommonOptions,
-    maxZoom: 17,
-    attribution: '&copy; OpenTopoMap &copy; OpenStreetMap'
-});
+function getTileLayer(layerName) {
+    if (!tileLayersCache[layerName]) {
+        if (layerName === 'sat') {
+            tileLayersCache.sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                ...tileCommonOptions,
+                maxZoom: 18,
+                attribution: '&copy; Esri &copy; Earthstar Geographics'
+            });
+        } else if (layerName === 'terrain') {
+            tileLayersCache.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                ...tileCommonOptions,
+                maxZoom: 17,
+                attribution: '&copy; OpenTopoMap &copy; OpenStreetMap'
+            });
+        } else if (layerName === 'dark') {
+            tileLayersCache.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                ...tileCommonOptions,
+                maxZoom: 19,
+                subdomains: 'abcd',
+                attribution: '&copy; CartoDB &copy; OpenStreetMap'
+            });
+        } else {
+            tileLayersCache.light = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                ...tileCommonOptions,
+                maxZoom: 19,
+                subdomains: 'abcd',
+                attribution: '&copy; CartoDB &copy; OpenStreetMap'
+            });
+        }
+    }
+    return tileLayersCache[layerName];
+}
 
 const MAP_LAYERS_ORDER = ['light', 'sat', 'terrain', 'dark'];
 
 function applyMapLayer(layerName) {
-    if (map.hasLayer(darkTileLayer)) map.removeLayer(darkTileLayer);
-    if (map.hasLayer(satTileLayer)) map.removeLayer(satTileLayer);
-    if (map.hasLayer(lightTileLayer)) map.removeLayer(lightTileLayer);
-    if (map.hasLayer(terrainTileLayer)) map.removeLayer(terrainTileLayer);
+    const targetLayer = getTileLayer(layerName);
+    if (activeTileLayerInstance && activeTileLayerInstance !== targetLayer && map.hasLayer(activeTileLayerInstance)) {
+        map.removeLayer(activeTileLayerInstance);
+    }
+    if (!map.hasLayer(targetLayer)) {
+        targetLayer.addTo(map);
+    }
+    activeTileLayerInstance = targetLayer;
 
     const card = document.getElementById("layerCard");
     const badge = document.getElementById("layerBadgeText");
@@ -181,7 +195,6 @@ function applyMapLayer(layerName) {
     });
 
     if (layerName === 'sat') {
-        satTileLayer.addTo(map);
         // Thumbnail menampilkan preview lapisan berikutnya (Medan)
         if (card) card.style.backgroundImage = "url('https://a.tile.opentopomap.org/4/8/6.png')";
         const opt = document.getElementById("layerOptSat");
@@ -189,7 +202,6 @@ function applyMapLayer(layerName) {
         const mobOpt = document.getElementById("mobLayerOptSat");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'terrain') {
-        terrainTileLayer.addTo(map);
         // Thumbnail menampilkan preview lapisan berikutnya (Gelap)
         if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png')";
         const opt = document.getElementById("layerOptTerrain");
@@ -197,7 +209,6 @@ function applyMapLayer(layerName) {
         const mobOpt = document.getElementById("mobLayerOptTerrain");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'dark') {
-        darkTileLayer.addTo(map);
         // Thumbnail menampilkan preview lapisan berikutnya (Standar)
         if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png')";
         const opt = document.getElementById("layerOptDark");
@@ -206,7 +217,6 @@ function applyMapLayer(layerName) {
         if (mobOpt) mobOpt.classList.add('active');
     } else {
         // default: light / standar
-        lightTileLayer.addTo(map);
         // Thumbnail menampilkan preview lapisan berikutnya (Satelit) persis seperti Google Maps
         if (card) card.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13')";
         const opt = document.getElementById("layerOptLight");
@@ -1105,6 +1115,11 @@ function switchNavTab(tabName) {
             return;
         }
         currentNavTab = tabName;
+    }
+
+    // Inisialisasi on-demand tab panduan siaga jika dipilih
+    if (tabName === 'guide' && typeof ensureGuideTabDOM === 'function') {
+        ensureGuideTabDOM();
     }
 
     // Tampilkan panel tab yang sesuai
@@ -3210,6 +3225,7 @@ function closeAppInfo(e) {
 
 // ==================== HISTATS ANALYTICS TRACKER ====================
 function initHistats() {
+    if (location.protocol === 'file:') return;
     try {
         window._Hasync = window._Hasync || [];
         window._Hasync.push(['Histats.start', '1,5045294,4,0,0,0,00010000']);
@@ -3219,7 +3235,7 @@ function initHistats() {
         const hs = document.createElement('script');
         hs.type = 'text/javascript';
         hs.async = true;
-        hs.src = '//s10.histats.com/js15_as.js';
+        hs.src = 'https://s10.histats.com/js15_as.js';
         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
     } catch (e) {
         console.warn('[Analytics] Histats init warning:', e);

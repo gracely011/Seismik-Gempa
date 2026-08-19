@@ -441,9 +441,12 @@ body.theme-light #map {
         border-bottom: 1px solid var(--border-color) !important;
     }
 
-    body.nav-rail-disabled:not(.panel-collapsed) #searchSubmitBtn,
-    body.nav-rail-disabled:not(.panel-collapsed) #searchDividerVertical {
-        display: none !important;
+    body.nav-rail-disabled #searchSubmitBtn {
+        display: flex !important;
+    }
+
+    body.nav-rail-disabled #searchDividerVertical {
+        display: block !important;
     }
 
     body.nav-rail-disabled .cards-scroll-wrap {
@@ -451,9 +454,11 @@ body.theme-light #map {
         overflow-y: auto !important;
     }
 
-    /* Posisi Layer Thumbnail saat nav rail dimatikan */
-    body.nav-rail-disabled.panel-collapsed .layer-switcher-wrapper {
+    /* Posisi Layer Thumbnail saat nav rail dimatikan ("Tampilkan sidebar" OFF) */
+    body.nav-rail-disabled.panel-collapsed .layer-switcher-wrapper,
+    body.nav-rail-disabled .layer-switcher-wrapper {
         left: 12px !important;
+        bottom: 20px !important;
     }
 
     body.nav-rail-disabled:not(.panel-collapsed) .layer-switcher-wrapper {
@@ -1484,10 +1489,9 @@ body.theme-dark .weather-pill-gmap {
         transition: left 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s ease !important;
     }
 
-    /* Saat Sidebar Ditutup (Collapsed) -> Merapat langsung ke samping nav-rail (72px + 12px = 84px) */
-    body.panel-collapsed .layer-switcher-wrapper,
-    .panel-container.collapsed ~ .layer-switcher-wrapper,
-    .panel-container.collapsed .layer-switcher-wrapper {
+    /* Saat Sidebar Ditutup (Collapsed) & Nav Rail Aktif -> Merapat langsung ke samping nav-rail (72px + 12px = 84px) */
+    body:not(.nav-rail-disabled).panel-collapsed .layer-switcher-wrapper,
+    body:not(.nav-rail-disabled) .panel-container.collapsed ~ .layer-switcher-wrapper {
         left: calc(var(--rail-width) + 12px) !important;
     }
 

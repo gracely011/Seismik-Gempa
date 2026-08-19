@@ -12,6 +12,7 @@ const PRECACHE_ASSETS = [
     'faults.js?v=15.0',
     'style.css?v=15.0',
     'app.js?v=15.0',
+    'modals.js?v=15.0',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
     'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap',

@@ -803,164 +803,52 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- ==================== TAB 5: SIAGA (PANDUAN MITIGASI & KONTAK DARURAT) ==================== -->
-            <div class="panel-view-tab" id="viewGuide" style="display: none;">
-                <!-- HEADER SIAGA -->
-                <div class="tab-screen-header">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="google-symbols" style="font-size: 22px; color: #ea4335;">&#xe002;</span>
-                        <h1 class="tab-screen-title">Panduan Siaga</h1>
-                    </div>
-                </div>
-
-                <!-- 1. TIGA LANGKAH UTAMA -->
-                <div class="section-container">
-                    <div class="section-title-main" style="margin-bottom: 8px;">🚨 3 Langkah Utama Saat Gempa</div>
-                    <div class="step-grid">
-                        <div class="step-box">
-                            <div class="step-num">1</div>
-                            <div class="step-head">DROP (Merunduk)</div>
-                            <div class="step-desc">Segera rendahkan tubuh Anda ke lantai sebelum guncangan menjatuhkan Anda.</div>
-                        </div>
-                        <div class="step-box">
-                            <div class="step-num">2</div>
-                            <div class="step-head">COVER (Lindungi)</div>
-                            <div class="step-desc">Lindungi kepala dan leher di bawah meja kokoh atau dengan tas / bantal.</div>
-                        </div>
-                        <div class="step-box">
-                            <div class="step-num">3</div>
-                            <div class="step-head">HOLD ON (Bertahan)</div>
-                            <div class="step-desc">Pegang kuat kaki meja dan tetap berlindung sampai guncangan benar-benar berhenti.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. PANDUAN BERDASARKAN LOKASI -->
-                <div class="section-container">
-                    <div class="section-title-main" style="margin-bottom: 8px;">🏢 Tindakan Berdasarkan Lokasi</div>
-                    <div class="g-card" style="margin-bottom: 0;">
-                        <ul class="guide-list" style="margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: var(--text-secondary);">
-                            <li><strong>Di Dalam Gedung / Rumah:</strong> Jauhi jendela kaca, cermin, dan lemari tinggi. Jangan gunakan lift! Gunakan tangga darurat.</li>
-                            <li><strong>Di Luar Ruangan:</strong> Menjauh dari tiang listrik, papan reklame, pohon besar, dan dinding bata. Cari lapangan terbuka.</li>
-                            <li><strong>Di Dekat Pantai:</strong> Jika gempa terasa kuat (>20 detik) atau air laut surut tiba-tiba, <em>segera evakuasi ke tempat tinggi minimal 20 meter</em> (Waspada Tsunami!).</li>
-                            <li><strong>Di Dalam Kendaraan:</strong> Kurangi kecepatan perlahan, menepi ke bahu jalan yang aman, dan matikan mesin. Tetap di dalam mobil sampai gempa reda.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- 3. TAS SIAGA BENCANA -->
-                <div class="section-container">
-                    <div class="section-title-main" style="margin-bottom: 8px;">🎒 Tas Siaga Bencana (TSB)</div>
-                    <div class="tsb-chips-grid">
-                        <div class="tsb-item">💊 Kotak P3K &amp; Obat</div>
-                        <div class="tsb-item">🔦 Senter &amp; Baterai</div>
-                        <div class="tsb-item">📢 Peluit Darurat</div>
-                        <div class="tsb-item">💧 Air Minum (3 Hari)</div>
-                        <div class="tsb-item">🍞 Makanan Siap Saji</div>
-                        <div class="tsb-item">📻 Radio Portable</div>
-                        <div class="tsb-item">📄 Dokumen Penting</div>
-                        <div class="tsb-item">🔋 Powerbank &amp; Kabel</div>
-                        <div class="tsb-item">💵 Uang Tunai</div>
-                        <div class="tsb-item">😷 Masker &amp; Sanitizer</div>
-                    </div>
-                </div>
-
-                <!-- 4. KONTAK DARURAT CEPAT -->
-                <div class="section-container" style="margin-bottom: 24px;">
-                    <div class="section-title-main" style="margin-bottom: 8px;">📞 Kontak Nomor Darurat Nasional</div>
-                    <div class="emergency-contacts-grid">
-                        <a href="tel:115" class="contact-card" onclick="handleContactClick('115', 'BASARNAS', event)" title="Panggil 115 BASARNAS">
-                            <div class="contact-icon" style="background:#ea4335;">115</div>
-                            <div class="contact-info">
-                                <div class="contact-name">BASARNAS (115)</div>
-                                <div class="contact-desc">Pencarian &amp; Pertolongan Jiwa</div>
-                            </div>
-                        </a>
-                        <a href="tel:117" class="contact-card" onclick="handleContactClick('117', 'BNPB / BPBD', event)" title="Panggil 117 BNPB / BPBD">
-                            <div class="contact-icon" style="background:#f29900;">117</div>
-                            <div class="contact-info">
-                                <div class="contact-name">BNPB / BPBD (117)</div>
-                                <div class="contact-desc">Pusat Pengendalian Bencana</div>
-                            </div>
-                        </a>
-                        <a href="tel:118" class="contact-card" onclick="handleContactClick('118', 'Ambulans / PMI', event)" title="Panggil 118 Ambulans">
-                            <div class="contact-icon" style="background:#34a853;">118</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Ambulans / PMI (118)</div>
-                                <div class="contact-desc">Medis Gawat Darurat</div>
-                            </div>
-                        </a>
-                        <a href="tel:110" class="contact-card" onclick="handleContactClick('110', 'Kepolisian RI', event)" title="Panggil 110 Polisi">
-                            <div class="contact-icon" style="background:#1a73e8;">110</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Kepolisian RI (110)</div>
-                                <div class="contact-desc">Bantuan Keamanan</div>
-                            </div>
-                        </a>
-                        <a href="tel:113" class="contact-card" onclick="handleContactClick('113', 'Damkar', event)" title="Panggil 113 Damkar">
-                            <div class="contact-icon" style="background:#d93025;">113</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Damkar (113)</div>
-                                <div class="contact-desc">Evakuasi &amp; Kebakaran</div>
-                            </div>
-                        </a>
-                        <a href="tel:112" class="contact-card" onclick="handleContactClick('112', 'Panggilan Terpadu', event)" title="Panggil 112 Panggilan Terpadu">
-                            <div class="contact-icon" style="background:#673ab7;">112</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Panggilan Terpadu (112)</div>
-                                <div class="contact-desc">Nomor Darurat Terintegrasi</div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+    <!-- GOOGLE MAPS LAYER SWITCHER WITH HOVER EXPANSION (GLOBAL ROOT CONTROL) -->
+    <div class="layer-switcher-wrapper" id="layerSwitcherWrap">
+        <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL -->
+        <div class="layer-thumbnail-card" id="layerCard" onclick="handleLayerCardClick(event)" title="Ganti Lapisan Peta">
+            <span class="google-symbols mobile-layer-icon" style="font-size: 20px;">&#xe53b;</span>
+            <div class="layer-thumbnail-badge">
+                <span class="google-symbols" style="font-size: 15px;">&#xe53b;</span>
+                <span id="layerBadgeText">Lapisan</span>
             </div>
         </div>
 
-        <!-- GOOGLE MAPS LAYER SWITCHER WITH HOVER EXPANSION -->
-        <div class="layer-switcher-wrapper" id="layerSwitcherWrap">
-            <!-- TRIGGER BUTTON / CURRENT ACTIVE LAYER THUMBNAIL -->
-            <div class="layer-thumbnail-card" id="layerCard" onclick="handleLayerCardClick(event)" title="Ganti Lapisan Peta">
-                <span class="google-symbols mobile-layer-icon" style="font-size: 20px;">&#xe53b;</span>
-                <div class="layer-thumbnail-badge">
-                    <span class="google-symbols" style="font-size: 15px;">&#xe53b;</span>
-                    <span id="layerBadgeText">Lapisan</span>
-                </div>
+        <!-- HOVER POPUP MENU (GOOGLE MAPS STYLE DESKTOP) -->
+        <div class="layer-popup-menu" id="layerPopupMenu">
+            <!-- 1. STANDAR (DEFAULT) -->
+            <div class="layer-option-item active" id="layerOptLight" onclick="selectMapLayer('light')" title="Peta Standar">
+                <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png');"></div>
+                <span class="layer-opt-label">Standar</span>
             </div>
 
-            <!-- HOVER POPUP MENU (GOOGLE MAPS STYLE DESKTOP) -->
-            <div class="layer-popup-menu" id="layerPopupMenu">
-                <!-- 1. STANDAR (DEFAULT) -->
-                <div class="layer-option-item active" id="layerOptLight" onclick="selectMapLayer('light')" title="Peta Standar">
-                    <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png');"></div>
-                    <span class="layer-opt-label">Standar</span>
-                </div>
+            <!-- 2. SATELIT -->
+            <div class="layer-option-item" id="layerOptSat" onclick="selectMapLayer('sat')" title="Citra Satelit">
+                <div class="layer-thumb-preview" style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13');"></div>
+                <span class="layer-opt-label">Satelit</span>
+            </div>
 
-                <!-- 2. SATELIT -->
-                <div class="layer-option-item" id="layerOptSat" onclick="selectMapLayer('sat')" title="Citra Satelit">
-                    <div class="layer-thumb-preview" style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13');"></div>
-                    <span class="layer-opt-label">Satelit</span>
-                </div>
+            <!-- 3. GELAP / DARK -->
+            <div class="layer-option-item" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
+                <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png');"></div>
+                <span class="layer-opt-label">Gelap</span>
+            </div>
 
-                <!-- 3. GELAP / DARK -->
-                <div class="layer-option-item" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
-                    <div class="layer-thumb-preview" style="background-image: url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png');"></div>
-                    <span class="layer-opt-label">Gelap</span>
-                </div>
+            <!-- 4. MEDAN / TERRAIN -->
+            <div class="layer-option-item" id="layerOptTerrain" onclick="selectMapLayer('terrain')" title="Peta Medan">
+                <div class="layer-thumb-preview" style="background-image: url('https://a.tile.opentopomap.org/4/8/6.png');"></div>
+                <span class="layer-opt-label">Medan</span>
+            </div>
 
-                <!-- 4. MEDAN / TERRAIN -->
-                <div class="layer-option-item" id="layerOptTerrain" onclick="selectMapLayer('terrain')" title="Peta Medan">
-                    <div class="layer-thumb-preview" style="background-image: url('https://a.tile.opentopomap.org/4/8/6.png');"></div>
-                    <span class="layer-opt-label">Medan</span>
+            <!-- 5. SESAR AKTIF & MEGATHRUST OVERLAY TOGGLE -->
+            <div class="layer-option-item" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Garis Patahan Sesar &amp; Megathrust (Klik untuk Aktifkan)">
+                <div class="layer-thumb-preview" style="background: linear-gradient(135deg, #1e293b, #b91c1c); display:flex; align-items:center; justify-content:center;">
+                    <span class="google-symbols" style="font-size: 18px; color: #f87171;">&#xe002;</span>
                 </div>
-
-                <!-- 5. SESAR AKTIF & MEGATHRUST OVERLAY TOGGLE -->
-                <div class="layer-option-item" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Garis Patahan Sesar &amp; Megathrust (Klik untuk Aktifkan)">
-                    <div class="layer-thumb-preview" style="background: linear-gradient(135deg, #1e293b, #b91c1c); display:flex; align-items:center; justify-content:center;">
-                        <span class="google-symbols" style="font-size: 18px; color: #f87171;">&#xe002;</span>
-                    </div>
-                    <span class="layer-opt-label">Sesar Aktif</span>
-                </div>
+                <span class="layer-opt-label">Sesar Aktif</span>
             </div>
         </div>
     </div>
@@ -1017,384 +905,17 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL PANDUAN SIAGA MITIGASI & KONTAK DARURAT ==================== -->
-    <div class="modal-backdrop" id="modalDisasterGuide" style="display: none;" onclick="closeDisasterGuide(event)">
-        <div class="modal-dialog guide-modal-dialog" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title-wrap">
-                    <div class="modal-icon-badge" style="background: rgba(234, 67, 53, 0.12); color: #ea4335;">
-                        <span class="google-symbols" style="font-size: 22px;">&#xe002;</span>
-                    </div>
-                    <div>
-                        <h3 class="modal-title">Panduan Siaga Bencana Gempa</h3>
-                        <p class="modal-sub">Prosedur Keselamatan &amp; Mitigasi Standar BNPB / BMKG</p>
-                    </div>
-                </div>
-                <button class="modal-close-btn" onclick="closeDisasterGuide()" title="Tutup">
-                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
-                </button>
-            </div>
-
-            <div class="modal-body-scroll">
-                <!-- 1. TIGA LANGKAH UTAMA (DROP, COVER, HOLD ON) -->
-                <div class="guide-card-section">
-                    <h4 class="guide-section-title">🚨 3 Langkah Utama Saat Terjadi Gempa</h4>
-                    <div class="step-grid">
-                        <div class="step-box">
-                            <div class="step-num">1</div>
-                            <div class="step-head">DROP (Merunduk)</div>
-                            <div class="step-desc">Segera rendahkan tubuh Anda ke lantai sebelum guncangan menjatuhkan Anda.</div>
-                        </div>
-                        <div class="step-box">
-                            <div class="step-num">2</div>
-                            <div class="step-head">COVER (Lindungi)</div>
-                            <div class="step-desc">Lindungi kepala dan leher di bawah meja kokoh atau dengan tas / bantal.</div>
-                        </div>
-                        <div class="step-box">
-                            <div class="step-num">3</div>
-                            <div class="step-head">HOLD ON (Bertahan)</div>
-                            <div class="step-desc">Pegang kuat kaki meja dan tetap berlindung sampai guncangan benar-benar berhenti.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. PANDUAN LOKASI (DALAM RUANGAN / LUAR / PESISIR) -->
-                <div class="guide-card-section">
-                    <h4 class="guide-section-title">🏢 Tindakan Berdasarkan Lokasi Anda</h4>
-                    <ul class="guide-list">
-                        <li><strong>Di Dalam Gedung / Rumah:</strong> Jauhi jendela kaca, cermin, lemari tinggi, dan lampu gantung. Jangan gunakan lift! Gunakan tangga darurat.</li>
-                        <li><strong>Di Luar Ruangan:</strong> Menjauh dari tiang listrik, papan reklame, pohon besar, jembatan penyeberangan, dan dinding bata. Cari lapangan terbuka.</li>
-                        <li><strong>Di Dekat Pantai:</strong> Jika gempa terasa kuat (>20 detik) atau air laut surut tiba-tiba, <em>segera evakuasi ke tempat tinggi minimal 20 meter</em> (Waspada Tsunami!).</li>
-                        <li><strong>Di Dalam Kendaraan:</strong> Kurangi kecepatan perlahan, menepi ke bahu jalan yang aman, dan matikan mesin. Tetap di dalam mobil sampai gempa reda.</li>
-                    </ul>
-                </div>
-
-                <!-- 3. TAS SIAGA BENCANA (TSB) -->
-                <div class="guide-card-section">
-                    <h4 class="guide-section-title">🎒 Perlengkapan Tas Siaga Bencana (TSB)</h4>
-                    <div class="tsb-chips-grid">
-                        <div class="tsb-item">💊 Kotak P3K &amp; Obat Pribadi</div>
-                        <div class="tsb-item">🔦 Senter &amp; Baterai Cadangan</div>
-                        <div class="tsb-item">📢 Peluit Darurat (Sinyal Suara)</div>
-                        <div class="tsb-item">💧 Air Minum (Minimal 3 Hari)</div>
-                        <div class="tsb-item">🍞 Makanan Siap Saji / Biskuit</div>
-                        <div class="tsb-item">📻 Radio Portable (Info Darurat)</div>
-                        <div class="tsb-item">📄 Dokumen Penting (Plastik Kedap)</div>
-                        <div class="tsb-item">🔋 Powerbank &amp; Kabel Charger</div>
-                        <div class="tsb-item">💵 Uang Tunai Secukupnya</div>
-                        <div class="tsb-item">😷 Masker &amp; Hand Sanitizer</div>
-                    </div>
-                </div>
-
-                <!-- 4. KONTAK DARURAT CEPAT (KLIK UNTUK PANGGIL) -->
-                <div class="guide-card-section">
-                    <h4 class="guide-section-title">📞 Kontak Nomor Darurat Nasional Indonesia</h4>
-                    <div class="emergency-contacts-grid">
-                        <a href="tel:115" class="contact-card" onclick="handleContactClick('115', 'BASARNAS', event)" title="Klik untuk Panggil / Salin Nomor 115">
-                            <div class="contact-icon" style="background:#ea4335;">115</div>
-                            <div class="contact-info">
-                                <div class="contact-name">BASARNAS (115)</div>
-                                <div class="contact-desc">Pencarian &amp; Pertolongan Jiwa</div>
-                            </div>
-                        </a>
-                        <a href="tel:117" class="contact-card" onclick="handleContactClick('117', 'BNPB / BPBD', event)" title="Klik untuk Panggil / Salin Nomor 117">
-                            <div class="contact-icon" style="background:#f29900;">117</div>
-                            <div class="contact-info">
-                                <div class="contact-name">BNPB / BPBD (117)</div>
-                                <div class="contact-desc">Pusat Pengendalian Bencana</div>
-                            </div>
-                        </a>
-                        <a href="tel:118" class="contact-card" onclick="handleContactClick('118', 'Ambulans / PMI', event)" title="Klik untuk Panggil / Salin Nomor 118 / 119">
-                            <div class="contact-icon" style="background:#34a853;">118</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Ambulans / PMI (118/119)</div>
-                                <div class="contact-desc">Pertolongan Medis Gawat Darurat</div>
-                            </div>
-                        </a>
-                        <a href="tel:110" class="contact-card" onclick="handleContactClick('110', 'Kepolisian RI', event)" title="Klik untuk Panggil / Salin Nomor 110">
-                            <div class="contact-icon" style="background:#1a73e8;">110</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Kepolisian RI (110)</div>
-                                <div class="contact-desc">Bantuan Keamanan &amp; Ketertiban</div>
-                            </div>
-                        </a>
-                        <a href="tel:113" class="contact-card" onclick="handleContactClick('113', 'Pemadam Kebakaran', event)" title="Klik untuk Panggil / Salin Nomor 113">
-                            <div class="contact-icon" style="background:#d93025;">113</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Damkar (113)</div>
-                                <div class="contact-desc">Evakuasi &amp; Bahaya Kebakaran</div>
-                            </div>
-                        </a>
-                        <a href="tel:112" class="contact-card" onclick="handleContactClick('112', 'Panggilan Terpadu', event)" title="Klik untuk Panggil / Salin Nomor 112">
-                            <div class="contact-icon" style="background:#673ab7;">112</div>
-                            <div class="contact-info">
-                                <div class="contact-name">Panggilan Terpadu (112)</div>
-                                <div class="contact-desc">Nomor Darurat Terintegrasi</div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== MODAL TENTANG APLIKASI & DEVELOPER ==================== -->
-    <div class="modal-backdrop" id="modalAppInfo" style="display: none;" onclick="closeAppInfo(event)">
-        <div class="modal-dialog info-modal-dialog" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title-wrap">
-                    <div class="modal-icon-badge" style="background: rgba(26, 115, 232, 0.12); color: var(--accent-blue);">
-                        <span class="google-symbols" style="font-size: 22px;">&#xe88e;</span>
-                    </div>
-                    <div>
-                        <h3 class="modal-title">Tentang Seismograf</h3>
-                        <p class="modal-sub">Monitor Seismik Real-Time • Google Maps Edition</p>
-                    </div>
-                </div>
-                <button class="modal-close-btn" onclick="closeAppInfo()" title="Tutup">
-                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
-                </button>
-            </div>
-
-            <div class="modal-body-scroll">
-                <!-- 1. RINGKASAN APLIKASI -->
-                <div class="guide-card-section">
-                    <div class="app-info-hero">
-                        <div class="app-info-logo-wrap">
-                            <span class="google-symbols" style="font-size: 28px; color: var(--accent-blue);">&#xe80b;</span>
-                        </div>
-                        <div>
-                            <div class="app-info-name">Seismograph Gracely</div>
-                            <div class="app-info-version">Versi 2.5.0 (Google Maps Edition)</div>
-                        </div>
-                    </div>
-                    <p class="app-info-desc">
-                        Aplikasi pemantauan aktivitas gempa bumi seismik waktu-nyata (real-time) di seluruh wilayah Indonesia dan dunia dengan integrasi multi-sumber resmi dari <strong>BMKG</strong> (Badan Meteorologi, Klimatologi, dan Geofisika) serta <strong>USGS</strong> (United States Geological Survey).
-                    </p>
-                    <div class="app-feature-pills">
-                        <span class="feature-pill">⚡ Live BMKG &amp; USGS</span>
-                        <span class="feature-pill">🔊 Sinyal Audio Peringatan</span>
-                        <span class="feature-pill">🌊 Peta Sesar &amp; Megathrust</span>
-                        <span class="feature-pill">📏 Kalkulasi Jarak GPS</span>
-                        <span class="feature-pill">📱 Dukungan Offline PWA</span>
-                    </div>
-                </div>
-
-                <!-- 2. KARTU DEVELOPER / PENGEMBANG -->
-                <div class="guide-card-section">
-                    <h4 class="guide-section-title">
-                        <span class="google-symbols" style="font-size: 18px; color: var(--accent-blue);">&#xe7fd;</span>
-                        Pengembang Aplikasi
-                    </h4>
-                    <div class="dev-profile-card">
-                        <div class="dev-avatar-wrap">
-                            <div class="dev-avatar-initial">PS</div>
-                            <div class="dev-verified-badge" title="Verified Developer">
-                                <span class="google-symbols" style="font-size: 14px; color: #1a73e8;">&#xe86c;</span>
-                            </div>
-                        </div>
-                        <div class="dev-info">
-                            <div class="dev-name">Petrus Siahaan</div>
-                            <div class="dev-role">Full-Stack Web &amp; GIS Developer</div>
-                            <div class="dev-location"><span class="google-symbols" style="font-size: 14px; color: #ea4335;">&#xe0c8;</span> Indonesia</div>
-                        </div>
-                    </div>
-
-                    <!-- TAUTAN MEDIA SOSIAL & SITUS -->
-                    <div class="dev-links-grid">
-                        <!-- SITUS RESMI -->
-                        <a href="https://petrus.gracely.my.id/" target="_blank" rel="noopener noreferrer" class="dev-link-btn" title="Kunjungi Situs Resmi Petrus Siahaan">
-                            <div class="dev-link-icon-wrap" style="background: rgba(26, 115, 232, 0.15); color: #1a73e8;">
-                                <span class="google-symbols" style="font-size: 20px;">&#xe80b;</span>
-                            </div>
-                            <div class="dev-link-text">
-                                <div class="dev-link-label">Situs Web</div>
-                                <div class="dev-link-val">petrus.gracely.my.id</div>
-                            </div>
-                            <span class="google-symbols dev-link-arrow" style="font-size: 18px;">&#xe895;</span>
-                        </a>
-
-                        <!-- INSTAGRAM -->
-                        <a href="https://www.instagram.com/petrusperdana1/" target="_blank" rel="noopener noreferrer" class="dev-link-btn" title="Kunjungi Instagram @petrusperdana1">
-                            <div class="dev-link-icon-wrap" style="background: rgba(225, 48, 108, 0.15); color: #e1306c;">
-                                <span class="google-symbols" style="font-size: 20px;">&#xe39e;</span>
-                            </div>
-                            <div class="dev-link-text">
-                                <div class="dev-link-label">Instagram</div>
-                                <div class="dev-link-val">@petrusperdana1</div>
-                            </div>
-                            <span class="google-symbols dev-link-arrow" style="font-size: 18px;">&#xe895;</span>
-                        </a>
-
-                        <!-- FACEBOOK -->
-                        <a href="https://www.facebook.com/petrusperdana1" target="_blank" rel="noopener noreferrer" class="dev-link-btn" title="Kunjungi Facebook Petrus Perdana">
-                            <div class="dev-link-icon-wrap" style="background: rgba(24, 119, 242, 0.15); color: #1877f2;">
-                                <span class="google-symbols" style="font-size: 20px;">&#xe80d;</span>
-                            </div>
-                            <div class="dev-link-text">
-                                <div class="dev-link-label">Facebook</div>
-                                <div class="dev-link-val">petrusperdana1</div>
-                            </div>
-                            <span class="google-symbols dev-link-arrow" style="font-size: 18px;">&#xe895;</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== MODAL SHARE / EMBED MAP (GOOGLE MAPS STYLE) ==================== -->
-    <div class="modal-backdrop" id="modalShareEmbed" style="display: none;" onclick="closeShareModal(event)">
-        <div class="modal-dialog share-embed-modal" onclick="event.stopPropagation()">
-            <div class="share-modal-header">
-                <div class="share-modal-tabs">
-                    <button class="share-tab-btn active" id="tabShareLink" onclick="switchShareTab('link')">Kirim link</button>
-                    <button class="share-tab-btn" id="tabShareEmbed" onclick="switchShareTab('embed')">Sematkan peta</button>
-                </div>
-                <button class="modal-close-icon-btn" onclick="closeShareModal()" title="Tutup">
-                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
-                </button>
-            </div>
-            <div class="share-modal-body">
-                <!-- TAB 1: KIRIM LINK -->
-                <div class="share-pane active" id="paneShareLink">
-                    <div class="share-input-group">
-                        <input type="text" class="share-url-input" id="shareUrlInput" readonly value="https://seismik.gracely.my.id/">
-                        <button class="share-copy-btn" onclick="copyShareUrl()">Salin link</button>
-                    </div>
-                </div>
-                <!-- TAB 2: SEMATKAN PETA -->
-                <div class="share-pane" id="paneShareEmbed" style="display: none;">
-                    <div class="share-input-group">
-                        <input type="text" class="share-url-input" id="shareEmbedInput" readonly value='&lt;iframe src="https://seismik.gracely.my.id/" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"&gt;&lt;/iframe&gt;'>
-                        <button class="share-copy-btn" onclick="copyEmbedIframe()">Salin HTML</button>
-                    </div>
-                    <div class="embed-preview-note">Preview peta disematkan responsif untuk situs web & blog Anda.</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== MODAL PILIH BAHASA (GOOGLE MAPS STYLE) ==================== -->
-    <div class="gmap-lang-modal-backdrop" id="modalLanguagePicker" style="display: none;" onclick="closeLanguageModal(event)">
-        <div class="sYmAxe" aria-modal="true" role="dialog" onclick="event.stopPropagation()">
-            <div class="uiuFBf" tabindex="0" jsaction="focus:modal.focus.top"></div>
-            <button class="OyzoZb" aria-label="Tutup" onclick="closeLanguageModal()" title="Tutup">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </button>
-            <div class="yFnP6d">
-                <div class="kARmKf">
-                    <div class="ZsCMfd">
-                        <div class="NVacAd">
-                            <div class="yb2Rh">Pilih bahasa</div>
-                            <div class="qMgSKe JAILI" style="border-top:none; padding-bottom: 8px;">
-                                <div class="Vn3gGd" style="width: 100%;">
-                                    <div><a class="jf99xf lang-item" data-lang="en" href="javascript:void(0)" onclick="setAppLanguage('en', 'English (United States)')">&#x202A;English (United States)&#x202C;</a></div>
-                                </div>
-                            </div>
-                            <div class="JAILI">
-                                <div class="Vn3gGd">
-                                    <div><a class="jf99xf lang-item" data-lang="af" href="javascript:void(0)" onclick="setAppLanguage('af', 'Afrikaans')">&#x202A;Afrikaans&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="az" href="javascript:void(0)" onclick="setAppLanguage('az', 'azərbaycan')">&#x202A;azərbaycan&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item active-lang" data-lang="id" href="javascript:void(0)" onclick="setAppLanguage('id', 'Bahasa Indonesia')"><span class="QxsAAd">&#x202A;Bahasa Indonesia&#x202C;</span></a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ms" href="javascript:void(0)" onclick="setAppLanguage('ms', 'Bahasa Melayu')">&#x202A;Bahasa Melayu&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="bs" href="javascript:void(0)" onclick="setAppLanguage('bs', 'bosanski')">&#x202A;bosanski&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ca" href="javascript:void(0)" onclick="setAppLanguage('ca', 'català')">&#x202A;català&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="cs" href="javascript:void(0)" onclick="setAppLanguage('cs', 'Čeština')">&#x202A;Čeština&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="da" href="javascript:void(0)" onclick="setAppLanguage('da', 'Dansk')">&#x202A;Dansk&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="de" href="javascript:void(0)" onclick="setAppLanguage('de', 'Deutsch (Deutschland)')">&#x202A;Deutsch (Deutschland)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="et" href="javascript:void(0)" onclick="setAppLanguage('et', 'eesti')">&#x202A;eesti&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="en-us" href="javascript:void(0)" onclick="setAppLanguage('en', 'English (United States)')">&#x202A;English (United States)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="es" href="javascript:void(0)" onclick="setAppLanguage('es', 'Español (España)')">&#x202A;Español (España)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="es-419" href="javascript:void(0)" onclick="setAppLanguage('es-419', 'Español (Latinoamérica)')">&#x202A;Español (Latinoamérica)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="eu" href="javascript:void(0)" onclick="setAppLanguage('eu', 'euskara')">&#x202A;euskara&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="fil" href="javascript:void(0)" onclick="setAppLanguage('fil', 'Filipino')">&#x202A;Filipino&#x202C;</a></div>
-                                </div>
-                                <div class="Vn3gGd">
-                                    <div><a class="jf99xf lang-item" data-lang="fr" href="javascript:void(0)" onclick="setAppLanguage('fr', 'Français (France)')">&#x202A;Français (France)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="gl" href="javascript:void(0)" onclick="setAppLanguage('gl', 'galego')">&#x202A;galego&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="hr" href="javascript:void(0)" onclick="setAppLanguage('hr', 'Hrvatski')">&#x202A;Hrvatski&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="zu" href="javascript:void(0)" onclick="setAppLanguage('zu', 'isiZulu')">&#x202A;isiZulu&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="is" href="javascript:void(0)" onclick="setAppLanguage('is', 'íslenska')">&#x202A;íslenska&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="it" href="javascript:void(0)" onclick="setAppLanguage('it', 'Italiano')">&#x202A;Italiano&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="sw" href="javascript:void(0)" onclick="setAppLanguage('sw', 'Kiswahili')">&#x202A;Kiswahili&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="lv" href="javascript:void(0)" onclick="setAppLanguage('lv', 'latviešu')">&#x202A;latviešu&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="lt" href="javascript:void(0)" onclick="setAppLanguage('lt', 'lietuvių')">&#x202A;lietuvių&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="hu" href="javascript:void(0)" onclick="setAppLanguage('hu', 'magyar')">&#x202A;magyar&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="nl" href="javascript:void(0)" onclick="setAppLanguage('nl', 'Nederlands')">&#x202A;Nederlands&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="no" href="javascript:void(0)" onclick="setAppLanguage('no', 'norsk')">&#x202A;norsk&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="uz" href="javascript:void(0)" onclick="setAppLanguage('uz', 'oʻzbekcha')">&#x202A;oʻzbekcha&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="pl" href="javascript:void(0)" onclick="setAppLanguage('pl', 'polski')">&#x202A;polski&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="pt-br" href="javascript:void(0)" onclick="setAppLanguage('pt-br', 'Português (Brasil)')">&#x202A;Português (Brasil)&#x202C;</a></div>
-                                </div>
-                                <div class="Vn3gGd">
-                                    <div><a class="jf99xf lang-item" data-lang="pt-pt" href="javascript:void(0)" onclick="setAppLanguage('pt-pt', 'Português (Portugal)')">&#x202A;Português (Portugal)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ro" href="javascript:void(0)" onclick="setAppLanguage('ro', 'română')">&#x202A;română&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="sq" href="javascript:void(0)" onclick="setAppLanguage('sq', 'shqip')">&#x202A;shqip&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="sk" href="javascript:void(0)" onclick="setAppLanguage('sk', 'Slovenčina')">&#x202A;Slovenčina&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="sl" href="javascript:void(0)" onclick="setAppLanguage('sl', 'slovenščina')">&#x202A;slovenščina&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="fi" href="javascript:void(0)" onclick="setAppLanguage('fi', 'Suomi')">&#x202A;Suomi&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="sv" href="javascript:void(0)" onclick="setAppLanguage('sv', 'Svenska')">&#x202A;Svenska&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="vi" href="javascript:void(0)" onclick="setAppLanguage('vi', 'Tiếng Việt')">&#x202A;Tiếng Việt&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="tr" href="javascript:void(0)" onclick="setAppLanguage('tr', 'Türkçe')">&#x202A;Türkçe&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="el" href="javascript:void(0)" onclick="setAppLanguage('el', 'Ελληνικά')">&#x202A;Ελληνικά&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="bg" href="javascript:void(0)" onclick="setAppLanguage('bg', 'български')">&#x202A;български&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ky" href="javascript:void(0)" onclick="setAppLanguage('ky', 'кыргызча')">&#x202A;кыргызча&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="kk" href="javascript:void(0)" onclick="setAppLanguage('kk', 'қазақ тілі')">&#x202A;қазақ тілі&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="mk" href="javascript:void(0)" onclick="setAppLanguage('mk', 'македонски')">&#x202A;македонски&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="mn" href="javascript:void(0)" onclick="setAppLanguage('mn', 'монгол')">&#x202A;монгол&#x202C;</a></div>
-                                </div>
-                                <div class="Vn3gGd">
-                                    <div><a class="jf99xf lang-item" data-lang="ru" href="javascript:void(0)" onclick="setAppLanguage('ru', 'Русский')">&#x202A;Русский&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="sr" href="javascript:void(0)" onclick="setAppLanguage('sr', 'српски (ћирилица)')">&#x202A;српски (ћирилица)&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="uk" href="javascript:void(0)" onclick="setAppLanguage('uk', 'Українська')">&#x202A;Українська&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ka" href="javascript:void(0)" onclick="setAppLanguage('ka', 'ქართული')">&#x202A;ქართული&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="hy" href="javascript:void(0)" onclick="setAppLanguage('hy', 'հայերեն')">&#x202A;հայերեն&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="iw" href="javascript:void(0)" onclick="setAppLanguage('iw', 'עברית')"><span dir="rtl">&#x202B;עברית&#x202C;</span></a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ur" href="javascript:void(0)" onclick="setAppLanguage('ur', 'اردو')"><span dir="rtl">&#x202B;اردو&#x202C;</span></a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ar" href="javascript:void(0)" onclick="setAppLanguage('ar', 'العربية')"><span dir="rtl">&#x202B;العربية&#x202C;</span></a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="fa" href="javascript:void(0)" onclick="setAppLanguage('fa', 'فارسی')"><span dir="rtl">&#x202B;فارسی&#x202C;</span></a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="am" href="javascript:void(0)" onclick="setAppLanguage('am', 'አማርኛ')">&#x202A;አማርኛ&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ne" href="javascript:void(0)" onclick="setAppLanguage('ne', 'नेपाली')">&#x202A;नेपाली&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="hi" href="javascript:void(0)" onclick="setAppLanguage('hi', 'हिन्दी')">&#x202A;हिन्दी&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="mr" href="javascript:void(0)" onclick="setAppLanguage('mr', 'मराठी')">&#x202A;मराठी&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="bn" href="javascript:void(0)" onclick="setAppLanguage('bn', 'বাংলা')">&#x202A;বাংলা&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="pa" href="javascript:void(0)" onclick="setAppLanguage('pa', 'ਪੰਜਾਬੀ')">&#x202A;ਪੰਜਾਬੀ&#x202C;</a></div>
-                                </div>
-                                <div class="Vn3gGd">
-                                    <div><a class="jf99xf lang-item" data-lang="gu" href="javascript:void(0)" onclick="setAppLanguage('gu', 'ગુજરાતી')">&#x202A;ગુજરાતી&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ta" href="javascript:void(0)" onclick="setAppLanguage('ta', 'தமிழ்')">&#x202A;தமிழ்&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="te" href="javascript:void(0)" onclick="setAppLanguage('te', 'తెలుగు')">&#x202A;తెలుగు&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="kn" href="javascript:void(0)" onclick="setAppLanguage('kn', 'ಕನ್ನಡ')">&#x202A;ಕನ್ನಡ&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ml" href="javascript:void(0)" onclick="setAppLanguage('ml', 'മലയാളം')">&#x202A;മലയാളം&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="si" href="javascript:void(0)" onclick="setAppLanguage('si', 'සිංහල')">&#x202A;සිංහල&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="th" href="javascript:void(0)" onclick="setAppLanguage('th', 'ไทย')">&#x202A;ไทย&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="lo" href="javascript:void(0)" onclick="setAppLanguage('lo', 'ລາວ')">&#x202A;ລາວ&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="my" href="javascript:void(0)" onclick="setAppLanguage('my', 'ဗမာ')">&#x202A;ဗမာ&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="km" href="javascript:void(0)" onclick="setAppLanguage('km', 'ខ្មែរ')">&#x202A;ខ្មែរ&#x202C;</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ko" href="javascript:void(0)" onclick="setAppLanguage('ko', '한국어')">&#x202A;한국어</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="ja" href="javascript:void(0)" onclick="setAppLanguage('ja', '日本語')">&#x202A;日本語</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="zh-cn" href="javascript:void(0)" onclick="setAppLanguage('zh-cn', '简体中文')">&#x202A;简体中文</a></div>
-                                    <div><a class="jf99xf lang-item" data-lang="zh-tw" href="javascript:void(0)" onclick="setAppLanguage('zh-tw', '繁體中文')">&#x202A;繁體中文</a></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="uiuFBf" tabindex="0" jsaction="focus:modal.focus.bottom"></div>
-            <div class="mIzEMb"></div>
-        </div>
-    </div>
-
     <!-- LEAFLET JS ENGINE (DEFERRED & OPTIMIZED) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
     <script src="faults.js?v=15.0"></script>
 
-    <!-- MAIN APP SCRIPT -->
+    <!-- MAIN CORE APP SCRIPT -->
     <script src="app.js?v=15.0"></script>
+
+    <!-- SECONDARY MODULES & ON-DEMAND MODALS SCRIPT -->
+    <script src="modals.js?v=15.0" defer></script>
 
     <!-- GOOGLE TRANSLATE CLIENT ENGINE (INVISIBLE BACKGROUND ENGINE) -->
     <div id="google_translate_element" style="display: none !important;"></div>
