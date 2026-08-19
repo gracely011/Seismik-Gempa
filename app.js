@@ -169,8 +169,12 @@ function applyMapLayer(layerName) {
     const badge = document.getElementById("layerBadgeText");
     if (badge) badge.innerText = "Lapisan";
 
-    // Update active highlight on popup drawer options
+    // Update active highlight on desktop popup drawer options
     document.querySelectorAll('.layer-option-item').forEach(el => el.classList.remove('active'));
+    // Update active highlight on mobile bottom sheet options (kecuali faults)
+    document.querySelectorAll('.mobile-sheet-item').forEach(el => {
+        if (el.id !== 'mobLayerOptFaults') el.classList.remove('active');
+    });
 
     if (layerName === 'sat') {
         satTileLayer.addTo(map);
@@ -178,18 +182,24 @@ function applyMapLayer(layerName) {
         if (card) card.style.backgroundImage = "url('https://a.tile.opentopomap.org/4/8/6.png')";
         const opt = document.getElementById("layerOptSat");
         if (opt) opt.classList.add('active');
+        const mobOpt = document.getElementById("mobLayerOptSat");
+        if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'terrain') {
         terrainTileLayer.addTo(map);
         // Thumbnail menampilkan preview lapisan berikutnya (Gelap)
         if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png')";
         const opt = document.getElementById("layerOptTerrain");
         if (opt) opt.classList.add('active');
+        const mobOpt = document.getElementById("mobLayerOptTerrain");
+        if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'dark') {
         darkTileLayer.addTo(map);
         // Thumbnail menampilkan preview lapisan berikutnya (Standar)
         if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png')";
         const opt = document.getElementById("layerOptDark");
         if (opt) opt.classList.add('active');
+        const mobOpt = document.getElementById("mobLayerOptDark");
+        if (mobOpt) mobOpt.classList.add('active');
     } else {
         // default: light / standar
         lightTileLayer.addTo(map);
@@ -197,6 +207,8 @@ function applyMapLayer(layerName) {
         if (card) card.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13')";
         const opt = document.getElementById("layerOptLight");
         if (opt) opt.classList.add('active');
+        const mobOpt = document.getElementById("mobLayerOptLight");
+        if (mobOpt) mobOpt.classList.add('active');
     }
 
     currentMapLayer = layerName;
@@ -204,10 +216,38 @@ function applyMapLayer(layerName) {
     setTimeout(() => { map.invalidateSize(); }, 50);
 }
 
+function openLayerBottomSheet() {
+    const backdrop = document.getElementById("mobileLayerBackdrop");
+    const sheet = document.getElementById("mobileLayerBottomSheet");
+    if (backdrop && sheet) {
+        backdrop.classList.add("show");
+        sheet.classList.add("show");
+    }
+}
+
+function closeLayerBottomSheet() {
+    const backdrop = document.getElementById("mobileLayerBackdrop");
+    const sheet = document.getElementById("mobileLayerBottomSheet");
+    if (backdrop && sheet) {
+        backdrop.classList.remove("show");
+        sheet.classList.remove("show");
+    }
+}
+
+function handleLayerCardClick(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (window.innerWidth <= 768) {
+        openLayerBottomSheet();
+    } else {
+        cycleNextMapLayer(e);
+    }
+}
+
 function selectMapLayer(layerName) {
     applyMapLayer(layerName);
     const popup = document.getElementById("layerPopupMenu");
     if (popup) popup.classList.remove('show');
+    // NOTE: Tidak menutup bottom sheet otomatis di mobile agar pengguna leluasa melihat peta & memilih detail lain
 }
 
 function cycleNextMapLayer(e) {
@@ -267,11 +307,14 @@ function initFaultLinesLayer() {
     });
 
     const btn = document.getElementById("layerOptFaults");
+    const mobBtn = document.getElementById("mobLayerOptFaults");
     if (isFaultsLayerVisible) {
         faultLinesLayerGroup.addTo(map);
         if (btn) btn.classList.add("active");
+        if (mobBtn) mobBtn.classList.add("active");
     } else {
         if (btn) btn.classList.remove("active");
+        if (mobBtn) mobBtn.classList.remove("active");
     }
 }
 
@@ -282,12 +325,15 @@ function toggleFaultsLayer() {
     } catch (e) { }
 
     const btn = document.getElementById("layerOptFaults");
+    const mobBtn = document.getElementById("mobLayerOptFaults");
     if (isFaultsLayerVisible) {
         map.addLayer(faultLinesLayerGroup);
         if (btn) btn.classList.add("active");
+        if (mobBtn) mobBtn.classList.add("active");
     } else {
         map.removeLayer(faultLinesLayerGroup);
         if (btn) btn.classList.remove("active");
+        if (mobBtn) mobBtn.classList.remove("active");
     }
 }
 
@@ -492,10 +538,55 @@ function calcDistance(lat1, lon1, lat2, lon2) {
     return Math.round(R * c);
 }
 
-// ==================== SIDEBAR & MOBILE DRAWER TOGGLE ====================
+// ==================== SIDEBAR & 3-LEVEL MOBILE DRAWER SYSTEM (0%, 30%, 100%) ====================
 let isPanelCollapsed = false;
 let isMobileDrawerOpen = false;
-let currentNavTab = 'monitor'; // 'monitor' | 'saved' | 'recent'
+let currentDrawerSnapState = '30'; // '0' | '30' | '100'
+let currentNavTab = 'monitor'; // 'monitor' | 'saved' | 'contribution' | 'recent'
+
+function setDrawerSnapState(state) {
+    if (!['0', '30', '100'].includes(state)) state = '30';
+    currentDrawerSnapState = state;
+    const drawer = document.getElementById("cardsScrollWrap");
+    const menuBtn = document.getElementById("railMenuBtn");
+    const savedBtn = document.getElementById("railBtnSaved");
+    const infoBtn = document.getElementById("railBtnInfo");
+    if (!drawer) return;
+
+    // Bersihkan seluruh class state sebelumnya
+    drawer.classList.remove('state-0', 'state-10', 'state-30', 'state-60', 'state-100', 'collapsed');
+    document.body.classList.remove('drawer-state-0', 'drawer-state-10', 'drawer-state-30', 'drawer-state-60', 'drawer-state-100', 'mobile-drawer-open');
+
+    // Reset inline styles agar transisi CSS class berjalan mulus
+    drawer.style.height = '';
+    drawer.style.maxHeight = '';
+    drawer.style.transform = '';
+    drawer.style.opacity = '';
+    const gpsControls = document.getElementById("gmapControlsGroup");
+    if (gpsControls) gpsControls.style.bottom = '';
+
+    drawer.classList.add(`state-${state}`);
+    document.body.classList.add(`drawer-state-${state}`);
+
+    if (state === '100') {
+        document.body.classList.add('mobile-drawer-open');
+        isMobileDrawerOpen = true;
+    } else {
+        isMobileDrawerOpen = false;
+    }
+
+    if (menuBtn) menuBtn.classList.toggle("active", currentNavTab === 'monitor' && state !== '0');
+    if (savedBtn) savedBtn.classList.toggle("active", currentNavTab === 'saved' && state !== '0');
+    if (infoBtn) infoBtn.classList.toggle("active", currentNavTab === 'contribution' && state !== '0');
+}
+
+function handleMenuBtnClick() {
+    if (window.innerWidth > 768) {
+        toggleSidebar();
+    } else {
+        switchNavTab('monitor');
+    }
+}
 
 function toggleSidebar() {
     if (window.innerWidth <= 768) {
@@ -517,10 +608,26 @@ function toggleSidebar() {
 }
 
 function switchNavTab(tabName) {
-    // Jika mengklik tab yang sama, buka/tutup panel
+    // Jika mengklik tab yang sama di mobile
     if (tabName === currentNavTab) {
         if (window.innerWidth <= 768) {
-            toggleMobileDrawer();
+            if (tabName === 'saved' || tabName === 'contribution' || tabName === 'guide') {
+                // Tab Anda / Kontribusi / Siaga: toggle antara 100 dan 0
+                if (currentDrawerSnapState === '100') {
+                    setDrawerSnapState('0');
+                } else {
+                    setDrawerSnapState('100');
+                }
+            } else if (tabName === 'monitor') {
+                // Tab Jelajahi: toggle 0 -> 30 -> 100 -> 30
+                if (currentDrawerSnapState === '0') {
+                    setDrawerSnapState('30');
+                } else if (currentDrawerSnapState === '30') {
+                    setDrawerSnapState('100');
+                } else {
+                    setDrawerSnapState('30');
+                }
+            }
         } else {
             toggleSidebar();
         }
@@ -532,20 +639,28 @@ function switchNavTab(tabName) {
     // Perbarui status aktif pada tombol navigasi rail
     const menuBtn = document.getElementById("railMenuBtn");
     const savedBtn = document.getElementById("railBtnSaved");
+    const infoBtn = document.getElementById("railBtnInfo");
     const recentBtn = document.getElementById("railBtnRecent");
+    const guideBtn = document.getElementById("railBtnGuide");
 
     if (menuBtn) menuBtn.classList.toggle("active", tabName === 'monitor');
     if (savedBtn) savedBtn.classList.toggle("active", tabName === 'saved');
+    if (infoBtn) infoBtn.classList.toggle("active", tabName === 'contribution');
     if (recentBtn) recentBtn.classList.toggle("active", tabName === 'recent');
+    if (guideBtn) guideBtn.classList.toggle("active", tabName === 'guide');
 
     // Tampilkan panel tab yang sesuai
     const tabMonitor = document.getElementById("viewMonitor");
     const tabSaved = document.getElementById("viewSaved");
+    const tabContrib = document.getElementById("viewContribution");
     const tabRecent = document.getElementById("viewRecent");
+    const tabGuide = document.getElementById("viewGuide");
 
-    if (tabMonitor) tabMonitor.style.display = tabName === 'monitor' ? 'flex' : 'none';
-    if (tabSaved) tabSaved.style.display = tabName === 'saved' ? 'flex' : 'none';
-    if (tabRecent) tabRecent.style.display = tabName === 'recent' ? 'flex' : 'none';
+    if (tabMonitor) tabMonitor.style.display = tabName === 'monitor' ? 'block' : 'none';
+    if (tabSaved) tabSaved.style.display = tabName === 'saved' ? 'block' : 'none';
+    if (tabContrib) tabContrib.style.display = tabName === 'contribution' ? 'block' : 'none';
+    if (tabRecent) tabRecent.style.display = tabName === 'recent' ? 'block' : 'none';
+    if (tabGuide) tabGuide.style.display = tabName === 'guide' ? 'block' : 'none';
 
     // Refresh konten tab
     if (tabName === 'saved') {
@@ -556,9 +671,13 @@ function switchNavTab(tabName) {
         render24hTimelineUI();
     }
 
-    // Pastikan panel/drawer terbuka
+    // Perilaku pembukaan seragam di mobile
     if (window.innerWidth <= 768) {
-        toggleMobileDrawer(true);
+        if (tabName === 'saved' || tabName === 'contribution' || tabName === 'guide') {
+            setDrawerSnapState('100');
+        } else if (tabName === 'monitor') {
+            setDrawerSnapState('30');
+        }
     } else {
         if (isPanelCollapsed) {
             toggleSidebar();
@@ -566,40 +685,168 @@ function switchNavTab(tabName) {
     }
 }
 
-function toggleMobileDrawer(forceOpen) {
-    const drawer = document.getElementById("cardsScrollWrap");
-    const menuBtn = document.getElementById("railMenuBtn");
-    if (!drawer) return;
+function openDisasterGuide() {
+    switchNavTab('guide');
+}
 
-    if (forceOpen !== undefined) {
-        isMobileDrawerOpen = forceOpen;
-    } else {
-        isMobileDrawerOpen = !isMobileDrawerOpen;
+function ratePlace(stars) {
+    showNotification(`Terima kasih! Anda memberikan penilaian ${stars} bintang.`);
+}
+
+function skipRating(btn) {
+    const card = btn.closest('.rating-prompt-card');
+    if (card) {
+        card.style.transition = 'opacity 0.25s';
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 250);
     }
+}
 
-    drawer.classList.toggle("collapsed", !isMobileDrawerOpen);
-    if (menuBtn && currentNavTab === 'monitor') menuBtn.classList.toggle("active", isMobileDrawerOpen);
+function answerContrib(btn, answer) {
+    const card = btn.closest('.rating-prompt-card');
+    showNotification(`Jawaban Anda (${answer}) telah terkirim!`);
+    if (card) {
+        card.style.transition = 'opacity 0.25s';
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 250);
+    }
+}
+
+function panToSavedShortcut(type) {
+    if (type === 'home') {
+        map.flyTo([1.103, 104.038], 13);
+        showNotification('Terbang ke lokasi Rumah (Batam)');
+    } else {
+        showNotification('Fitur penetapan alamat kantor segera hadir!');
+    }
+}
+
+function toggleMobileDrawer(forceOpen) {
+    if (forceOpen === true) {
+        setDrawerSnapState('100');
+    } else if (forceOpen === false) {
+        setDrawerSnapState('0');
+    } else {
+        if (currentDrawerSnapState === '0') {
+            setDrawerSnapState('30');
+        } else if (currentDrawerSnapState === '30') {
+            setDrawerSnapState('100');
+        } else {
+            setDrawerSnapState('30');
+        }
+    }
 }
 
 function openMobileDrawer() {
-    toggleMobileDrawer(true);
+    setDrawerSnapState('100');
 }
 
-// Tutup otomatis drawer mobile saat klik di luar area menu
-document.addEventListener('click', (e) => {
-    if (window.innerWidth <= 768 && isMobileDrawerOpen) {
-        const drawer = document.getElementById("cardsScrollWrap");
-        const menuBtn = document.getElementById("railMenuBtn");
-        if (drawer && !drawer.contains(e.target) && menuBtn && !menuBtn.contains(e.target)) {
-            toggleMobileDrawer(false);
+// Inisialisasi Gesture Sentuh (Touch Drag & Snapping 3 Level: 0%, 30%, 100%)
+function initMobileDrawerGestures() {
+    const drawer = document.getElementById("cardsScrollWrap");
+    const handleBar = document.querySelector(".bottom-sheet-handle-bar");
+    if (!drawer || !handleBar) return;
+
+    let startY = 0;
+    let startHeight = 0;
+    let isDragging = false;
+
+    function onTouchStart(e) {
+        if (window.innerWidth > 768) return;
+        // Hanya seret jika menyentuh handle bar atau jika scroll drawer ada di paling atas (top: 0)
+        if (!handleBar.contains(e.target) && drawer.scrollTop > 5) return;
+
+        startY = e.touches[0].clientY;
+        startHeight = drawer.getBoundingClientRect().height;
+        isDragging = true;
+        drawer.style.transition = 'none';
+    }
+
+    function onTouchMove(e) {
+        if (!isDragging) return;
+        const currentY = e.touches[0].clientY;
+        const deltaY = startY - currentY; // Positif = geser naik, Negatif = geser turun
+
+        // Jika drawer di-scroll ke bawah saat konten ada di tengah, biarkan scroll biasa
+        if (drawer.scrollTop > 0 && deltaY < 0 && !handleBar.contains(e.target)) {
+            isDragging = false;
+            drawer.style.transition = '';
+            return;
+        }
+
+        let newHeight = startHeight + deltaY;
+        const minHeight = 0; // Level 0% (Hidden)
+        const maxHeight = window.innerHeight - 70; // Level 100% (Setinggi search bar dengan jarak top 10px)
+
+        if (newHeight < minHeight) newHeight = minHeight;
+        if (newHeight > maxHeight) newHeight = maxHeight;
+
+        drawer.style.height = `${newHeight}px`;
+        drawer.style.maxHeight = `${newHeight}px`;
+        drawer.style.opacity = newHeight < 20 ? '0' : '1';
+        drawer.style.transform = 'translateY(0)';
+
+        const gpsControls = document.getElementById("gmapControlsGroup");
+        if (gpsControls) {
+            gpsControls.style.transition = 'none';
+            gpsControls.style.bottom = `${newHeight + 70}px`;
+        }
+
+        if (e.cancelable && handleBar.contains(e.target)) {
+            e.preventDefault();
         }
     }
-});
 
-// Tutup otomatis saat peta digeser atau diklik di mobile
+    function onTouchEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        drawer.style.transition = '';
+        const gpsControls = document.getElementById("gmapControlsGroup");
+        if (gpsControls) gpsControls.style.transition = '';
+
+        const finalHeight = drawer.getBoundingClientRect().height;
+        const screenH = window.innerHeight;
+        const ratio = finalHeight / screenH;
+
+        // Snapping cerdas 3 level (0%, 30%, 100%)
+        if (ratio < 0.14) {
+            setDrawerSnapState('0');
+        } else if (ratio < 0.48) {
+            setDrawerSnapState('30');
+        } else {
+            setDrawerSnapState('100');
+        }
+
+        setTimeout(() => {
+            drawer.style.height = '';
+            drawer.style.maxHeight = '';
+            drawer.style.opacity = '';
+            drawer.style.transform = '';
+            if (gpsControls) gpsControls.style.bottom = '';
+        }, 360);
+    }
+
+    handleBar.addEventListener('touchstart', onTouchStart, { passive: true });
+    drawer.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+}
+
+// Inisialisasi awal saat script dimuat
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initMobileDrawerGestures();
+        if (window.innerWidth <= 768) setDrawerSnapState('30');
+    });
+} else {
+    initMobileDrawerGestures();
+    if (window.innerWidth <= 768) setDrawerSnapState('30');
+}
+
+// Tutup / perkecil otomatis saat peta digeser di mobile jika sedang fullscreen
 map.on('movestart', () => {
-    if (window.innerWidth <= 768 && isMobileDrawerOpen) {
-        toggleMobileDrawer(false);
+    if (window.innerWidth <= 768 && currentDrawerSnapState === '100') {
+        setDrawerSnapState('30');
     }
 });
 
@@ -1801,7 +2048,7 @@ function checkProximityRisk() {
     if (closeQuake) {
         if (dot) dot.className = "status-dot warning";
         let dist = calcDistance(targetCoords[0], targetCoords[1], closeQuake.lat, closeQuake.lon);
-        text.innerHTML = `<b style="color:var(--accent-red)">Waspada:</b> Gempa M${closeQuake.mag} ${dist}km dari wilayah ini!`;
+        text.innerHTML = `<b style="color:var(--accent-red)">Waspada:</b> Gempa M ${closeQuake.mag} &middot; Jarak ${dist} km dari wilayah ini!`;
     } else {
         if (dot) dot.className = "status-dot";
         text.innerText = "Kondisi sekitar terpantau stabil & normal";
@@ -2858,7 +3105,7 @@ function showToastNotification(msg) {
             transform: translateX(-50%) translateY(20px);
             background: #202124;
             color: #ffffff;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
             font-size: 12px;
             font-weight: 700;
             padding: 10px 18px;
