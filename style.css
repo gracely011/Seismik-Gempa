@@ -1671,6 +1671,78 @@ body.theme-light .layer-popup-menu {
     font-weight: 600;
 }
 
+/* ==================== SATELIT CHECKBOX LABEL (GOOGLE MAPS STYLE) ==================== */
+.layer-popup-suboptions {
+    border-left: 1px solid var(--border-color);
+    padding-left: 14px;
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.layer-checkbox-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-family: "Google Sans Text", Roboto, Arial, sans-serif;
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.layer-checkbox-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.custom-chk-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--text-secondary);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.layer-checkbox-item input[type="checkbox"]:checked + .custom-chk-box {
+    background: #1a73e8;
+    border-color: #1a73e8;
+}
+
+.layer-checkbox-item input[type="checkbox"]:checked + .custom-chk-box::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.layer-chk-label {
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.mobile-sheet-checkboxes {
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+}
+
 /* AREA INI STATUS CARD (GOOGLE MAPS STYLE) */
 .area-header {
     display: flex;

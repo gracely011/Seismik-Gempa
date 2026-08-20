@@ -850,6 +850,15 @@
                 </div>
                 <span class="layer-opt-label">Sesar Aktif</span>
             </div>
+
+            <!-- SUB-OPSI SATELIT (CHECKBOX LABEL DESKTOP) -->
+            <div class="layer-popup-suboptions" id="layerPopupSuboptions">
+                <label class="layer-checkbox-item" id="desktopSatLabelRow" title="Tampilkan nama kota, jalan, dan batas wilayah pada peta satelit">
+                    <input type="checkbox" id="desktopSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
+                    <span class="custom-chk-box"></span>
+                    <span class="layer-chk-label">Label nama tempat</span>
+                </label>
+            </div>
         </div>
     </div>
 
@@ -881,6 +890,15 @@
                         <div class="mobile-sheet-thumb" style="background-image: url('https://a.tile.opentopomap.org/4/8/6.png');"></div>
                         <span class="mobile-sheet-label">Medan</span>
                     </div>
+                </div>
+
+                <!-- CHECKBOX LABEL SATELIT (MOBILE) -->
+                <div class="mobile-sheet-checkboxes">
+                    <label class="layer-checkbox-item" id="mobSatLabelRow" title="Tampilkan nama kota, jalan, dan batas wilayah pada peta satelit">
+                        <input type="checkbox" id="mobSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
+                        <span class="custom-chk-box"></span>
+                        <span class="layer-chk-label">Label nama tempat (Satelit)</span>
+                    </label>
                 </div>
 
                 <div class="mobile-sheet-section-divider"></div>

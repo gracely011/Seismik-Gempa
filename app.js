@@ -57,6 +57,8 @@ let searchQuery = '';
 // LocalStorage Persistent Settings (Default: Tema Terang Google Maps)
 let currentTheme = localStorage.getItem('seismo_theme') || 'light';
 let currentMapLayer = localStorage.getItem('seismo_layer') || 'light';
+let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') === 'true';
+let isSatelliteLabelsEnabled = localStorage.getItem('seismo_sat_labels') !== '0'; // Default: Aktif (true)
 
 // Google Symbols Icons for Light / Dark Mode (Unicode PUA)
 const SYM_MOON = '<span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe51c;</span>';
@@ -115,7 +117,145 @@ function resizeCanvas() {
 }
 window.addEventListener("resize", resizeCanvas);
 
+// ==================== URL VIEWPORT & LAYER SYNCHRONIZATION (GOOGLE MAPS STYLE) ====================
+let isSyncingFromHash = false;
+let hashUpdateTimer = null;
+const VALID_MAP_LAYERS = ['light', 'sat', 'terrain', 'dark'];
+
+function parseMapUrlHash() {
+    try {
+        const hash = window.location.hash || '';
+        // Mendukung format: #/@lat,lng,zoomz, #/@lat,lng,zoomz/sat, #/@lat,lng,zoomz/sat+faults, #/@lat,lng,zoomz?layer=sat, dsb.
+        const match = hash.match(/^#\/?@?(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(\d+(?:\.\d+)?)z?(?:[\/?](.+))?$/);
+        if (!match) return null;
+
+        const lat = parseFloat(match[1]);
+        const lng = parseFloat(match[2]);
+        const zoom = Math.round(parseFloat(match[3]));
+
+        if (isNaN(lat) || isNaN(lng) || isNaN(zoom)) return null;
+        if (lat < -90 || lat > 90) return null;
+        if (lng < -180 || lng > 180) return null;
+        if (zoom < 2 || zoom > 19) return null;
+
+        let layer = null;
+        let faults = null;
+
+        const extra = (match[4] || '').toLowerCase();
+        if (extra) {
+            if (extra.includes('sat')) layer = 'sat';
+            else if (extra.includes('terrain') || extra.includes('medan') || extra.includes('topo')) layer = 'terrain';
+            else if (extra.includes('dark') || extra.includes('gelap')) layer = 'dark';
+            else if (extra.includes('light') || extra.includes('standar') || extra.includes('default')) layer = 'light';
+
+            if (extra.includes('fault') || extra.includes('sesar') || extra.includes('megathrust')) {
+                faults = true;
+            }
+        }
+
+        return { lat, lng, zoom, layer, faults };
+    } catch (e) {
+        return null;
+    }
+}
+
+function updateUrlHashFromMap() {
+    if (isSyncingFromHash || typeof map === 'undefined' || !map) return;
+
+    if (hashUpdateTimer) clearTimeout(hashUpdateTimer);
+    hashUpdateTimer = setTimeout(() => {
+        try {
+            const center = map.getCenter();
+            const zoom = Math.round(map.getZoom());
+            const latStr = center.lat.toFixed(6);
+            const lngStr = center.lng.toFixed(6);
+
+            let suffix = '';
+            const layer = currentMapLayer || 'light';
+            const isFaults = !!(typeof isFaultsLayerVisible !== 'undefined' && isFaultsLayerVisible);
+
+            if (layer !== 'light' || isFaults) {
+                if (layer !== 'light' && isFaults) {
+                    suffix = `/${layer}+faults`;
+                } else if (layer !== 'light') {
+                    suffix = `/${layer}`;
+                } else if (isFaults) {
+                    suffix = `/+faults`;
+                }
+            }
+
+            const newHash = `#/@${latStr},${lngStr},${zoom}z${suffix}`;
+
+            if (window.location.hash !== newHash) {
+                if (window.history && window.history.replaceState) {
+                    try {
+                        window.history.replaceState(null, '', newHash);
+                    } catch (err) {
+                        window.location.replace(newHash);
+                    }
+                } else {
+                    window.location.replace(newHash);
+                }
+            }
+        } catch (e) {
+            console.warn('[MapURL] Update hash error:', e);
+        }
+    }, 120);
+}
+
+function initMapUrlSync() {
+    if (typeof map === 'undefined' || !map) return;
+
+    map.on('moveend', updateUrlHashFromMap);
+    map.on('zoomend', updateUrlHashFromMap);
+
+    window.addEventListener('hashchange', () => {
+        const parsed = parseMapUrlHash();
+        if (!parsed) return;
+
+        const currentCenter = map.getCenter();
+        const currentZoom = Math.round(map.getZoom());
+
+        const isSameLat = Math.abs(currentCenter.lat - parsed.lat) < 0.00001;
+        const isSameLng = Math.abs(currentCenter.lng - parsed.lng) < 0.00001;
+        const isSameZoom = currentZoom === parsed.zoom;
+
+        isSyncingFromHash = true;
+
+        if (!isSameLat || !isSameLng || !isSameZoom) {
+            map.setView([parsed.lat, parsed.lng], parsed.zoom, { animate: true });
+        }
+
+        if (parsed.layer && parsed.layer !== currentMapLayer && typeof applyMapLayer === 'function') {
+            applyMapLayer(parsed.layer);
+        }
+
+        if (parsed.faults !== null && typeof isFaultsLayerVisible !== 'undefined' && parsed.faults !== isFaultsLayerVisible && typeof toggleFaultsLayer === 'function') {
+            toggleFaultsLayer();
+        }
+
+        setTimeout(() => {
+            isSyncingFromHash = false;
+        }, 300);
+    });
+
+    // Inisialisasi hash pada URL saat pertama kali dimuat
+    updateUrlHashFromMap();
+}
+
 // ==================== MAP & TILES ====================
+const initialHashView = parseMapUrlHash();
+if (initialHashView) {
+    if (initialHashView.layer && VALID_MAP_LAYERS.includes(initialHashView.layer)) {
+        currentMapLayer = initialHashView.layer;
+    }
+    if (initialHashView.faults !== null) {
+        isFaultsLayerVisible = initialHashView.faults;
+    }
+}
+const initialCenter = initialHashView ? [initialHashView.lat, initialHashView.lng] : userCoords;
+const initialZoom = initialHashView ? initialHashView.zoom : (hasUserGPS ? 7 : 5);
+
 const map = L.map("map", {
     zoomControl: false,
     zoomAnimation: true,
@@ -126,7 +266,7 @@ const map = L.map("map", {
     wheelPxPerZoomLevel: 120,
     inertia: true,
     inertiaDeceleration: 3000
-}).setView(userCoords, hasUserGPS ? 7 : 5);
+}).setView(initialCenter, initialZoom);
 
 // Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat
 const tileCommonOptions = {
@@ -169,6 +309,55 @@ function getTileLayer(layerName) {
         }
     }
     return tileLayersCache[layerName];
+}
+
+// Lapisan Label Transparan Resmi Esri (Nama Kota, Jalan, Batas Wilayah)
+const satelliteLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    ...tileCommonOptions,
+    maxZoom: 18,
+    pane: 'overlayPane',
+    attribution: '&copy; Esri &copy; OpenStreetMap'
+});
+
+function toggleSatelliteLabels(enabled) {
+    if (typeof enabled === 'boolean') {
+        isSatelliteLabelsEnabled = enabled;
+    } else {
+        isSatelliteLabelsEnabled = !isSatelliteLabelsEnabled;
+    }
+
+    try {
+        localStorage.setItem('seismo_sat_labels', isSatelliteLabelsEnabled ? '1' : '0');
+    } catch (e) {}
+
+    updateSatelliteLabelsUI();
+    updateSatelliteLabelsLayer();
+}
+
+function updateSatelliteLabelsUI() {
+    const deskChk = document.getElementById('desktopSatLabelCheckbox');
+    const mobChk = document.getElementById('mobSatLabelCheckbox');
+    if (deskChk) deskChk.checked = isSatelliteLabelsEnabled;
+    if (mobChk) mobChk.checked = isSatelliteLabelsEnabled;
+
+    const deskRow = document.getElementById('layerPopupSuboptions');
+    const mobRow = document.getElementById('mobSatLabelRow')?.closest('.mobile-sheet-checkboxes');
+    if (deskRow) deskRow.style.display = (currentMapLayer === 'sat') ? 'flex' : 'none';
+    if (mobRow) mobRow.style.display = (currentMapLayer === 'sat') ? 'flex' : 'none';
+}
+
+function updateSatelliteLabelsLayer() {
+    if (typeof map === 'undefined' || !map) return;
+
+    if (currentMapLayer === 'sat' && isSatelliteLabelsEnabled) {
+        if (!map.hasLayer(satelliteLabelsLayer)) {
+            satelliteLabelsLayer.addTo(map);
+        }
+    } else {
+        if (map.hasLayer(satelliteLabelsLayer)) {
+            map.removeLayer(satelliteLabelsLayer);
+        }
+    }
 }
 
 const MAP_LAYERS_ORDER = ['light', 'sat', 'terrain', 'dark'];
@@ -227,7 +416,10 @@ function applyMapLayer(layerName) {
 
     currentMapLayer = layerName;
     localStorage.setItem('seismo_layer', layerName);
+    updateSatelliteLabelsLayer();
+    updateSatelliteLabelsUI();
     setTimeout(() => { map.invalidateSize(); }, 50);
+    if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
 }
 
 function openLayerBottomSheet() {
@@ -289,8 +481,6 @@ function toggleMapLayer(e) {
 
 // ==================== FAULT LINES & MEGATHRUST LAYER ====================
 let faultLinesLayerGroup = L.layerGroup();
-// Baca preferensi tersimpan dari LocalStorage (default NONAKTIF/false jika belum pernah diaktifkan secara manual)
-let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') === 'true';
 
 function initFaultLinesLayer() {
     if (typeof FAULT_LINES_DATA === 'undefined') return;
@@ -349,6 +539,7 @@ function toggleFaultsLayer() {
         if (btn) btn.classList.remove("active");
         if (mobBtn) mobBtn.classList.remove("active");
     }
+    if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
 }
 
 // Inisialisasi garis sesar aktif saat boot
@@ -2567,64 +2758,51 @@ function toggleAlarm() {
 }
 
 // ==================== WEATHER & REVERSE GEOCODING (GOOGLE MAPS STYLE) ====================
-function formatIndonesianPlace(rawCity, rawLocality, rawSubdivision, lat, lon) {
-    let main = "";
-    let admin = "";
+function formatIndonesianPlace(addrObj, lat, lon) {
+    if (!addrObj || typeof addrObj !== 'object') {
+        return {
+            main: `Area (${lat.toFixed(2)})`,
+            admin: `Wilayah ${lat.toFixed(2)}, ${lon.toFixed(2)}`,
+            province: "Indonesia"
+        };
+    }
+
+    // 1. Ekstraksi Tingkat 1: Desa / Kelurahan / Suburb / Lingkungan / Kampung / Dusun
+    let village = addrObj.village || addrObj.suburb || addrObj.neighbourhood || addrObj.hamlet || addrObj.quarter || addrObj.residential || addrObj.city_district || addrObj.locality || "";
+    
+    // 2. Ekstraksi Tingkat 2: Kecamatan / Sub-district
+    let district = addrObj.district || addrObj.county_subdivision || addrObj.municipality || addrObj.subdistrict || "";
+    
+    // 3. Ekstraksi Tingkat 3: Kabupaten / Kota / Regency
+    let city = addrObj.county || addrObj.city || addrObj.town || addrObj.regency || addrObj.state_district || "";
+    
+    // 4. Ekstraksi Tingkat 4: Provinsi / State
+    let rawProv = addrObj.state || addrObj.province || addrObj.region || addrObj.principalSubdivision || "";
+
+    // Bersihkan nama desa / kelurahan dari awalan administratif
+    village = village.replace(/^(Kelurahan|Desa|Gampong|Nagari|Dusun|Pekan)\s+/i, '').trim();
+
+    // Format nama Kecamatan
+    let cleanDistrict = district.replace(/^(Kecamatan|Kec\.)\s+/i, '').trim();
+
+    // Format nama Kota / Kabupaten
+    let cleanCity = city.trim();
+    if (cleanCity) {
+        if (/^(Kabupaten|Kab\.)\s+/i.test(cleanCity)) {
+            cleanCity = "Kab. " + cleanCity.replace(/^(Kabupaten|Kab\.)\s+/i, '').trim();
+        } else if (/^(Kota)\s+/i.test(cleanCity)) {
+            cleanCity = "Kota " + cleanCity.replace(/^(Kota)\s+/i, '').trim();
+        } else if (cleanCity.endsWith(" Regency")) {
+            cleanCity = "Kab. " + cleanCity.replace(/\s+Regency$/i, '').trim();
+        } else if (cleanCity.endsWith(" City")) {
+            cleanCity = "Kota " + cleanCity.replace(/\s+City$/i, '').trim();
+        }
+    }
+
+    // Normalisasi Nama Provinsi Resmi Indonesia
     let province = "";
-
-    // 1. Validasi Geografis Ketat Berdasarkan Bounding Box Koordinat
-    // Sibolga & Tapanuli Tengah (Sumatera Utara)
-    if (lat >= 1.55 && lat <= 1.95 && lon >= 98.55 && lon <= 99.05) {
-        return { main: "Sibolga", admin: "Kota Sibolga", province: "Sumatera Utara" };
-    }
-
-    // Batam / Barelang / Bintan / Kepulauan Riau
-    if (lat >= 0.5 && lat <= 1.5 && lon >= 103.4 && lon <= 104.9) {
-        let isTPI = (rawCity && rawCity.toLowerCase().includes("tanjung pinang")) || (rawLocality && rawLocality.toLowerCase().includes("tanjung pinang"));
-        let isBintan = (rawCity && rawCity.toLowerCase().includes("bintan")) || (rawLocality && rawLocality.toLowerCase().includes("bintan"));
-        let isKarimun = (rawCity && rawCity.toLowerCase().includes("karimun")) || (rawLocality && rawLocality.toLowerCase().includes("karimun"));
-
-        if (isTPI) {
-            return { main: "Tanjungpinang", admin: "Kota Tanjungpinang", province: "Kepulauan Riau" };
-        } else if (isBintan) {
-            return { main: "Bintan", admin: "Kabupaten Bintan", province: "Kepulauan Riau" };
-        } else if (isKarimun) {
-            return { main: "Karimun", admin: "Kabupaten Karimun", province: "Kepulauan Riau" };
-        } else {
-            return { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
-        }
-    }
-
-    // DKI Jakarta
-    if (lat >= -6.4 && lat <= -6.0 && lon >= 106.65 && lon <= 107.0) {
-        return { main: "Jakarta", admin: "DKI Jakarta", province: "DKI Jakarta" };
-    }
-
-    // Parsing nama kota/kabupaten
-    let candidate = rawCity || rawLocality || "";
-    if (candidate) {
-        if (candidate.startsWith("Kota ")) {
-            main = candidate.replace(/^Kota\s+/, "").trim();
-            admin = candidate;
-        } else if (candidate.startsWith("Kabupaten ")) {
-            main = candidate.replace(/^Kabupaten\s+/, "").trim();
-            admin = candidate;
-        } else if (candidate.endsWith(" City")) {
-            main = candidate.replace(/\s+City$/, "").trim();
-            admin = "Kota " + main;
-        } else if (candidate.endsWith(" Regency")) {
-            main = candidate.replace(/\s+Regency$/, "").trim();
-            admin = "Kabupaten " + main;
-        } else {
-            main = candidate;
-            admin = "Kota " + candidate;
-        }
-    }
-
-    // Parsing dan normalisasi nama provinsi resmi Indonesia
-    let candidateProv = rawSubdivision || "";
-    if (candidateProv) {
-        let provLower = candidateProv.toLowerCase();
+    if (rawProv) {
+        let provLower = rawProv.toLowerCase();
         if (provLower.includes("riau islands") || provLower.includes("kepulauan riau") || provLower === "riau kepulauan") {
             province = "Kepulauan Riau";
         } else if (provLower === "sumatra" || provLower === "sumatera") {
@@ -2632,42 +2810,71 @@ function formatIndonesianPlace(rawCity, rawLocality, rawSubdivision, lat, lon) {
             else if (lat > -0.5) province = "Riau";
             else if (lat > -2.5) province = "Sumatera Barat";
             else province = "Sumatera Selatan";
-        } else if (provLower.includes("north sumatra")) {
+        } else if (provLower.includes("north sumatra") || provLower.includes("sumatera utara")) {
             province = "Sumatera Utara";
-        } else if (provLower.includes("west sumatra")) {
+        } else if (provLower.includes("west sumatra") || provLower.includes("sumatera barat")) {
             province = "Sumatera Barat";
-        } else if (provLower.includes("south sumatra")) {
+        } else if (provLower.includes("south sumatra") || provLower.includes("sumatera selatan")) {
             province = "Sumatera Selatan";
         } else if (provLower.includes("jakarta")) {
             province = "DKI Jakarta";
-        } else if (provLower.includes("west java")) {
+        } else if (provLower.includes("west java") || provLower.includes("jawa barat")) {
             province = "Jawa Barat";
-        } else if (provLower.includes("central java")) {
+        } else if (provLower.includes("central java") || provLower.includes("jawa tengah")) {
             province = "Jawa Tengah";
-        } else if (provLower.includes("east java")) {
+        } else if (provLower.includes("east java") || provLower.includes("jawa timur")) {
             province = "Jawa Timur";
         } else if (provLower.includes("yogyakarta") || provLower.includes("jogja")) {
             province = "D.I. Yogyakarta";
         } else if (provLower.includes("bali")) {
             province = "Bali";
+        } else if (provLower.includes("aceh")) {
+            province = "Aceh";
+        } else if (provLower.includes("lampung")) {
+            province = "Lampung";
+        } else if (provLower.includes("banten")) {
+            province = "Banten";
+        } else if (provLower.includes("jambi")) {
+            province = "Jambi";
+        } else if (provLower.includes("bengkulu")) {
+            province = "Bengkulu";
+        } else if (provLower.includes("bangka") || provLower.includes("belitung")) {
+            province = "Kep. Bangka Belitung";
         } else {
-            province = candidateProv;
+            province = rawProv;
         }
     }
 
-    // Cegah anomali: Koordinat di luar pulau Jawa tidak boleh berprovinsi Jawa/Jakarta
+    // Validasi pencegahan anomali provinsi pulau Jawa vs luar Jawa
     if (lat > -5.0 && (province.toLowerCase().includes("jawa") || province.toLowerCase().includes("jakarta"))) {
         if (lat >= -1.0 && lat <= 2.0 && lon >= 100.0 && lon <= 106.0) {
             province = (lon >= 103.4) ? "Kepulauan Riau" : "Riau";
-        } else if (lat > 2.0 && lon <= 100.0) {
+        } else if (lat > 1.0 && lon <= 100.0) {
             province = "Sumatera Utara";
         } else {
             province = "Indonesia";
         }
     }
 
-    if (!main) main = `Area (${lat.toFixed(2)})`;
-    if (!admin) admin = `Wilayah ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    // Susun Judul Utama (Nama Kelurahan / Desa jika ada, atau Kecamatan, atau Kota)
+    let main = village || cleanDistrict || cleanCity || `Area (${lat.toFixed(2)})`;
+
+    // Susun Sub-Judul Administrasi (Kecamatan dan Kabupaten/Kota)
+    let admin = "";
+    if (village && cleanDistrict && cleanCity) {
+        admin = `Kec. ${cleanDistrict}, ${cleanCity}`;
+    } else if (village && cleanDistrict) {
+        admin = `Kec. ${cleanDistrict}`;
+    } else if (village && cleanCity) {
+        admin = `${cleanCity}`;
+    } else if (cleanDistrict && cleanCity) {
+        admin = `Kec. ${cleanDistrict}, ${cleanCity}`;
+    } else if (cleanCity) {
+        admin = `${cleanCity}`;
+    } else {
+        admin = `Wilayah ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    }
+
     if (!province) province = "Indonesia";
 
     return { main, admin, province };
@@ -2680,9 +2887,9 @@ function renderLocationUI(obj, lat, lon) {
     const locEl = document.getElementById("user_loc");
 
     if (obj) {
-        if (mainEl) mainEl.innerText = obj.main || "Batam";
-        if (adminEl) adminEl.innerText = obj.admin || "Kota Batam";
-        if (provEl) provEl.innerText = obj.province || "Kepulauan Riau";
+        if (mainEl) mainEl.innerText = obj.main || "Wilayah";
+        if (adminEl) adminEl.innerText = obj.admin || "";
+        if (provEl) provEl.innerText = obj.province || "Indonesia";
     }
 
     if (locEl && lat !== undefined && lon !== undefined) {
@@ -2693,65 +2900,34 @@ function renderLocationUI(obj, lat, lon) {
 }
 
 async function fetchLocationName(lat, lon) {
-    // 0. Cek Cache Lokal Terlebih Dahulu (Jika koordinat tidak berubah signifikan)
+    // 0. Cek Cache Lokal Terlebih Dahulu (Jika koordinat tidak berubah signifikan < ~500m)
     const cachedObjStr = localStorage.getItem('seismo_user_place_obj');
     const cachedLat = parseFloat(localStorage.getItem('seismo_user_lat'));
     const cachedLon = parseFloat(localStorage.getItem('seismo_user_lon'));
     if (cachedObjStr && cachedLat && cachedLon) {
         const dist = Math.abs(lat - cachedLat) + Math.abs(lon - cachedLon);
-        if (dist < 0.03) { // < ~3km
+        if (dist < 0.005) { // < ~500m
             try {
                 const cachedObj = JSON.parse(cachedObjStr);
-                const validatedObj = formatIndonesianPlace(cachedObj.main, cachedObj.admin, cachedObj.province, lat, lon);
-                userPlaceObj = validatedObj;
-                userPlaceName = `${validatedObj.main}, ${validatedObj.admin}, ${validatedObj.province}`;
-                viewedPlaceObj = validatedObj;
-                renderLocationUI(validatedObj, lat, lon);
+                userPlaceObj = cachedObj;
+                userPlaceName = `${cachedObj.main}, ${cachedObj.admin}, ${cachedObj.province}`;
+                viewedPlaceObj = cachedObj;
+                renderLocationUI(cachedObj, lat, lon);
                 if (gpsMarker) updateGPSMarker(lat, lon, parseFloat(savedAcc) || 50, false);
-                return validatedObj;
+                return cachedObj;
             } catch (e) { }
         }
     }
 
-    // 1. Provider Utama: BigDataCloud Client API (cepat & bahasa Indonesia)
+    // 1. Provider Utama: OpenStreetMap Nominatim zoom=18 (sangat detail desa, kelurahan, kecamatan)
     try {
-        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
-        if (res.ok) {
-            const data = await res.json();
-            let city = data.city || data.locality || data.principalSubdivision || "";
-            let locality = data.locality || "";
-            let prov = data.principalSubdivision || "";
-
-            const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
-            userPlaceObj = obj;
-            userPlaceName = `${obj.main}, ${obj.admin}, ${obj.province}`;
-            viewedPlaceObj = obj;
-
-            localStorage.setItem('seismo_user_place_obj', JSON.stringify(obj));
-            localStorage.setItem('seismo_user_place', userPlaceName);
-
-            renderLocationUI(obj, lat, lon);
-            if (gpsMarker) updateGPSMarker(lat, lon, parseFloat(savedAcc) || 50, false);
-            return obj;
-        }
-    } catch (e) {
-        console.warn("BigDataCloud error, trying Nominatim fallback:", e);
-    }
-
-    // 2. Provider Cadangan: OpenStreetMap Nominatim
-    try {
-        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=12&addressdetails=1`, {
+        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'Accept-Language': 'id' }
         });
         if (resNom.ok) {
             const dataNom = await resNom.json();
             if (dataNom && dataNom.address) {
-                const addr = dataNom.address;
-                let city = addr.city || addr.town || addr.municipality || addr.county || addr.state_district || "";
-                let locality = addr.suburb || addr.neighbourhood || addr.village || "";
-                let prov = addr.state || addr.region || "";
-
-                const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
+                const obj = formatIndonesianPlace(dataNom.address, lat, lon);
                 userPlaceObj = obj;
                 userPlaceName = `${obj.main}, ${obj.admin}, ${obj.province}`;
                 viewedPlaceObj = obj;
@@ -2765,10 +2941,44 @@ async function fetchLocationName(lat, lon) {
             }
         }
     } catch (e) {
-        console.warn("Nominatim reverse geocode error:", e);
+        console.warn("Nominatim reverse geocode error, trying BigDataCloud fallback:", e);
     }
 
-    const fallbackObj = formatIndonesianPlace("", "", "", lat, lon);
+    // 2. Provider Cadangan: BigDataCloud Client API (cepat & bahasa Indonesia)
+    try {
+        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+        if (res.ok) {
+            const data = await res.json();
+            let addrObj = {
+                locality: data.locality || "",
+                city: data.city || "",
+                state: data.principalSubdivision || ""
+            };
+            if (Array.isArray(data.localityInfo?.administrative)) {
+                data.localityInfo.administrative.forEach(adm => {
+                    if (adm.adminLevel === 7 || adm.adminLevel === 8) addrObj.village = adm.name;
+                    else if (adm.adminLevel === 6) addrObj.district = adm.name;
+                    else if (adm.adminLevel === 4 || adm.adminLevel === 5) addrObj.county = adm.name;
+                });
+            }
+
+            const obj = formatIndonesianPlace(addrObj, lat, lon);
+            userPlaceObj = obj;
+            userPlaceName = `${obj.main}, ${obj.admin}, ${obj.province}`;
+            viewedPlaceObj = obj;
+
+            localStorage.setItem('seismo_user_place_obj', JSON.stringify(obj));
+            localStorage.setItem('seismo_user_place', userPlaceName);
+
+            renderLocationUI(obj, lat, lon);
+            if (gpsMarker) updateGPSMarker(lat, lon, parseFloat(savedAcc) || 50, false);
+            return obj;
+        }
+    } catch (e) {
+        console.warn("BigDataCloud reverse geocode error:", e);
+    }
+
+    const fallbackObj = formatIndonesianPlace(null, lat, lon);
     userPlaceObj = fallbackObj;
     viewedPlaceObj = fallbackObj;
     renderLocationUI(fallbackObj, lat, lon);
@@ -2776,34 +2986,15 @@ async function fetchLocationName(lat, lon) {
 
 // Reverse geocoding khusus saat meninjau wilayah favorit / pencarian (tanpa menimpa GPS asli pengguna)
 async function fetchLocationNameForView(lat, lon) {
+    // 1. OpenStreetMap Nominatim zoom=18
     try {
-        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
-        if (res.ok) {
-            const data = await res.json();
-            let city = data.city || data.locality || data.principalSubdivision || "";
-            let locality = data.locality || "";
-            let prov = data.principalSubdivision || "";
-
-            const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
-            viewedPlaceObj = obj;
-            renderLocationUI(obj, lat, lon);
-            return obj;
-        }
-    } catch (e) { }
-
-    try {
-        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=12&addressdetails=1`, {
+        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'Accept-Language': 'id' }
         });
         if (resNom.ok) {
             const dataNom = await resNom.json();
             if (dataNom && dataNom.address) {
-                const addr = dataNom.address;
-                let city = addr.city || addr.town || addr.municipality || addr.county || addr.state_district || "";
-                let locality = addr.suburb || addr.neighbourhood || addr.village || "";
-                let prov = addr.state || addr.region || "";
-
-                const obj = formatIndonesianPlace(city, locality, prov, lat, lon);
+                const obj = formatIndonesianPlace(dataNom.address, lat, lon);
                 viewedPlaceObj = obj;
                 renderLocationUI(obj, lat, lon);
                 return obj;
@@ -2811,7 +3002,32 @@ async function fetchLocationNameForView(lat, lon) {
         }
     } catch (e) { }
 
-    const fallbackObj = formatIndonesianPlace("", "", "", lat, lon);
+    // 2. BigDataCloud Fallback
+    try {
+        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+        if (res.ok) {
+            const data = await res.json();
+            let addrObj = {
+                locality: data.locality || "",
+                city: data.city || "",
+                state: data.principalSubdivision || ""
+            };
+            if (Array.isArray(data.localityInfo?.administrative)) {
+                data.localityInfo.administrative.forEach(adm => {
+                    if (adm.adminLevel === 7 || adm.adminLevel === 8) addrObj.village = adm.name;
+                    else if (adm.adminLevel === 6) addrObj.district = adm.name;
+                    else if (adm.adminLevel === 4 || adm.adminLevel === 5) addrObj.county = adm.name;
+                });
+            }
+
+            const obj = formatIndonesianPlace(addrObj, lat, lon);
+            viewedPlaceObj = obj;
+            renderLocationUI(obj, lat, lon);
+            return obj;
+        }
+    } catch (e) { }
+
+    const fallbackObj = formatIndonesianPlace(null, lat, lon);
     viewedPlaceObj = fallbackObj;
     renderLocationUI(fallbackObj, lat, lon);
 }
@@ -2977,6 +3193,7 @@ function requestFreshGPS(panToLocation = true) {
             localStorage.setItem('seismo_user_acc', accuracy);
 
             userCoords = [latitude, longitude];
+            viewedCoords = [latitude, longitude];
             hasUserGPS = true;
 
             updateGPSMarker(latitude, longitude, accuracy, panToLocation);
@@ -2996,7 +3213,7 @@ function requestFreshGPS(panToLocation = true) {
                 map.flyTo(userCoords, 9, { duration: 1.2 });
             }
         },
-        { timeout: 10000, enableHighAccuracy: true }
+        { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
     );
 }
 
@@ -3025,6 +3242,7 @@ function bootApp() {
     // 1. Instan Visual UI & Tema Terang Bawaan (Milidetik ke-0)
     initTheme();
     applyMapLayer(currentMapLayer);
+    initMapUrlSync();
     updateLiveClock();
     initChipsSliderInteractions();
     updateBookmarkIconState();
