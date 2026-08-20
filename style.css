@@ -102,6 +102,114 @@ body.theme-light #map {
     background-color: #f1f3f4;
 }
 
+/* ==================== GOOGLE MAPS STYLE MAP PRELOADER OVERLAY ==================== */
+.map-loader-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background-color: #f1f3f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    user-select: none;
+    opacity: 1;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.theme-dark .map-loader-overlay {
+    background-color: #202124;
+}
+
+.map-loader-overlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.map-loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.map-loader-brand {
+    font-family: "Google Sans", Roboto, Arial, sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: rgba(60, 64, 67, 0.55);
+    letter-spacing: -0.2px;
+}
+
+body.theme-dark .map-loader-brand {
+    color: rgba(232, 234, 237, 0.45);
+}
+
+.map-loader-brand-bold {
+    font-weight: 700;
+    color: rgba(26, 115, 232, 0.7);
+}
+
+body.theme-dark .map-loader-brand-bold {
+    color: rgba(138, 180, 248, 0.7);
+}
+
+/* Three Bouncing Dots (Google Style Animation) */
+.map-loader-dots {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.map-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #1a73e8;
+    animation: gmapBounce 1.2s infinite ease-in-out both;
+}
+
+.map-dot.dot-1 {
+    background-color: #1a73e8; /* Google Blue */
+    animation-delay: -0.32s;
+}
+
+.map-dot.dot-2 {
+    background-color: #ea4335; /* Google Red */
+    animation-delay: -0.16s;
+}
+
+.map-dot.dot-3 {
+    background-color: #fbbc04; /* Google Yellow */
+    animation-delay: 0s;
+}
+
+body.theme-dark .map-dot.dot-1 {
+    background-color: #8ab4f8;
+}
+
+body.theme-dark .map-dot.dot-2 {
+    background-color: #f28b82;
+}
+
+body.theme-dark .map-dot.dot-3 {
+    background-color: #fdd663;
+}
+
+@keyframes gmapBounce {
+    0%, 80%, 100% {
+        transform: scale(0.4);
+        opacity: 0.4;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 /* ==================== SMOOTH HARDWARE-ACCELERATED LEAFLET TILES ==================== */
 .leaflet-tile {
     transition: opacity 0.15s ease-out !important;

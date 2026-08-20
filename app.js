@@ -268,6 +268,27 @@ const map = L.map("map", {
     inertiaDeceleration: 3000
 }).setView(initialCenter, initialZoom);
 
+// ==================== APP SHELL & MAP PRELOADER OVERLAY ====================
+let isMapLoaderHidden = false;
+
+function hideMapLoader() {
+    if (isMapLoaderHidden) return;
+    isMapLoaderHidden = true;
+
+    const loader = document.getElementById('map-loader');
+    if (!loader) return;
+
+    loader.classList.add('fade-out');
+    setTimeout(() => {
+        if (loader && loader.parentNode) {
+            loader.parentNode.removeChild(loader);
+        }
+    }, 420);
+}
+
+// Batas waktu aman (Safety fallback timeout) agar overlay tidak macet jika koneksi internet lambat
+setTimeout(hideMapLoader, 2200);
+
 // Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat
 const tileCommonOptions = {
     keepBuffer: 4,
@@ -369,6 +390,9 @@ function applyMapLayer(layerName) {
     }
     if (!map.hasLayer(targetLayer)) {
         targetLayer.addTo(map);
+        if (!isMapLoaderHidden) {
+            targetLayer.once('load', hideMapLoader);
+        }
     }
     activeTileLayerInstance = targetLayer;
 
