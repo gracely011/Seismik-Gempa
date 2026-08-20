@@ -572,11 +572,12 @@ const searchPlaceIcon = L.divIcon({
     iconAnchor: [15, 30]
 });
 
-function createAreaPopupHTML(obj, lat, lon) {
+function createAreaPopupHTML(obj, lat, lon, accuracyText = '') {
     const rawMain = obj?.main || "Wilayah";
     const main = String(rawMain).replace(/^📍\s*/, '').trim();
     const admin = obj?.admin || `Wilayah ${lat.toFixed(2)}`;
     const prov = obj?.province || "Indonesia";
+    const adminFull = admin ? `${admin} · ${prov}` : prov;
 
     const tempText = document.getElementById("weatherConditionTemp")?.innerText || "Cerah · 28 °C";
     const now = new Date();
@@ -603,8 +604,8 @@ function createAreaPopupHTML(obj, lat, lon) {
                             </span>
                         </button>
                     </div>
-                    <div class="popup-area-sub-line">${admin}</div>
-                    <div class="popup-area-sub-line">${prov}</div>
+                    ${accuracyText ? `<div class="popup-area-sub-line" style="font-weight: 500; color: var(--accent-blue);">${accuracyText}</div>` : ''}
+                    <div class="popup-area-sub-line">${adminFull}</div>
                     <div class="popup-area-gps-coord">GPS: ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
                 </div>
                 <div class="popup-area-right">
@@ -677,11 +678,8 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
     hasUserGPS = true;
 
     let placeObj = userPlaceObj || { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
-    const popupHtml = createAreaPopupHTML({
-        main: placeObj.main,
-        admin: `Lokasi Anda (GPS) • ±${Math.round(accuracy)}m`,
-        province: placeObj.province
-    }, lat, lon);
+    const accText = `Lokasi Anda (GPS) • ±${Math.round(accuracy)}m`;
+    const popupHtml = createAreaPopupHTML(placeObj, lat, lon, accText);
 
     if (!gpsMarker) {
         gpsMarker = L.marker([lat, lon], { icon: gpsPulseIcon, zIndexOffset: 1000 }).addTo(map);
@@ -2768,10 +2766,10 @@ function formatIndonesianPlace(addrObj, lat, lon) {
     }
 
     // 1. Ekstraksi Tingkat 1: Desa / Kelurahan / Suburb / Lingkungan / Kampung / Dusun
-    let village = addrObj.village || addrObj.suburb || addrObj.neighbourhood || addrObj.hamlet || addrObj.quarter || addrObj.residential || addrObj.city_district || addrObj.locality || "";
+    let village = addrObj.village || addrObj.suburb || addrObj.neighbourhood || addrObj.hamlet || addrObj.quarter || addrObj.residential || addrObj.locality || "";
     
-    // 2. Ekstraksi Tingkat 2: Kecamatan / Sub-district
-    let district = addrObj.district || addrObj.county_subdivision || addrObj.municipality || addrObj.subdistrict || "";
+    // 2. Ekstraksi Tingkat 2: Kecamatan / Sub-district (city_district di Indonesia adalah Kecamatan)
+    let district = addrObj.district || addrObj.city_district || addrObj.county_subdivision || addrObj.municipality || addrObj.subdistrict || "";
     
     // 3. Ekstraksi Tingkat 3: Kabupaten / Kota / Regency
     let city = addrObj.county || addrObj.city || addrObj.town || addrObj.regency || addrObj.state_district || "";
@@ -2796,6 +2794,8 @@ function formatIndonesianPlace(addrObj, lat, lon) {
             cleanCity = "Kab. " + cleanCity.replace(/\s+Regency$/i, '').trim();
         } else if (cleanCity.endsWith(" City")) {
             cleanCity = "Kota " + cleanCity.replace(/\s+City$/i, '').trim();
+        } else if (!/^(DKI|Daerah|Kab|Kota)/i.test(cleanCity)) {
+            cleanCity = "Kota " + cleanCity;
         }
     }
 
@@ -2883,13 +2883,15 @@ function formatIndonesianPlace(addrObj, lat, lon) {
 function renderLocationUI(obj, lat, lon) {
     const mainEl = document.getElementById("areaCityMain");
     const adminEl = document.getElementById("areaCityAdmin");
-    const provEl = document.getElementById("areaProvince");
     const locEl = document.getElementById("user_loc");
 
     if (obj) {
         if (mainEl) mainEl.innerText = obj.main || "Wilayah";
-        if (adminEl) adminEl.innerText = obj.admin || "";
-        if (provEl) provEl.innerText = obj.province || "Indonesia";
+        if (adminEl) {
+            const adminText = obj.admin ? `${obj.admin}` : "";
+            const provText = obj.province || "Indonesia";
+            adminEl.innerText = adminText ? `${adminText} · ${provText}` : provText;
+        }
     }
 
     if (locEl && lat !== undefined && lon !== undefined) {
