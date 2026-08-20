@@ -313,9 +313,20 @@ function ensureShareModalDOM() {
     return modal;
 }
 
+function updateShareModalInputs() {
+    const currentUrl = window.location.href;
+    const shareInput = document.getElementById("shareUrlInput");
+    const embedInput = document.getElementById("shareEmbedInput");
+    if (shareInput) shareInput.value = currentUrl;
+    if (embedInput) {
+        embedInput.value = `<iframe src="${currentUrl}" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+    }
+}
+
 function openShareModal() {
     if (typeof closeDesktopSettings === 'function') closeDesktopSettings();
     const modal = ensureShareModalDOM();
+    updateShareModalInputs();
     if (modal) modal.style.display = "flex";
 }
 

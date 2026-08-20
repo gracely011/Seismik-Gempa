@@ -224,6 +224,39 @@
             <div class="print-map-watermark" aria-hidden="true">
                 <span class="site-wm-bold">seismik</span>.gracely.my.id
             </div>
+
+            <!-- FLOATING PRINT NAVIGATION CONTROLS (1:1 GOOGLE MAPS .zeJi9d) -->
+            <div class="print-floating-controls" id="printFloatingControls">
+                <!-- Tombol Pan / Geser Peta -->
+                <div class="print-pan-control" title="Geser Peta">
+                    <button type="button" class="print-pan-btn pan-up" onclick="panPrintMap('up')" aria-label="Geser ke Atas" title="Geser ke Atas">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4l-6 6h12z"/></svg>
+                    </button>
+                    <div class="print-pan-middle">
+                        <button type="button" class="print-pan-btn pan-left" onclick="panPrintMap('left')" aria-label="Geser ke Kiri" title="Geser ke Kiri">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M4 12l6-6v12z"/></svg>
+                        </button>
+                        <div class="print-pan-center-dot" onclick="panPrintMap('reset')" title="Reset ke Titik Awal"></div>
+                        <button type="button" class="print-pan-btn pan-right" onclick="panPrintMap('right')" aria-label="Geser ke Kanan" title="Geser ke Kanan">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 12l-6 6V6z"/></svg>
+                        </button>
+                    </div>
+                    <button type="button" class="print-pan-btn pan-down" onclick="panPrintMap('down')" aria-label="Geser ke Bawah" title="Geser ke Bawah">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 20l6-6H6z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Tombol Zoom In / Out (.t5jFcc) -->
+                <div class="print-zoom-control">
+                    <button type="button" class="print-zoom-btn zoom-in" onclick="zoomInPrintMap()" aria-label="Perbesar" title="Perbesar">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    </button>
+                    <div class="print-zoom-divider"></div>
+                    <button type="button" class="print-zoom-btn zoom-out" onclick="zoomOutPrintMap()" aria-label="Perkecil" title="Perkecil">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- PRINT MAP FOOTER (CREDIT DATA & SCALE BAR) -->

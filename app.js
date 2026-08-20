@@ -160,11 +160,12 @@ function parseMapUrlHash() {
 }
 
 function updateUrlHashFromMap() {
-    if (isSyncingFromHash || typeof map === 'undefined' || !map) return;
+    if (isSyncingFromHash || typeof map === 'undefined' || !map || document.body.classList.contains('print-preview-mode')) return;
 
     if (hashUpdateTimer) clearTimeout(hashUpdateTimer);
     hashUpdateTimer = setTimeout(() => {
         try {
+            if (document.body.classList.contains('print-preview-mode')) return;
             const center = map.getCenter();
             const zoom = Math.round(map.getZoom());
             const latStr = center.lat.toFixed(6);
@@ -206,10 +207,24 @@ function updateUrlHashFromMap() {
 function initMapUrlSync() {
     if (typeof map === 'undefined' || !map) return;
 
-    map.on('moveend', updateUrlHashFromMap);
-    map.on('zoomend', updateUrlHashFromMap);
+    map.on('moveend', () => {
+        if (document.body.classList.contains('print-preview-mode')) {
+            if (typeof updatePrePrintStateFromCurrent === 'function') updatePrePrintStateFromCurrent();
+            return;
+        }
+        updateUrlHashFromMap();
+    });
+
+    map.on('zoomend', () => {
+        if (document.body.classList.contains('print-preview-mode')) {
+            if (typeof updatePrePrintStateFromCurrent === 'function') updatePrePrintStateFromCurrent();
+            return;
+        }
+        updateUrlHashFromMap();
+    });
 
     window.addEventListener('hashchange', () => {
+        if (document.body.classList.contains('print-preview-mode')) return;
         const parsed = parseMapUrlHash();
         if (!parsed) return;
 
@@ -890,7 +905,58 @@ function handleSettingsNav(tabName) {
     switchNavTab(tabName);
 }
 
-let prePrintMapState = null;
+function updatePrePrintStateFromCurrent() {
+    if (!map) return;
+    const currentCenter = map.getCenter();
+    const currentZoom = map.getZoom();
+    prePrintMapState = {
+        bounds: map.getBounds(),
+        center: currentCenter,
+        zoom: currentZoom,
+        layer: currentMapLayer,
+        faults: isFaultsLayerVisible,
+        aspectRatio: prePrintMapState ? prePrintMapState.aspectRatio : (window.innerWidth / window.innerHeight)
+    };
+
+    const footerLeftEl = document.getElementById("printFooterLeft");
+    if (footerLeftEl) {
+        const latestQuake = Array.isArray(quakesArray) && quakesArray.length > 0 ? quakesArray[0] : null;
+        if (latestQuake) {
+            const magVal = (latestQuake.mag || 0).toFixed(1);
+            const locVal = latestQuake.place || 'Wilayah Indonesia';
+            footerLeftEl.textContent = `⚡ Mutakhir: M ${magVal} · ${locVal} (${latestQuake.time || '-'})`;
+        } else {
+            const activeAreaName = (viewedPlaceObj && viewedPlaceObj.main) ? `${viewedPlaceObj.main}, ${viewedPlaceObj.admin || ''}` : (userPlaceName || 'Indonesia');
+            footerLeftEl.textContent = `📍 Area: ${activeAreaName} (${currentCenter.lat.toFixed(3)}, ${currentCenter.lng.toFixed(3)})`;
+        }
+    }
+}
+
+function panPrintMap(direction) {
+    if (!map) return;
+    const offset = 140;
+    if (direction === 'up') map.panBy([0, -offset], { animate: true });
+    else if (direction === 'down') map.panBy([0, offset], { animate: true });
+    else if (direction === 'left') map.panBy([-offset, 0], { animate: true });
+    else if (direction === 'right') map.panBy([offset, 0], { animate: true });
+    else if (direction === 'reset') {
+        const center = (userMarker && userMarker.getLatLng()) ? userMarker.getLatLng() : [ -0.7893, 113.9213 ];
+        map.setView(center, 7, { animate: true });
+    }
+    setTimeout(updatePrePrintStateFromCurrent, 300);
+}
+
+function zoomInPrintMap() {
+    if (!map) return;
+    map.zoomIn();
+    setTimeout(updatePrePrintStateFromCurrent, 300);
+}
+
+function zoomOutPrintMap() {
+    if (!map) return;
+    map.zoomOut();
+    setTimeout(updatePrePrintStateFromCurrent, 300);
+}
 
 function printMapPage() {
     closeDesktopSettings();
@@ -898,12 +964,24 @@ function printMapPage() {
     if (typeof closeShareModal === 'function') closeShareModal();
     if (typeof closeLayerBottomSheet === 'function') closeLayerBottomSheet();
 
-    // 1. Rekam batas geografis (bounds) dan titik pusat aktif di layar
+    // Hitung aspek rasio riil layar monitor / kontainer peta aktif saat ini secara dinamis
+    const activeMapEl = document.getElementById("map");
+    const curWidth = (activeMapEl && activeMapEl.clientWidth > 0) ? activeMapEl.clientWidth : window.innerWidth;
+    const curHeight = (activeMapEl && activeMapEl.clientHeight > 0) ? activeMapEl.clientHeight : window.innerHeight;
+    const dynamicRatio = (curWidth && curHeight && curHeight > 0) ? (curWidth / curHeight) : (16 / 9);
+
+    // Terapkan ke CSS variable dinamis
+    document.documentElement.style.setProperty('--print-map-aspect-ratio', `${dynamicRatio.toFixed(4)}`);
+
+    // 1. Rekam koordinat pusat, zoom, dan lapisan aktif yang sedang dilihat di layar
     if (map) {
         prePrintMapState = {
             bounds: map.getBounds(),
             center: map.getCenter(),
-            zoom: map.getZoom()
+            zoom: map.getZoom(),
+            layer: currentMapLayer,
+            faults: isFaultsLayerVisible,
+            aspectRatio: dynamicRatio
         };
     }
 
@@ -933,7 +1011,9 @@ function printMapPage() {
             const locVal = latestQuake.place || 'Wilayah Indonesia';
             footerLeftEl.textContent = `⚡ Mutakhir: M ${magVal} · ${locVal} (${latestQuake.time || '-'})`;
         } else {
-            footerLeftEl.textContent = `📍 Area: ${userPlaceName || 'Indonesia'}`;
+            const currentCenter = prePrintMapState ? prePrintMapState.center : map.getCenter();
+            const activeAreaName = (viewedPlaceObj && viewedPlaceObj.main) ? `${viewedPlaceObj.main}, ${viewedPlaceObj.admin || ''}` : (userPlaceName || 'Indonesia');
+            footerLeftEl.textContent = `📍 Area: ${activeAreaName} (${currentCenter.lat.toFixed(3)}, ${currentCenter.lng.toFixed(3)})`;
         }
     }
 
@@ -945,29 +1025,46 @@ function printMapPage() {
     // 2. Beralih ke Halaman Pratinjau Cetak Interaktif Google Maps
     document.body.classList.add('print-preview-mode');
 
-    // 3. Sesuaikan ukuran kanvas & hitung fitBounds agar seluruh area yang dilihat pengguna di layar muat utuh di bingkai cetak lanskap
+    // 3. Kunci seluruh interaksi mouse manual (agar pergeseran peta hanya dikontrol via tombol navigasi cetak)
+    if (map) {
+        if (map.dragging) map.dragging.disable();
+        if (map.touchZoom) map.touchZoom.disable();
+        if (map.doubleClickZoom) map.doubleClickZoom.disable();
+        if (map.scrollWheelZoom) map.scrollWheelZoom.disable();
+        if (map.boxZoom) map.boxZoom.disable();
+        if (map.keyboard) map.keyboard.disable();
+    }
+
+    // 4. Sesuaikan ukuran kanvas & pertahankan titik pusat & zoom persis seperti yang dilihat pengguna
     setTimeout(() => {
         if (map && prePrintMapState) {
             map.invalidateSize({ animate: false });
-            map.fitBounds(prePrintMapState.bounds, {
-                animate: false,
-                padding: [15, 15],
-                maxZoom: prePrintMapState.zoom
-            });
+            map.setView(prePrintMapState.center, prePrintMapState.zoom, { animate: false });
         }
         if (notesInput) notesInput.focus();
-    }, 120);
+    }, 80);
 }
 
 function closePrintPreview() {
     document.body.classList.remove('print-preview-mode');
+
+    // Aktifkan kembali seluruh interaksi peta normal
+    if (map) {
+        if (map.dragging) map.dragging.enable();
+        if (map.touchZoom) map.touchZoom.enable();
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+        if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
+        if (map.boxZoom) map.boxZoom.enable();
+        if (map.keyboard) map.keyboard.enable();
+    }
+
     setTimeout(() => {
         if (map && prePrintMapState) {
             map.invalidateSize({ animate: false });
             map.setView(prePrintMapState.center, prePrintMapState.zoom, { animate: false });
             prePrintMapState = null;
         }
-    }, 120);
+    }, 80);
 }
 
 function executeBrowserPrint() {
@@ -978,17 +1075,7 @@ function executeBrowserPrint() {
         notesPrintedText.textContent = text ? `Catatan: ${text}` : '';
     }
 
-    if (map && prePrintMapState) {
-        map.invalidateSize({ animate: false });
-        map.fitBounds(prePrintMapState.bounds, {
-            animate: false,
-            padding: [10, 10]
-        });
-    }
-
-    setTimeout(() => {
-        window.print();
-    }, 150);
+    window.print();
 }
 
 // Keyboard shortcut: Enter untuk Cetak, Escape untuk Batal di Mode Pratinjau
@@ -1009,23 +1096,6 @@ window.addEventListener('beforeprint', () => {
     if (notesInput && notesPrintedText && !notesPrintedText.textContent) {
         const text = notesInput.value.trim();
         notesPrintedText.textContent = text ? `Catatan: ${text}` : '';
-    }
-    if (map && prePrintMapState) {
-        map.invalidateSize({ animate: false });
-        map.fitBounds(prePrintMapState.bounds, {
-            animate: false,
-            padding: [10, 10]
-        });
-    }
-});
-
-window.addEventListener('afterprint', () => {
-    if (map && prePrintMapState) {
-        map.invalidateSize({ animate: false });
-        map.fitBounds(prePrintMapState.bounds, {
-            animate: false,
-            padding: [15, 15]
-        });
     }
 });
 
