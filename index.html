@@ -675,14 +675,38 @@
                     <div class="section-title-main">Tempat terakhir Anda</div>
                     <div class="section-sub-desc">Dari tempat tersimpan dan histori pantauan Anda</div>
 
-                    <!-- Filter Chips Row -->
-                    <div class="gmap-filter-chips-row">
-                        <div class="gmap-dropdown-chip active"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
-                        <div class="gmap-dropdown-chip">Wilayah <span class="chip-arrow">▼</span></div>
-                        <div class="gmap-dropdown-chip">Kategori <span class="chip-arrow">▼</span></div>
-                        <div class="gmap-dropdown-chip">Disimpan <span class="chip-arrow">▼</span></div>
-                        <div class="gmap-dropdown-chip">Histori</div>
+                    <!-- Filter Chips Row (Scrollable Horizontal) -->
+                    <div class="gmap-filter-chips-row" id="savedFilterChipsRow">
+                        <button class="gmap-dropdown-chip" id="chipSavedSearch" onclick="toggleSavedInlineSearch()" title="Cari Tempat" aria-label="Cari Tempat">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        </button>
+                        <button class="gmap-dropdown-chip" id="chipSavedRegion" onclick="toggleSavedFilterDropdown('region', this)">
+                            <span id="chipSavedRegionLabel">Wilayah</span> <span class="chip-arrow">▾</span>
+                        </button>
+                        <button class="gmap-dropdown-chip" id="chipSavedCategory" onclick="toggleSavedFilterDropdown('category', this)">
+                            <span id="chipSavedCategoryLabel">Kategori</span> <span class="chip-arrow">▾</span>
+                        </button>
+                        <button class="gmap-dropdown-chip" id="chipSavedSort" onclick="toggleSavedFilterDropdown('sort', this)">
+                            <span id="chipSavedSortLabel">Disimpan</span> <span class="chip-arrow">▾</span>
+                        </button>
+                        <button class="gmap-dropdown-chip" id="chipSavedHistory" onclick="toggleSavedFilterDropdown('history', this)">
+                            <span id="chipSavedHistoryLabel">Histori</span> <span class="chip-arrow">▾</span>
+                        </button>
                     </div>
+
+                    <!-- INLINE SEARCH INPUT (EXPANDABLE) -->
+                    <div class="saved-inline-search-wrap" id="savedInlineSearchWrap" style="display: none;">
+                        <div class="saved-inline-search-box">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-muted)"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            <input type="text" id="savedInlineSearchInput" placeholder="Cari di tempat tersimpan &amp; histori..." oninput="handleSavedPlacesSearch(this.value)" autocomplete="off">
+                            <button class="saved-search-clear-btn" id="savedSearchClearBtn" onclick="clearSavedInlineSearch()" title="Hapus">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- FLOATING DROPDOWN MENU FOR CHIPS -->
+                    <div class="saved-chips-dropdown" id="savedChipsDropdown" style="display: none;"></div>
 
                     <!-- Saved Places List -->
                     <div class="saved-items-container" id="savedPlacesList">

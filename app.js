@@ -2223,6 +2223,31 @@ const DEFAULT_SAVED_PLACES = [
     { id: 'jakarta', name: 'Jakarta', admin: 'DKI Jakarta', province: 'Indonesia', lat: -6.2088, lon: 106.8456, temp: '30°C' }
 ];
 
+// ==================== STATE FILTER CHIPS TAB DISIMPAN ====================
+let savedFilterSearch = '';
+let savedFilterRegion = 'all';
+let savedFilterCategory = 'all';
+let savedFilterSort = 'default';
+let savedViewMode = 'saved'; // 'saved' atau 'history'
+let activeSavedDropdownType = null;
+
+const INDONESIA_REGION_PROVINCES = {
+    sumatera: ['aceh', 'sumatera utara', 'sumatera barat', 'riau', 'kepulauan riau', 'jambi', 'sumatera selatan', 'bengkulu', 'lampung', 'bangka belitung', 'sibolga', 'padang', 'pekanbaru', 'medan', 'batam'],
+    jawa: ['dki jakarta', 'jakarta', 'jawa barat', 'jawa tengah', 'daerah istimewa yogyakarta', 'yogyakarta', 'jawa timur', 'banten', 'bandung', 'semarang', 'surabaya'],
+    kalimantan: ['kalimantan barat', 'kalimantan tengah', 'kalimantan selatan', 'kalimantan timur', 'kalimantan utara', 'pontianak', 'banjarmasin', 'samarinda', 'balikpapan', 'ikn', 'nusantara'],
+    sulawesi: ['sulawesi utara', 'sulawesi tengah', 'sulawesi selatan', 'sulawesi tenggara', 'gorontalo', 'sulawesi barat', 'makassar', 'manado', 'palu', 'kendar'],
+    balinusra: ['bali', 'nusa tenggara barat', 'nusa tenggara timur', 'denpasar', 'mataram', 'kupang', 'lombok'],
+    papuamaluku: ['maluku', 'maluku utara', 'papua', 'papua barat', 'papua selatan', 'papua tengah', 'papua pegunungan', 'papua barat daya', 'ambon', 'ternate', 'jayapura']
+};
+
+function matchesRegionFilter(place, regionKey) {
+    if (!regionKey || regionKey === 'all') return true;
+    const provs = INDONESIA_REGION_PROVINCES[regionKey];
+    if (!provs) return true;
+    const textToCheck = `${place.province || ''} ${place.admin || ''} ${place.name || ''}`.toLowerCase();
+    return provs.some(prov => textToCheck.includes(prov));
+}
+
 function getSavedPlaces() {
     try {
         const data = localStorage.getItem('seismo_saved_places');
@@ -2297,6 +2322,16 @@ function removeSavedPlace(id, e) {
     updateBookmarkIconState();
 }
 
+function removeRecentSearch(name, e) {
+    if (e) e.stopPropagation();
+    let list = getRecentSearches().filter(item => item.name.toLowerCase() !== name.toLowerCase());
+    try {
+        localStorage.setItem('seismo_recent_searches', JSON.stringify(list));
+    } catch (err) { }
+    renderSavedPlacesUI();
+    renderRecentSearchesUI();
+}
+
 function flyToSavedPlace(lat, lon, name) {
     map.flyTo([lat, lon], 10, { duration: 1.2 });
     viewedCoords = [lat, lon];
@@ -2322,54 +2357,354 @@ function flyToSavedPlace(lat, lon, name) {
     }
 }
 
+// ==================== INTERAKSI FILTER CHIPS DISIMPAN ====================
+function toggleSavedInlineSearch() {
+    const wrap = document.getElementById("savedInlineSearchWrap");
+    const input = document.getElementById("savedInlineSearchInput");
+    const chip = document.getElementById("chipSavedSearch");
+    if (!wrap || !input) return;
+
+    closeSavedChipsDropdown();
+
+    if (wrap.style.display === "none" || wrap.style.display === "") {
+        wrap.style.display = "block";
+        if (chip) chip.classList.add("active");
+        input.focus();
+    } else {
+        wrap.style.display = "none";
+        if (chip && !savedFilterSearch) chip.classList.remove("active");
+    }
+}
+
+function handleSavedPlacesSearch(val) {
+    savedFilterSearch = (val || '').trim().toLowerCase();
+    const clearBtn = document.getElementById("savedSearchClearBtn");
+    if (clearBtn) clearBtn.style.display = savedFilterSearch ? "flex" : "none";
+    const chip = document.getElementById("chipSavedSearch");
+    if (chip) chip.classList.toggle("active", Boolean(savedFilterSearch));
+    renderSavedPlacesUI();
+}
+
+function clearSavedInlineSearch() {
+    const input = document.getElementById("savedInlineSearchInput");
+    if (input) input.value = "";
+    handleSavedPlacesSearch("");
+}
+
+function toggleSavedFilterDropdown(type, btnEl) {
+    const dropdown = document.getElementById("savedChipsDropdown");
+    if (!dropdown || !btnEl) return;
+
+    if (activeSavedDropdownType === type && dropdown.style.display !== "none") {
+        closeSavedChipsDropdown();
+        return;
+    }
+
+    activeSavedDropdownType = type;
+    document.querySelectorAll(".gmap-dropdown-chip").forEach(c => c.classList.remove("open"));
+    btnEl.classList.add("open");
+
+    const checkSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--accent-blue)" style="flex-shrink:0;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+
+    let itemsHtml = '';
+    if (type === 'region') {
+        const regions = [
+            { id: 'all', label: 'Semua Wilayah' },
+            { id: 'sumatera', label: 'Sumatera' },
+            { id: 'jawa', label: 'Jawa' },
+            { id: 'kalimantan', label: 'Kalimantan' },
+            { id: 'sulawesi', label: 'Sulawesi' },
+            { id: 'balinusra', label: 'Bali & Nusa Tenggara' },
+            { id: 'papuamaluku', label: 'Maluku & Papua' }
+        ];
+        itemsHtml = regions.map(r => `
+            <button class="saved-chips-dropdown-item ${savedFilterRegion === r.id ? 'active' : ''}" onclick="applySavedRegionFilter('${r.id}', '${r.label}')">
+                <span>${r.label}</span>
+                ${savedFilterRegion === r.id ? checkSvg : ''}
+            </button>
+        `).join('');
+    } else if (type === 'category') {
+        const categories = [
+            { id: 'all', label: 'Semua Status' },
+            { id: 'safe', label: '🟢 Terpantau Aman' },
+            { id: 'warning', label: '⚠️ Ada Aktivitas Gempa' }
+        ];
+        itemsHtml = categories.map(c => `
+            <button class="saved-chips-dropdown-item ${savedFilterCategory === c.id ? 'active' : ''}" onclick="applySavedCategoryFilter('${c.id}', '${c.label}')">
+                <span>${c.label}</span>
+                ${savedFilterCategory === c.id ? checkSvg : ''}
+            </button>
+        `).join('');
+    } else if (type === 'sort') {
+        const sorts = [
+            { id: 'default', label: 'Default' },
+            { id: 'nearest', label: '📍 Terdekat dari Saya' },
+            { id: 'newest', label: '🕒 Terbaru Ditambahkan' },
+            { id: 'alphabet', label: '🔤 Nama (A - Z)' }
+        ];
+        itemsHtml = sorts.map(s => `
+            <button class="saved-chips-dropdown-item ${savedFilterSort === s.id ? 'active' : ''}" onclick="applySavedSortFilter('${s.id}', '${s.label}')">
+                <span>${s.label}</span>
+                ${savedFilterSort === s.id ? checkSvg : ''}
+            </button>
+        `).join('');
+    } else if (type === 'history') {
+        const views = [
+            { id: 'saved', label: '⭐ Tempat Tersimpan' },
+            { id: 'history', label: '🕒 Histori Dikunjungi' }
+        ];
+        itemsHtml = views.map(v => `
+            <button class="saved-chips-dropdown-item ${savedViewMode === v.id ? 'active' : ''}" onclick="applySavedViewMode('${v.id}', '${v.label}')">
+                <span>${v.label}</span>
+                ${savedViewMode === v.id ? checkSvg : ''}
+            </button>
+        `).join('');
+    }
+
+    dropdown.innerHTML = itemsHtml;
+    dropdown.style.display = "flex";
+
+    const parent = btnEl.closest('.section-container') || btnEl.parentElement;
+    const parentRect = parent.getBoundingClientRect();
+    const btnRect = btnEl.getBoundingClientRect();
+
+    let top = btnRect.bottom - parentRect.top + 6;
+    let left = btnRect.left - parentRect.left;
+
+    if (left + 190 > parentRect.width) {
+        dropdown.style.left = 'auto';
+        dropdown.style.right = '6px';
+    } else {
+        dropdown.style.left = `${Math.max(6, left)}px`;
+        dropdown.style.right = 'auto';
+    }
+    dropdown.style.top = `${top}px`;
+}
+
+function closeSavedChipsDropdown() {
+    const dropdown = document.getElementById("savedChipsDropdown");
+    if (dropdown) dropdown.style.display = "none";
+    activeSavedDropdownType = null;
+    document.querySelectorAll(".gmap-dropdown-chip").forEach(c => c.classList.remove("open"));
+}
+
+function applySavedRegionFilter(regionKey, label) {
+    savedFilterRegion = regionKey;
+    const labelEl = document.getElementById("chipSavedRegionLabel");
+    const chip = document.getElementById("chipSavedRegion");
+    if (labelEl) labelEl.innerText = regionKey === 'all' ? 'Wilayah' : label;
+    if (chip) chip.classList.toggle("active", regionKey !== 'all');
+    closeSavedChipsDropdown();
+    renderSavedPlacesUI();
+}
+
+function applySavedCategoryFilter(catKey, label) {
+    savedFilterCategory = catKey;
+    const labelEl = document.getElementById("chipSavedCategoryLabel");
+    const chip = document.getElementById("chipSavedCategory");
+    if (labelEl) labelEl.innerText = catKey === 'all' ? 'Kategori' : (catKey === 'safe' ? 'Aman' : 'Gempa');
+    if (chip) chip.classList.toggle("active", catKey !== 'all');
+    closeSavedChipsDropdown();
+    renderSavedPlacesUI();
+}
+
+function applySavedSortFilter(sortKey, label) {
+    savedFilterSort = sortKey;
+    const labelEl = document.getElementById("chipSavedSortLabel");
+    const chip = document.getElementById("chipSavedSort");
+    if (labelEl) labelEl.innerText = sortKey === 'default' ? 'Disimpan' : (label.includes('Terdekat') ? 'Terdekat' : (label.includes('Nama') ? 'A-Z' : 'Terbaru'));
+    if (chip) chip.classList.toggle("active", sortKey !== 'default');
+    closeSavedChipsDropdown();
+    renderSavedPlacesUI();
+}
+
+function applySavedViewMode(viewMode, label) {
+    savedViewMode = viewMode;
+    const labelEl = document.getElementById("chipSavedHistoryLabel");
+    const chip = document.getElementById("chipSavedHistory");
+    if (labelEl) labelEl.innerText = viewMode === 'history' ? 'Histori' : 'Tersimpan';
+    if (chip) chip.classList.toggle("active", viewMode === 'history');
+    closeSavedChipsDropdown();
+    renderSavedPlacesUI();
+}
+
+function initChipsDragScroll() {
+    const row = document.getElementById("savedFilterChipsRow");
+    if (!row) return;
+
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let dragDist = 0;
+
+    row.addEventListener('mousedown', (e) => {
+        isDown = true;
+        dragDist = 0;
+        startX = e.pageX - row.offsetLeft;
+        scrollLeft = row.scrollLeft;
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isDown) {
+            isDown = false;
+            setTimeout(() => { dragDist = 0; }, 60);
+        }
+    });
+
+    row.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        const x = e.pageX - row.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        dragDist = Math.abs(walk);
+        if (dragDist > 4) {
+            e.preventDefault();
+            row.scrollLeft = scrollLeft - walk;
+        }
+    });
+
+    // Support mouse wheel horizontal scroll
+    row.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            row.scrollLeft += e.deltaY;
+        }
+    }, { passive: false });
+
+    // Block button click if user was dragging
+    row.addEventListener('click', (e) => {
+        if (dragDist > 5) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+        }
+    }, true);
+}
+
+// Tutup dropdown filter chips saat klik di luar
+document.addEventListener("pointerdown", (e) => {
+    if (!e.target.closest('#savedChipsDropdown') && !e.target.closest('.gmap-dropdown-chip')) {
+        closeSavedChipsDropdown();
+    }
+});
+
 function renderSavedPlacesUI() {
     const container = document.getElementById("savedPlacesList");
     const badge = document.getElementById("savedPlacesCountBadge");
     if (!container) return;
 
-    const places = getSavedPlaces();
-    if (badge) badge.innerText = `${places.length} disimpan`;
+    // Ambil data berdasarkan view mode (Saved vs History)
+    let rawItems = [];
+    if (savedViewMode === 'history') {
+        const recentSearches = getRecentSearches();
+        rawItems = recentSearches.map((item, idx) => ({
+            id: 'hist_' + idx,
+            name: item.name,
+            admin: '',
+            province: '',
+            lat: item.lat,
+            lon: item.lon,
+            temp: '28°C',
+            time: item.time || 'Hari ini',
+            isHistory: true
+        }));
+    } else {
+        rawItems = getSavedPlaces();
+    }
 
-    if (places.length === 0) {
+    if (badge) badge.innerText = `${rawItems.length} ${savedViewMode === 'history' ? 'riwayat' : 'disimpan'}`;
+
+    // 1. Filter Pencarian Teks
+    let filtered = rawItems.filter(p => {
+        if (!savedFilterSearch) return true;
+        const text = `${p.name} ${p.admin || ''} ${p.province || ''}`.toLowerCase();
+        return text.includes(savedFilterSearch);
+    });
+
+    // 2. Filter Wilayah (Pulau/Region)
+    filtered = filtered.filter(p => matchesRegionFilter(p, savedFilterRegion));
+
+    // Hitung jarak gempa dan jarak GPS untuk setiap item
+    filtered = filtered.map(p => {
+        let nearestQuakeDist = null;
+        let nearestMag = 0;
+        quakesArray.forEach(q => {
+            let d = calcDistance(p.lat, p.lon, q.lat, q.lon);
+            if (nearestQuakeDist === null || d < nearestQuakeDist) {
+                nearestQuakeDist = d;
+                nearestMag = q.mag;
+            }
+        });
+
+        let isWarning = nearestQuakeDist !== null && nearestQuakeDist <= 150 && nearestMag >= 4.5;
+        let statusLabel = isWarning
+            ? `⚠️ Gempa M${nearestMag.toFixed(1)} (${nearestQuakeDist} km)`
+            : (nearestQuakeDist !== null ? `🟢 Terpantau Aman (${nearestQuakeDist} km)` : `🟢 Terpantau Aman`);
+
+        let userDist = (userCoords && userCoords[0]) ? calcDistance(userCoords[0], userCoords[1], p.lat, p.lon) : 999999;
+
+        return {
+            ...p,
+            nearestQuakeDist,
+            nearestMag,
+            isWarning,
+            statusLabel,
+            userDist
+        };
+    });
+
+    // 3. Filter Kategori Status Gempa
+    if (savedFilterCategory === 'safe') {
+        filtered = filtered.filter(p => !p.isWarning);
+    } else if (savedFilterCategory === 'warning') {
+        filtered = filtered.filter(p => p.isWarning);
+    }
+
+    // 4. Pengurutan (Sortir)
+    if (savedFilterSort === 'nearest') {
+        filtered.sort((a, b) => a.userDist - b.userDist);
+    } else if (savedFilterSort === 'alphabet') {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (savedFilterSort === 'newest') {
+        filtered.reverse();
+    }
+
+    if (filtered.length === 0) {
         container.innerHTML = `
-            <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:16px;">
-                Belum ada wilayah pantauan yang disimpan.<br>
-                Klik tombol <b>＋ Simpan Wilayah Ini</b> untuk menambahkan.
+            <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:18px;">
+                ${savedFilterSearch || savedFilterRegion !== 'all' || savedFilterCategory !== 'all'
+                    ? 'Tidak ada lokasi yang cocok dengan filter yang dipilih.'
+                    : (savedViewMode === 'history'
+                        ? 'Belum ada histori lokasi yang dikunjungi.'
+                        : 'Belum ada wilayah pantauan yang disimpan.<br>Klik tombol <b>＋ Simpan Wilayah Ini</b> untuk menambahkan.')}
             </div>
         `;
         return;
     }
 
-    container.innerHTML = places.map(p => {
-        let nearestDist = null;
-        let nearestMag = 0;
-        quakesArray.forEach(q => {
-            let d = calcDistance(p.lat, p.lon, q.lat, q.lon);
-            if (nearestDist === null || d < nearestDist) {
-                nearestDist = d;
-                nearestMag = q.mag;
-            }
-        });
-
-        let isWarning = nearestDist !== null && nearestDist <= 150 && nearestMag >= 4.5;
-        let statusLabel = isWarning
-            ? `⚠️ Gempa M${nearestMag.toFixed(1)} (${nearestDist} km)`
-            : (nearestDist !== null ? `🟢 Terpantau Aman (${nearestDist} km)` : `🟢 Terpantau Aman`);
-
+    container.innerHTML = filtered.map(p => {
         let safeName = escapeQuotes(p.name);
+        let deleteAction = p.isHistory
+            ? `removeRecentSearch('${safeName}', event)`
+            : `removeSavedPlace('${p.id}', event)`;
+        let deleteTitle = p.isHistory ? 'Hapus dari Histori' : 'Hapus dari Disimpan';
+        let subText = p.isHistory
+            ? `<span class="saved-place-status-dot"></span><span>🕒 ${p.time} · ${p.statusLabel}</span>`
+            : `<span class="saved-place-status-dot ${p.isWarning ? 'warning' : ''}"></span><span>${p.statusLabel}</span>`;
+
         return `
             <div class="saved-place-card" onclick="flyToSavedPlace(${p.lat}, ${p.lon}, '${safeName}')">
                 <div class="saved-place-info">
-                    <div class="saved-place-name"><span class="icon-pin-svg"></span> ${p.name}</div>
+                    <div class="saved-place-name">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--accent-red)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <span>${p.name}</span>
+                    </div>
                     <div class="saved-place-sub">
-                        <span class="saved-place-status-dot ${isWarning ? 'warning' : ''}"></span>
-                        <span>${statusLabel}</span>
+                        ${subText}
                     </div>
                 </div>
                 <div class="saved-place-right">
                     <div class="saved-place-weather">${p.temp || '28°C'}</div>
-                    <button class="btn-item-delete" onclick="removeSavedPlace('${p.id}', event)" title="Hapus dari Disimpan">
-                        <span class="google-symbols" style="font-size: 15px;">&#xe872;</span>
+                    <button class="btn-item-delete" onclick="${deleteAction}" title="${deleteTitle}">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                     </button>
                 </div>
             </div>
@@ -3386,7 +3721,7 @@ function bootApp() {
     applyMapLayer(currentMapLayer);
     initMapUrlSync();
     updateLiveClock();
-    initChipsSliderInteractions();
+    initChipsDragScroll();
     updateBookmarkIconState();
     renderSavedPlacesUI();
     renderBookmarkedQuakesUI();
