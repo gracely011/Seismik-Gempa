@@ -2925,6 +2925,20 @@ function renderLocationUI(obj, lat, lon) {
     updateBookmarkIconState();
 }
 
+// Helper Fetch dengan AbortController Timeout Otomatis (Mencegah Tab Browser Hang)
+async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+    } catch (err) {
+        clearTimeout(timer);
+        throw err;
+    }
+}
+
 async function fetchLocationName(lat, lon) {
     // 0. Cek Cache Lokal Terlebih Dahulu (Jika koordinat tidak berubah signifikan < ~500m)
     const cachedObjStr = localStorage.getItem('seismo_user_place_obj');
@@ -2947,9 +2961,9 @@ async function fetchLocationName(lat, lon) {
 
     // 1. Provider Utama: OpenStreetMap Nominatim zoom=18 (sangat detail desa, kelurahan, kecamatan)
     try {
-        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+        const resNom = await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'Accept-Language': 'id' }
-        });
+        }, 3000);
         if (resNom.ok) {
             const dataNom = await resNom.json();
             if (dataNom && dataNom.address) {
@@ -2967,12 +2981,12 @@ async function fetchLocationName(lat, lon) {
             }
         }
     } catch (e) {
-        console.warn("Nominatim reverse geocode error, trying BigDataCloud fallback:", e);
+        console.warn("Nominatim reverse geocode error/timeout, trying BigDataCloud fallback:", e);
     }
 
     // 2. Provider Cadangan: BigDataCloud Client API (cepat & bahasa Indonesia)
     try {
-        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+        const res = await fetchWithTimeout(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`, {}, 3000);
         if (res.ok) {
             const data = await res.json();
             let addrObj = {
@@ -3001,7 +3015,7 @@ async function fetchLocationName(lat, lon) {
             return obj;
         }
     } catch (e) {
-        console.warn("BigDataCloud reverse geocode error:", e);
+        console.warn("BigDataCloud reverse geocode error/timeout:", e);
     }
 
     const fallbackObj = formatIndonesianPlace(null, lat, lon);
@@ -3014,9 +3028,9 @@ async function fetchLocationName(lat, lon) {
 async function fetchLocationNameForView(lat, lon) {
     // 1. OpenStreetMap Nominatim zoom=18
     try {
-        const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+        const resNom = await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
             headers: { 'Accept-Language': 'id' }
-        });
+        }, 3000);
         if (resNom.ok) {
             const dataNom = await resNom.json();
             if (dataNom && dataNom.address) {
@@ -3030,7 +3044,7 @@ async function fetchLocationNameForView(lat, lon) {
 
     // 2. BigDataCloud Fallback
     try {
-        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+        const res = await fetchWithTimeout(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`, {}, 3000);
         if (res.ok) {
             const data = await res.json();
             let addrObj = {
@@ -3084,7 +3098,7 @@ async function fetchWeather(lat, lon) {
     } catch (e) { }
 
     try {
-        let w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        let w = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`, {}, 3000);
         if (w.ok) {
             let wj = await w.json();
             if (wj.current_weather) {
@@ -3133,18 +3147,50 @@ function applyWeatherToUI(weatherData) {
                 <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path>
             </svg>
         `;
-    } else if (code >= 80) {
-        desc = "Hujan Badai";
+    } else if (code >= 71 && code <= 86) {
+        desc = "Salju / Es";
         iconHtml = `
-            <svg class="gmap-rain-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea4335" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            <svg class="gmap-cloud-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8ab4f8" stroke-width="2">
+                <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"></path>
+                <line x1="8" y1="16" x2="8.01" y2="16"></line>
+                <line x1="8" y1="20" x2="8.01" y2="20"></line>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                <line x1="12" y1="22" x2="12.01" y2="22"></line>
+                <line x1="16" y1="16" x2="16.01" y2="16"></line>
+                <line x1="16" y1="20" x2="16.01" y2="20"></line>
+            </svg>
+        `;
+    } else if (code >= 95) {
+        desc = "Badai Petir";
+        iconHtml = `
+            <svg class="gmap-storm-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbc04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"></path>
+                <polyline points="13 11 9 17 15 17 11 23"></polyline>
             </svg>
         `;
     }
 
-    if (condTempEl) condTempEl.innerHTML = `${desc} &middot; ${temp} &deg;C`;
+    if (condTempEl) condTempEl.innerText = `${desc} · ${temp} °C`;
     if (iconContainer) iconContainer.innerHTML = iconHtml;
-    updateLiveClock();
+}
+
+function updateBookmarkIconState() {
+    const btn = document.getElementById("areaBookmarkBtn");
+    const icon = document.getElementById("areaBookmarkIcon");
+    if (!btn || !icon) return;
+
+    const places = getSavedPlaces();
+    const isSaved = places.some(p => Math.abs(p.lat - viewedCoords[0]) < 0.05 && Math.abs(p.lon - viewedCoords[1]) < 0.05);
+
+    if (isSaved) {
+        btn.classList.add("active");
+        btn.title = "Tersimpan di Wilayah Favorit";
+        icon.innerHTML = '&#xe866;'; // Filled bookmark
+    } else {
+        btn.classList.remove("active");
+        btn.title = "Simpan Wilayah Ini";
+        icon.innerHTML = '&#xe867;'; // Outline bookmark
+    }
 
     if (searchPlaceMarker && searchPlaceMarker.getPopup() && searchPlaceMarker.isPopupOpen()) {
         searchPlaceMarker.setPopupContent(createAreaPopupHTML(viewedPlaceObj, viewedCoords[0], viewedCoords[1]));
@@ -3302,83 +3348,85 @@ function bootApp() {
         resizeCanvas();
     }, 40);
 
-    // 3. Background Non-Blocking Initializers (Milidetik ke-100+)
-    setTimeout(() => {
-        initLocation();
-        initHistats();
+    // 3. UI Interactions (Instant)
+    const searchInputEl = document.getElementById("searchInput");
+    const searchBoxCardEl = document.getElementById("searchBoxCard");
 
-        if (currentAppLanguage && currentAppLanguage !== 'id') {
-            triggerGoogleTranslate(currentAppLanguage);
+    function switchToMonitorAndExpand() {
+        if (window.innerWidth > 768) {
+            if (currentNavTab !== 'monitor') {
+                switchNavTab('monitor');
+            }
+            if (isPanelCollapsed) {
+                toggleSidebar(true);
+            }
+            const wrap = document.getElementById("cardsScrollWrap");
+            if (wrap) wrap.scrollTop = 0;
         }
+    }
 
-        // Listener fokus & klik pencarian desktop untuk auto-switch ke viewMonitor dan auto-expand dropdown panel
-        const searchInputEl = document.getElementById("searchInput");
-        const searchBoxCardEl = document.getElementById("searchBoxCard");
+    if (searchInputEl) {
+        searchInputEl.addEventListener("focus", switchToMonitorAndExpand);
+        searchInputEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchToMonitorAndExpand();
+        });
+    }
 
-        function switchToMonitorAndExpand() {
+    if (searchBoxCardEl) {
+        searchBoxCardEl.addEventListener("click", (e) => {
             if (window.innerWidth > 768) {
-                if (currentNavTab !== 'monitor') {
-                    switchNavTab('monitor');
+                if (!e.target.closest('#searchMenuBtn') && !e.target.closest('#searchSubmitBtn')) {
+                    switchToMonitorAndExpand();
+                    if (searchInputEl) searchInputEl.focus();
                 }
-                if (isPanelCollapsed) {
-                    toggleSidebar(true);
-                }
-                const wrap = document.getElementById("cardsScrollWrap");
-                if (wrap) wrap.scrollTop = 0;
+            }
+        });
+    }
+
+    // Listener klik di luar area (Click Outside) untuk menutup cards-scroll-wrap saat mode nav-rail mati
+    document.addEventListener("pointerdown", (e) => {
+        if (window.innerWidth <= 768) return;
+        if (!isNavRailEnabled && !isPanelCollapsed) {
+            const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+            const settingsDrawer = document.getElementById("gmapSettingsWrapper");
+            const isInsidePanel = panel && panel.contains(e.target);
+            const isInsideSettings = settingsDrawer && settingsDrawer.contains(e.target);
+            const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.leaflet-popup') || e.target.closest('.toast');
+
+            if (!isInsidePanel && !isInsideSettings && !isInsideModal) {
+                toggleSidebar(false);
+                if (searchInputEl) searchInputEl.blur();
             }
         }
+    });
 
-        if (searchInputEl) {
-            searchInputEl.addEventListener("focus", () => {
-                switchToMonitorAndExpand();
-            });
-            searchInputEl.addEventListener("click", (e) => {
-                e.stopPropagation();
-                switchToMonitorAndExpand();
-            });
-        }
-
-        if (searchBoxCardEl) {
-            searchBoxCardEl.addEventListener("click", (e) => {
-                if (window.innerWidth > 768) {
-                    if (!e.target.closest('#searchMenuBtn') && !e.target.closest('#searchSubmitBtn')) {
-                        switchToMonitorAndExpand();
-                        if (searchInputEl) searchInputEl.focus();
-                    }
-                }
-            });
-        }
-
-        // Listener klik di luar area (Click Outside) untuk menutup cards-scroll-wrap saat mode nav-rail mati
-        document.addEventListener("pointerdown", (e) => {
-            if (window.innerWidth <= 768) return;
+    // Listener tombol ESC keyboard untuk menutup Settings Drawer dan Modal
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeDesktopSettings();
+            closeShareModal();
+            closeLanguageModal();
             if (!isNavRailEnabled && !isPanelCollapsed) {
-                const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
-                const settingsDrawer = document.getElementById("gmapSettingsWrapper");
-                const isInsidePanel = panel && panel.contains(e.target);
-                const isInsideSettings = settingsDrawer && settingsDrawer.contains(e.target);
-                const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.leaflet-popup') || e.target.closest('.toast');
-
-                if (!isInsidePanel && !isInsideSettings && !isInsideModal) {
-                    toggleSidebar(false);
-                    if (searchInputEl) searchInputEl.blur();
-                }
+                toggleSidebar(false);
+                if (searchInputEl) searchInputEl.blur();
             }
-        });
+        }
+    });
 
-        // Listener tombol ESC keyboard untuk menutup Settings Drawer dan Modal
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                closeDesktopSettings();
-                closeShareModal();
-                closeLanguageModal();
-                if (!isNavRailEnabled && !isPanelCollapsed) {
-                    toggleSidebar(false);
-                    if (searchInputEl) searchInputEl.blur();
-                }
-            }
-        });
-    }, 100);
+    // 4. Background Secondary Network Services (POST-LOAD DEFER - setelah window onload)
+    const runPostLoadServices = () => {
+        setTimeout(() => {
+            initLocation();
+            initHistats();
+        }, 150);
+    };
+
+    if (document.readyState === 'complete') {
+        runPostLoadServices();
+    } else {
+        window.addEventListener('load', runPostLoadServices, { once: true });
+    }
 }
 
 if (document.readyState === 'loading') {
