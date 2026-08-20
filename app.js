@@ -35,20 +35,20 @@ let simInterval = null;
 const savedLat = localStorage.getItem('seismo_user_lat');
 const savedLon = localStorage.getItem('seismo_user_lon');
 const savedAcc = localStorage.getItem('seismo_user_acc');
-let userPlaceName = localStorage.getItem('seismo_user_place') || 'Batam, Kota Batam, Kepulauan Riau';
+let userPlaceName = localStorage.getItem('seismo_user_place') || 'Lubuk Tukko, Pandan, Kabupaten Tapanuli Tengah, Sumatera Utara';
 let userPlaceObj = null;
 try {
     const savedObj = localStorage.getItem('seismo_user_place_obj');
     if (savedObj) userPlaceObj = JSON.parse(savedObj);
 } catch (e) { }
 
-// Default GPS pengguna (Batam jika belum ada koordinat GPS terdeteksi)
-let userCoords = (savedLat && savedLon) ? [parseFloat(savedLat), parseFloat(savedLon)] : [1.1030, 104.0383];
+// Default GPS pengguna (Lubuk Tukko, Pandan, Tapanuli Tengah jika belum ada GPS terdeteksi)
+let userCoords = (savedLat && savedLon) ? [parseFloat(savedLat), parseFloat(savedLon)] : [1.688159, 98.823695];
 let hasUserGPS = !!(savedLat && savedLon);
 
 // Wilayah yang sedang dipantau / dilihat di kartu status area (bisa berbeda dari GPS saat cari kota)
 let viewedCoords = [...userCoords];
-let viewedPlaceObj = userPlaceObj || { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
+let viewedPlaceObj = userPlaceObj || { main: "Lubuk Tukko", admin: "Kec. Pandan, Kab. Tapanuli Tengah", province: "Sumatera Utara" };
 
 let quakesArray = [];
 let currentFilter = 'all';
@@ -269,7 +269,7 @@ if (initialHashView) {
     }
 }
 const initialCenter = initialHashView ? [initialHashView.lat, initialHashView.lng] : userCoords;
-const initialZoom = initialHashView ? initialHashView.zoom : (hasUserGPS ? 7 : 5);
+const initialZoom = initialHashView ? initialHashView.zoom : (hasUserGPS ? 14 : 13);
 
 const map = L.map("map", {
     zoomControl: false,
@@ -3302,12 +3302,12 @@ function initLocation() {
             }).catch(() => { });
         }
     } else {
-        const defaultObj = { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
-        userCoords = [1.1030, 104.0383];
-        viewedCoords = [1.1030, 104.0383];
+        const defaultObj = { main: "Lubuk Tukko", admin: "Kec. Pandan, Kab. Tapanuli Tengah", province: "Sumatera Utara" };
+        userCoords = [1.688159, 98.823695];
+        viewedCoords = [1.688159, 98.823695];
         viewedPlaceObj = defaultObj;
-        renderLocationUI(defaultObj, 1.1030, 104.0383);
-        fetchWeather(1.1030, 104.0383);
+        renderLocationUI(defaultObj, 1.688159, 98.823695);
+        fetchWeather(1.688159, 98.823695);
     }
 }
 
