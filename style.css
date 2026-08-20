@@ -505,7 +505,10 @@ body.theme-dark .map-dot.dot-3 {
     gap: 6px;
     height: 48px;
     flex-shrink: 0;
-    transition: border-radius 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, width 0.2s ease;
+    transition: border-radius 180ms cubic-bezier(0.0, 0, 0.2, 1),
+                box-shadow 180ms ease,
+                border-color 180ms ease,
+                width 180ms ease;
 }
 
 .panel-container.collapsed .search-box-card {
@@ -556,31 +559,43 @@ body.theme-dark .map-dot.dot-3 {
         display: none !important;
     }
 
-    /* Saat panel terbuka melayang di bawah search box */
-    body.nav-rail-disabled:not(.panel-collapsed) .search-box-card {
-        border-radius: 16px 16px 0 0 !important;
-        border-bottom: 1px solid var(--border-color) !important;
+    /* TRANSISI BUKA/TUTUP HALUS & CEPAT ALA GOOGLE MAPS PADA CARDS-SCROLL-WRAP */
+    .panel-container .cards-scroll-wrap {
+        pointer-events: auto;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 16px 16px;
+        box-shadow: var(--shadow-panel);
+        max-height: calc(100vh - 84px);
+        overflow-y: auto;
+        transform-origin: top center;
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scaleY(1);
+        transition: opacity 180ms cubic-bezier(0.0, 0, 0.2, 1),
+                    transform 180ms cubic-bezier(0.0, 0, 0.2, 1),
+                    max-height 200ms cubic-bezier(0.0, 0, 0.2, 1),
+                    visibility 180ms step-start;
     }
 
-    body.nav-rail-disabled .cards-scroll-wrap {
-        max-height: calc(100vh - 84px) !important;
-        overflow-y: auto !important;
-    }
-
-    /* Posisi Layer Thumbnail saat nav rail dimatikan ("Tampilkan sidebar" OFF) */
-    body.nav-rail-disabled.panel-collapsed .layer-switcher-wrapper,
-    body.nav-rail-disabled .layer-switcher-wrapper {
-        left: 12px !important;
-        bottom: 20px !important;
-    }
-
-    body.nav-rail-disabled:not(.panel-collapsed) .layer-switcher-wrapper {
-        left: 404px !important; /* 12px + 376px + 16px */
-    }
-
-    /* 2. KETIKA KARTU KONTEN DITUTUP (PANEL COLLAPSED) */
     .panel-container.collapsed {
         pointer-events: none !important;
+    }
+
+    .panel-container.collapsed .cards-scroll-wrap {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transform: translateY(-8px) scaleY(0.97) !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        transition: opacity 140ms cubic-bezier(0.4, 0, 1, 1),
+                    transform 140ms cubic-bezier(0.4, 0, 1, 1),
+                    max-height 140ms cubic-bezier(0.4, 0, 1, 1),
+                    visibility 140ms step-end !important;
     }
 
     .panel-container.collapsed .search-box-card {
@@ -589,17 +604,34 @@ body.theme-dark .map-dot.dot-3 {
         pointer-events: auto !important;
     }
 
-    .panel-container .cards-scroll-wrap {
-        pointer-events: auto;
-        background: var(--bg-panel);
-        border: 1px solid var(--border-color);
-        border-top: none;
-        border-radius: 0 0 16px 16px;
-        box-shadow: var(--shadow-panel);
+    .panel-container:not(.collapsed) .search-box-card {
+        border-radius: 16px 16px 0 0 !important;
+        border-bottom: 1px solid var(--border-color) !important;
     }
 
-    .panel-container.collapsed .cards-scroll-wrap {
-        display: none !important;
+    /* Posisi Layer Thumbnail saat Panel Collapsed vs Expanded pada Desktop */
+    body.panel-collapsed .layer-switcher-wrapper {
+        left: calc(var(--rail-width) + 12px) !important;
+        bottom: 20px !important;
+        transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
+    }
+
+    body.nav-rail-disabled.panel-collapsed .layer-switcher-wrapper {
+        left: 12px !important;
+        bottom: 20px !important;
+        transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
+    }
+
+    body:not(.panel-collapsed):not(.nav-rail-disabled) .layer-switcher-wrapper {
+        left: calc(var(--rail-width) + var(--panel-width) + 24px) !important;
+        bottom: 20px !important;
+        transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
+    }
+
+    body.nav-rail-disabled:not(.panel-collapsed) .layer-switcher-wrapper {
+        left: 404px !important;
+        bottom: 20px !important;
+        transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
     }
 }
 

@@ -3398,17 +3398,15 @@ function bootApp() {
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
     } else {
+        isPanelCollapsed = false;
+        document.body.classList.remove("panel-collapsed");
+        const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+        if (panel) panel.classList.remove("collapsed");
+
         if (!isNavRailEnabled) {
             document.body.classList.add("nav-rail-disabled");
-            isPanelCollapsed = true;
-            document.body.classList.add("panel-collapsed");
-            const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
-            if (panel) panel.classList.add("collapsed");
         } else {
             document.body.classList.remove("nav-rail-disabled");
-            document.body.classList.remove("panel-collapsed");
-            const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
-            if (panel) panel.classList.remove("collapsed");
         }
     }
 
@@ -3454,10 +3452,10 @@ function bootApp() {
         });
     }
 
-    // Listener klik di luar area (Click Outside) untuk menutup cards-scroll-wrap saat mode nav-rail mati
+    // Listener klik di luar area (Click Outside) untuk menutup cards-scroll-wrap pada Desktop
     document.addEventListener("pointerdown", (e) => {
         if (window.innerWidth <= 768) return;
-        if (!isNavRailEnabled && !isPanelCollapsed) {
+        if (!isPanelCollapsed) {
             const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
             const settingsDrawer = document.getElementById("gmapSettingsWrapper");
             const isInsidePanel = panel && panel.contains(e.target);
@@ -3471,16 +3469,12 @@ function bootApp() {
         }
     });
 
-    // Listener tombol ESC keyboard untuk menutup Settings Drawer dan Modal
+    // Listener tombol ESC keyboard untuk menutup Settings Drawer dan Modal (tanpa menutup sidebar)
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             closeDesktopSettings();
             closeShareModal();
             closeLanguageModal();
-            if (!isNavRailEnabled && !isPanelCollapsed) {
-                toggleSidebar(false);
-                if (searchInputEl) searchInputEl.blur();
-            }
         }
     });
 
