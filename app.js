@@ -272,6 +272,7 @@ const initialCenter = initialHashView ? [initialHashView.lat, initialHashView.ln
 const initialZoom = initialHashView ? initialHashView.zoom : (hasUserGPS ? 14 : 13);
 
 const map = L.map("map", {
+    attributionControl: false,
     zoomControl: false,
     zoomAnimation: true,
     fadeAnimation: true,
@@ -335,8 +336,7 @@ function getGoogleMapsTileLayer(lyrsCode, isDark = false) {
             updateWhenZooming: true,
             updateInterval: 30,
             crossOrigin: true,
-            className: isDark ? 'gmap-dark-filter-tile' : '',
-            attribution: '&copy; Google Maps'
+            className: isDark ? 'gmap-dark-filter-tile' : ''
         });
     }
     return tileLayersCache[cacheKey];
@@ -364,8 +364,7 @@ function toggleTrafficLayer() {
                 keepBuffer: 16,
                 updateWhenIdle: false,
                 pane: 'overlayPane',
-                zIndex: 450,
-                attribution: '&copy; Google Traffic'
+                zIndex: 450
             });
         }
         if (map && !map.hasLayer(trafficTileLayer)) {
@@ -393,8 +392,7 @@ function toggleTransitLayer() {
                 keepBuffer: 16,
                 updateWhenIdle: false,
                 pane: 'overlayPane',
-                zIndex: 440,
-                attribution: '&copy; Google Transit'
+                zIndex: 440
             });
         }
         if (map && !map.hasLayer(transitTileLayer)) {
@@ -422,8 +420,7 @@ function toggleBikeLayer() {
                 keepBuffer: 16,
                 updateWhenIdle: false,
                 pane: 'overlayPane',
-                zIndex: 445,
-                attribution: '&copy; Google Biking'
+                zIndex: 445
             });
         }
         if (map && !map.hasLayer(bikeTileLayer)) {
@@ -697,28 +694,24 @@ function getTileLayer(layerName) {
         if (layerName === 'sat') {
             tileLayersCache.sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 ...tileCommonOptions,
-                maxZoom: 18,
-                attribution: '&copy; Esri &copy; Earthstar Geographics'
+                maxZoom: 18
             });
         } else if (layerName === 'terrain') {
             tileLayersCache.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                 ...tileCommonOptions,
-                maxZoom: 17,
-                attribution: '&copy; OpenTopoMap &copy; OpenStreetMap'
+                maxZoom: 17
             });
         } else if (layerName === 'dark') {
             tileLayersCache.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 ...tileCommonOptions,
                 maxZoom: 19,
-                subdomains: 'abcd',
-                attribution: '&copy; CartoDB &copy; OpenStreetMap'
+                subdomains: 'abcd'
             });
         } else {
             tileLayersCache.light = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 ...tileCommonOptions,
                 maxZoom: 19,
-                subdomains: 'abcd',
-                attribution: '&copy; CartoDB &copy; OpenStreetMap'
+                subdomains: 'abcd'
             });
         }
     }
@@ -729,8 +722,7 @@ function getTileLayer(layerName) {
 const satelliteLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     ...tileCommonOptions,
     maxZoom: 18,
-    pane: 'overlayPane',
-    attribution: '&copy; Esri &copy; OpenStreetMap'
+    pane: 'overlayPane'
 });
 
 function toggleSatelliteLabels(enabled) {

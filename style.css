@@ -1830,6 +1830,15 @@ body.theme-light .layer-popup-menu {
     will-change: transform, opacity;
 }
 
+/* Sembunyikan Kontrol Atribusi Leaflet & Jejak Provider Peta */
+.leaflet-control-attribution,
+.leaflet-control-attribution * {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
 /* ==================== SATELIT CHECKBOX LABEL (GOOGLE MAPS STYLE) ==================== */
 .layer-popup-suboptions {
     border-left: 1px solid var(--border-color);
