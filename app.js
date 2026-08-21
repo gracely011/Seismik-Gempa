@@ -304,17 +304,395 @@ function hideMapLoader() {
 // Batas waktu aman (Safety fallback timeout) agar overlay tidak macet jika koneksi internet lambat
 setTimeout(hideMapLoader, 2200);
 
-// Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat
+// Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat (Super Smooth Dragging)
 const tileCommonOptions = {
-    keepBuffer: 4,
-    updateWhenIdle: true,
-    updateWhenZooming: true
+    maxZoom: 20,
+    tileSize: 256,
+    zoomOffset: 0,
+    keepBuffer: 16,
+    updateWhenIdle: false, // Memuat ubin terus menerus secara realtime saat digeser
+    updateWhenZooming: true,
+    updateInterval: 30
 };
 
 const tileLayersCache = {};
 let activeTileLayerInstance = null;
 
+// ==================== SECRET GOOGLE MAPS ENGINE (MT-CLUSTER PROXYLESS) ====================
+let isGmapsFeatureUnlocked = (localStorage.getItem('_sg_vstate') === '1');
+let isGoogleMapsEngineActive = (localStorage.getItem('_sg_engine') === '1');
+
+// Tile Generator Resmi Google Maps MT-Cluster dengan parameter Web Client (hl=id, gl=ID)
+function getGoogleMapsTileLayer(lyrsCode, isDark = false) {
+    const cacheKey = `gmap_${lyrsCode}_${isDark ? 'dark' : 'normal'}`;
+    if (!tileLayersCache[cacheKey]) {
+        tileLayersCache[cacheKey] = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=${lyrsCode}&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
+            subdomains: ['0', '1', '2', '3'],
+            maxZoom: 20,
+            tileSize: 256,
+            keepBuffer: 16,
+            updateWhenIdle: false,
+            updateWhenZooming: true,
+            updateInterval: 30,
+            crossOrigin: true,
+            className: isDark ? 'gmap-dark-filter-tile' : '',
+            attribution: '&copy; Google Maps'
+        });
+    }
+    return tileLayersCache[cacheKey];
+}
+
+// ==================== GOOGLE OVERLAYS: LALU LINTAS, TRANSIT, BERSEPEDA ====================
+let isTrafficLayerActive = (localStorage.getItem('seismo_traffic_active') === '1');
+let trafficTileLayer = null;
+
+let isTransitLayerActive = (localStorage.getItem('seismo_transit_active') === '1');
+let transitTileLayer = null;
+
+let isBikeLayerActive = (localStorage.getItem('seismo_bike_active') === '1');
+let bikeTileLayer = null;
+
+function toggleTrafficLayer() {
+    isTrafficLayerActive = !isTrafficLayerActive;
+    try { localStorage.setItem('seismo_traffic_active', isTrafficLayerActive ? '1' : '0'); } catch(e){}
+    
+    if (isTrafficLayerActive) {
+        if (!trafficTileLayer) {
+            trafficTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=h,traffic&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                keepBuffer: 16,
+                updateWhenIdle: false,
+                pane: 'overlayPane',
+                zIndex: 450,
+                attribution: '&copy; Google Traffic'
+            });
+        }
+        if (map && !map.hasLayer(trafficTileLayer)) {
+            map.addLayer(trafficTileLayer);
+        }
+        showToastNotification("🚦 Lapisan Lalu Lintas Google (Live Traffic) Aktif");
+    } else {
+        if (map && trafficTileLayer && map.hasLayer(trafficTileLayer)) {
+            map.removeLayer(trafficTileLayer);
+        }
+        showToastNotification("🚦 Lapisan Lalu Lintas Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
+function toggleTransitLayer() {
+    isTransitLayerActive = !isTransitLayerActive;
+    try { localStorage.setItem('seismo_transit_active', isTransitLayerActive ? '1' : '0'); } catch(e){}
+    
+    if (isTransitLayerActive) {
+        if (!transitTileLayer) {
+            transitTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                keepBuffer: 16,
+                updateWhenIdle: false,
+                pane: 'overlayPane',
+                zIndex: 440,
+                attribution: '&copy; Google Transit'
+            });
+        }
+        if (map && !map.hasLayer(transitTileLayer)) {
+            map.addLayer(transitTileLayer);
+        }
+        showToastNotification("🚇 Lapisan Transportasi Umum Google Aktif");
+    } else {
+        if (map && transitTileLayer && map.hasLayer(transitTileLayer)) {
+            map.removeLayer(transitTileLayer);
+        }
+        showToastNotification("🚇 Lapisan Transportasi Umum Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
+function toggleBikeLayer() {
+    isBikeLayerActive = !isBikeLayerActive;
+    try { localStorage.setItem('seismo_bike_active', isBikeLayerActive ? '1' : '0'); } catch(e){}
+    
+    if (isBikeLayerActive) {
+        if (!bikeTileLayer) {
+            bikeTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                keepBuffer: 16,
+                updateWhenIdle: false,
+                pane: 'overlayPane',
+                zIndex: 445,
+                attribution: '&copy; Google Biking'
+            });
+        }
+        if (map && !map.hasLayer(bikeTileLayer)) {
+            map.addLayer(bikeTileLayer);
+        }
+        showToastNotification("🚴 Lapisan Jalur Bersepeda Google Aktif");
+    } else {
+        if (map && bikeTileLayer && map.hasLayer(bikeTileLayer)) {
+            map.removeLayer(bikeTileLayer);
+        }
+        showToastNotification("🚴 Lapisan Jalur Bersepeda Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
+function startMeasureFromLayer() {
+    const center = map.getCenter();
+    startMeasureTool(center.lat, center.lng);
+}
+
+function updateLayerDetailUI() {
+    const trafficBtnDesk = document.getElementById('layerOptTraffic');
+    const trafficBtnMob = document.getElementById('mobLayerOptTraffic');
+    if (trafficBtnDesk) trafficBtnDesk.classList.toggle('active', !!isTrafficLayerActive);
+    if (trafficBtnMob) trafficBtnMob.classList.toggle('active', !!isTrafficLayerActive);
+
+    const transitBtnDesk = document.getElementById('layerOptTransit');
+    const transitBtnMob = document.getElementById('mobLayerOptTransit');
+    if (transitBtnDesk) transitBtnDesk.classList.toggle('active', !!isTransitLayerActive);
+    if (transitBtnMob) transitBtnMob.classList.toggle('active', !!isTransitLayerActive);
+
+    const bikeBtnDesk = document.getElementById('layerOptBike');
+    const bikeBtnMob = document.getElementById('mobLayerOptBike');
+    if (bikeBtnDesk) bikeBtnDesk.classList.toggle('active', !!isBikeLayerActive);
+    if (bikeBtnMob) bikeBtnMob.classList.toggle('active', !!isBikeLayerActive);
+
+    const faultsBtnDesk = document.getElementById('layerOptFaults');
+    const faultsBtnMob = document.getElementById('mobLayerOptFaults');
+    if (faultsBtnDesk) faultsBtnDesk.classList.toggle('active', !!isFaultsLayerVisible);
+    if (faultsBtnMob) faultsBtnMob.classList.toggle('active', !!isFaultsLayerVisible);
+}
+
+// ==================== DYNAMIC DOM INJECTION & PURGE MODULE (STEALTH) ====================
+function injectGoogleMapsVersionUI() {
+    // 1. Inject Menu Item into Settings Drawer
+    if (!document.getElementById('settingsGmapsVersionItem')) {
+        const shareLocItem = document.getElementById('settingsShareLocationItem');
+        if (shareLocItem) {
+            const html = `
+                <li class="AJqepd" id="settingsGmapsVersionItem">
+                    <div class="IpXlkd T2ozWe" onclick="toggleGoogleMapsEngineMode()">
+                        <span class="tIuFw wch72" style="color: #1a73e8;">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        </span>
+                        <label class="fontBodyMedium gFio1e" style="color: #1a73e8; font-weight: 500;">Google Maps Version</label>
+                        <button role="switch" class="Ud5kdf LdO2ac" id="settingsGmapsVersionSwitch" aria-checked="${isGoogleMapsEngineActive ? 'true' : 'false'}" aria-label="Google Maps Version">
+                            <div class="JbUHGd"></div>
+                        </button>
+                    </div>
+                </li>
+            `;
+            shareLocItem.insertAdjacentHTML('beforebegin', html);
+        }
+    } else {
+        const sw = document.getElementById('settingsGmapsVersionSwitch');
+        if (sw) sw.setAttribute('aria-checked', isGoogleMapsEngineActive ? 'true' : 'false');
+    }
+
+    // 2. Inject Extra Layer Details (Traffic, Transit, Bike) into Desktop Layer Popup
+    const deskHook = document.getElementById('desktopExtraDetailsHook');
+    if (deskHook && !document.getElementById('layerOptTraffic')) {
+        deskHook.innerHTML = `
+            <div class="layer-option-item ${isTrafficLayerActive ? 'active' : ''}" id="layerOptTraffic" onclick="toggleTrafficLayer()" title="Kondisi Lalu Lintas Live Google">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M18 4v28M4 18h28" stroke="#dadce0" stroke-width="6" stroke-linecap="round"/><path d="M18 10v16" stroke="#34a853" stroke-width="3.5" stroke-linecap="round"/><path d="M18 18h10" stroke="#ea4335" stroke-width="3.5" stroke-linecap="round"/><path d="M10 18h8" stroke="#fbbc04" stroke-width="3.5" stroke-linecap="round"/></svg>
+                </div>
+                <span class="layer-opt-label">Lalu lintas</span>
+            </div>
+            <div class="layer-option-item ${isTransitLayerActive ? 'active' : ''}" id="layerOptTransit" onclick="toggleTransitLayer()" title="Jalur Transportasi Umum Google">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M8 12h20v14a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2v-14z" fill="#1a73e8"/><circle cx="12" cy="22" r="1.5" fill="#ffffff"/><circle cx="24" cy="22" r="1.5" fill="#ffffff"/><rect x="10" y="14" width="16" height="5" rx="1" fill="#ffffff"/><path d="M10 28l-2 3m18-3l2 3" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="layer-opt-label">Transportasi</span>
+            </div>
+            <div class="layer-option-item ${isBikeLayerActive ? 'active' : ''}" id="layerOptBike" onclick="toggleBikeLayer()" title="Jalur Sepeda Google">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e6f4ea"/><circle cx="12" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><circle cx="24" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><path d="M12 22l4-7h5l3 7m-7-7v7m2-10h3" fill="none" stroke="#137333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="layer-opt-label">Bersepeda</span>
+            </div>
+        `;
+    }
+
+    // 3. Inject Extra Layer Details into Mobile Bottom Sheet
+    const mobHook = document.getElementById('mobileExtraDetailsHook');
+    if (mobHook && !document.getElementById('mobLayerOptTraffic')) {
+        mobHook.innerHTML = `
+            <div class="mobile-sheet-item ${isTrafficLayerActive ? 'active' : ''}" id="mobLayerOptTraffic" onclick="toggleTrafficLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M18 4v28M4 18h28" stroke="#dadce0" stroke-width="6" stroke-linecap="round"/><path d="M18 10v16" stroke="#34a853" stroke-width="3.5" stroke-linecap="round"/><path d="M18 18h10" stroke="#ea4335" stroke-width="3.5" stroke-linecap="round"/><path d="M10 18h8" stroke="#fbbc04" stroke-width="3.5" stroke-linecap="round"/></svg>
+                </div>
+                <span class="mobile-sheet-label">Lalu lintas</span>
+            </div>
+            <div class="mobile-sheet-item ${isTransitLayerActive ? 'active' : ''}" id="mobLayerOptTransit" onclick="toggleTransitLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M8 12h20v14a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2v-14z" fill="#1a73e8"/><circle cx="12" cy="22" r="1.5" fill="#ffffff"/><circle cx="24" cy="22" r="1.5" fill="#ffffff"/><rect x="10" y="14" width="16" height="5" rx="1" fill="#ffffff"/><path d="M10 28l-2 3m18-3l2 3" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="mobile-sheet-label">Transportasi</span>
+            </div>
+            <div class="mobile-sheet-item ${isBikeLayerActive ? 'active' : ''}" id="mobLayerOptBike" onclick="toggleBikeLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e6f4ea"/><circle cx="12" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><circle cx="24" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><path d="M12 22l4-7h5l3 7m-7-7v7m2-10h3" fill="none" stroke="#137333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="mobile-sheet-label">Bersepeda</span>
+            </div>
+        `;
+    }
+
+    updateLayerDetailUI();
+}
+
+function purgeGoogleMapsVersionUI() {
+    // 1. Remove Menu Item from Settings Drawer
+    const settingsItem = document.getElementById('settingsGmapsVersionItem');
+    if (settingsItem) settingsItem.remove();
+
+    // 2. Remove Extra Layer Details from Desktop & Mobile
+    const deskHook = document.getElementById('desktopExtraDetailsHook');
+    if (deskHook) deskHook.innerHTML = '';
+    const mobHook = document.getElementById('mobileExtraDetailsHook');
+    if (mobHook) mobHook.innerHTML = '';
+
+    // 3. Remove active Google Overlay Layers from Map
+    if (map) {
+        if (trafficTileLayer && map.hasLayer(trafficTileLayer)) map.removeLayer(trafficTileLayer);
+        if (transitTileLayer && map.hasLayer(transitTileLayer)) map.removeLayer(transitTileLayer);
+        if (bikeTileLayer && map.hasLayer(bikeTileLayer)) map.removeLayer(bikeTileLayer);
+    }
+    isTrafficLayerActive = false;
+    isTransitLayerActive = false;
+    isBikeLayerActive = false;
+    try {
+        localStorage.removeItem('seismo_traffic_active');
+        localStorage.removeItem('seismo_transit_active');
+        localStorage.removeItem('seismo_bike_active');
+    } catch(e){}
+}
+
+function updateGmapsVersionUI() {
+    if (isGmapsFeatureUnlocked) {
+        injectGoogleMapsVersionUI();
+    } else {
+        purgeGoogleMapsVersionUI();
+    }
+}
+
+function unlockGoogleMapsVersionFeature(silent = false) {
+    isGmapsFeatureUnlocked = true;
+    try { localStorage.setItem('_sg_vstate', '1'); } catch(e){}
+    updateGmapsVersionUI();
+    if (!silent && typeof showToastNotification === 'function') {
+        showToastNotification("🔓 Menu 'Google Maps Version' Terbuka di Setelan!");
+    }
+    if (!silent && typeof openDesktopSettings === 'function') {
+        openDesktopSettings();
+    }
+}
+
+function lockGoogleMapsVersionFeature(silent = false) {
+    isGmapsFeatureUnlocked = false;
+    isGoogleMapsEngineActive = false;
+    try {
+        localStorage.setItem('_sg_vstate', '0');
+        localStorage.setItem('_sg_engine', '0');
+    } catch(e){}
+
+    updateGmapsVersionUI();
+
+    // Kembalikan peta ke provider standar
+    if (typeof applyMapLayer === 'function') {
+        applyMapLayer(currentMapLayer || 'light');
+    }
+
+    if (!silent && typeof showToastNotification === 'function') {
+        showToastNotification("🔒 Fitur 'Google Maps Version' Telah Dinonaktifkan & Disembunyikan.");
+    }
+}
+
+function toggleGoogleMapsEngineMode() {
+    isGoogleMapsEngineActive = !isGoogleMapsEngineActive;
+    try { localStorage.setItem('_sg_engine', isGoogleMapsEngineActive ? '1' : '0'); } catch(e){}
+    updateGmapsVersionUI();
+
+    // Terapkan ulang layer aktif dengan engine baru
+    if (typeof applyMapLayer === 'function') {
+        applyMapLayer(currentMapLayer || 'light');
+    }
+
+    if (typeof showToastNotification === 'function') {
+        showToastNotification(isGoogleMapsEngineActive 
+            ? "🗺️ Engine Peta Asli Google Maps Diaktifkan!" 
+            : "🗺️ Engine Peta Standar Diaktifkan");
+    }
+}
+
+// Handler Secret Tap Mobile (5x ketuk pada judul Setelan)
+let secretTapCount = 0;
+let secretTapTimer = null;
+
+function handleSecretTap() {
+    secretTapCount++;
+    if (secretTapTimer) clearTimeout(secretTapTimer);
+
+    if (secretTapCount >= 5) {
+        secretTapCount = 0;
+        if (!isGmapsFeatureUnlocked) {
+            unlockGoogleMapsVersionFeature();
+        } else {
+            lockGoogleMapsVersionFeature();
+        }
+        return;
+    }
+
+    secretTapTimer = setTimeout(() => {
+        secretTapCount = 0;
+    }, 2000);
+}
+
+// Global Secret Keystroke Listener ("1234ulix12" untuk unlock, "off" untuk lock)
+let secretKeyBuffer = '';
+const SECRET_UNLOCK_CODE = '1234ulix12';
+const SECRET_LOCK_CODE = 'off';
+
+window.addEventListener('keydown', (e) => {
+    // Abaikan jika user sedang mengetik di input, textarea, dsb
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
+        return;
+    }
+
+    if (e.key && e.key.length === 1) {
+        secretKeyBuffer += e.key.toLowerCase();
+        if (secretKeyBuffer.length > 25) {
+            secretKeyBuffer = secretKeyBuffer.slice(-25);
+        }
+
+        if (secretKeyBuffer.endsWith(SECRET_UNLOCK_CODE)) {
+            secretKeyBuffer = '';
+            unlockGoogleMapsVersionFeature();
+        } else if (secretKeyBuffer.endsWith(SECRET_LOCK_CODE)) {
+            secretKeyBuffer = '';
+            lockGoogleMapsVersionFeature();
+        }
+    }
+});
+
 function getTileLayer(layerName) {
+    if (isGoogleMapsEngineActive) {
+        if (layerName === 'sat') {
+            return getGoogleMapsTileLayer(isSatelliteLabelsEnabled ? 'y' : 's');
+        } else if (layerName === 'terrain') {
+            return getGoogleMapsTileLayer('p');
+        } else if (layerName === 'dark') {
+            return getGoogleMapsTileLayer('m', true);
+        } else {
+            return getGoogleMapsTileLayer('m');
+        }
+    }
+
     if (!tileLayersCache[layerName]) {
         if (layerName === 'sat') {
             tileLayersCache.sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -457,6 +835,7 @@ function applyMapLayer(layerName) {
     localStorage.setItem('seismo_layer', layerName);
     updateSatelliteLabelsLayer();
     updateSatelliteLabelsUI();
+    if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
     setTimeout(() => { map.invalidateSize(); }, 50);
     if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
     if (typeof updateMeasureTheme === 'function') updateMeasureTheme();
@@ -848,6 +1227,7 @@ function openDesktopSettings() {
     if (wrap) wrap.classList.add("open");
     if (sw) sw.setAttribute("aria-checked", isNavRailEnabled ? "true" : "false");
     if (gSw) gSw.setAttribute("aria-checked", isGlobalQuakeMode ? "true" : "false");
+    if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
 }
 
 function closeDesktopSettings() {
@@ -4760,8 +5140,10 @@ function initGmapContextMenu() {
     });
 }
 
-// Inisialisasi Google Maps Context Menu saat aplikasi siap
+// Inisialisasi Google Maps Context Menu & Secret Engine UI saat aplikasi siap
 initGmapContextMenu();
+if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
+if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
 
 
 

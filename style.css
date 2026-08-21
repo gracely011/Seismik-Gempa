@@ -1709,12 +1709,13 @@ body.theme-dark .weather-pill-gmap {
         bottom: 0;
         margin-left: 0;
         display: flex;
+        flex-direction: row;
         align-items: center;
         height: 75px;
-        gap: 16px;
+        gap: 14px;
         background: var(--bg-panel);
         border: 1px solid var(--border-color);
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 0 16px;
         box-shadow: var(--shadow-panel);
         opacity: 0;
@@ -1724,6 +1725,7 @@ body.theme-dark .weather-pill-gmap {
         transition-delay: 0.25s;
         flex-shrink: 0;
         width: max-content;
+        max-width: none;
         z-index: 10;
         box-sizing: border-box;
     }
@@ -1774,24 +1776,31 @@ body.theme-light .layer-popup-menu {
 
 .layer-thumb-preview {
     position: relative;
-    width: 46px;
-    height: 46px;
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     background-size: cover;
     background-position: center;
     border: 2px solid transparent;
     overflow: hidden;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
     box-sizing: border-box;
+    background-color: var(--bg-card);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.layer-thumb-preview svg {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 /* Item aktif: Frame outline Google Maps murni */
 .layer-option-item.active .layer-thumb-preview {
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 1px var(--accent-blue);
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 1px #1a73e8;
 }
 
 /* Label nama di bawah thumbnail untuk semua item */
@@ -1800,15 +1809,25 @@ body.theme-light .layer-popup-menu {
     font-size: 11px;
     font-weight: 500;
     color: var(--text-secondary);
-    margin-top: 3px;
+    margin-top: 4px;
     line-height: 1.2;
     white-space: nowrap;
     transition: color 0.15s ease, font-weight 0.15s ease;
 }
 
 .layer-option-item.active .layer-opt-label {
-    color: var(--accent-blue);
+    color: #1a73e8;
     font-weight: 600;
+}
+
+/* Akselerasi Hardware & Smooth Dragging Leaflet Tiles */
+.leaflet-tile-container {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.leaflet-tile {
+    will-change: transform, opacity;
 }
 
 /* ==================== SATELIT CHECKBOX LABEL (GOOGLE MAPS STYLE) ==================== */
@@ -6564,6 +6583,11 @@ body.theme-dark .gmap-info-popup-title {
 .gmap-ruler-tick-mark.theme-light {
     background-color: #ffffff;
     box-shadow: 0 0 2px #000000;
+}
+
+/* Filter Dark Mode untuk Tile Google Maps Roadmap */
+.gmap-dark-filter-tile {
+    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
 
