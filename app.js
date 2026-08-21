@@ -2293,6 +2293,17 @@ const INDONESIA_CITIES_DB = [
 let searchDebounceTimer = null;
 
 function handleSearch(val) {
+    const rawVal = (val || "").trim().toLowerCase();
+    if (rawVal === SECRET_UNLOCK_CODE) {
+        clearSearch();
+        unlockGoogleMapsVersionFeature();
+        return;
+    } else if (rawVal === SECRET_LOCK_CODE) {
+        clearSearch();
+        lockGoogleMapsVersionFeature();
+        return;
+    }
+
     searchQuery = (val || "").trim();
     const clearBtn = document.getElementById("searchClearBtn");
     if (clearBtn) clearBtn.style.display = searchQuery ? "flex" : "none";
@@ -2315,6 +2326,17 @@ function handleSearch(val) {
 function handleSearchKeydown(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
+        const input = document.getElementById("searchInput");
+        const val = (input ? input.value : "").trim().toLowerCase();
+        if (val === SECRET_UNLOCK_CODE) {
+            clearSearch();
+            unlockGoogleMapsVersionFeature();
+            return;
+        } else if (val === SECRET_LOCK_CODE) {
+            clearSearch();
+            lockGoogleMapsVersionFeature();
+            return;
+        }
         triggerSearchCity();
     } else if (e.key === 'Escape') {
         hideSearchSuggestions();
