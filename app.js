@@ -4325,21 +4325,45 @@ function initGmapContextMenu() {
     function formatRulerTickLabel(meters) {
         if (meters >= 1000) {
             const km = meters / 1000;
-            return `${km.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km`;
+            const formatted = Number.isInteger(km) 
+                ? km.toString() 
+                : km.toLocaleString('id-ID', { maximumFractionDigits: 1 });
+            return `${formatted} km`;
         }
-        return `${Math.round(meters).toLocaleString('id-ID')} m`;
+        return `${Math.round(meters)} m`;
     }
 
-    function getRulerIntervalStep(totalMeters) {
-        if (totalMeters >= 1000000) return 100000;  // 100 km
-        if (totalMeters >= 400000) return 50000;    // 50 km
-        if (totalMeters >= 150000) return 25000;    // 25 km
-        if (totalMeters >= 50000) return 10000;     // 10 km
-        if (totalMeters >= 15000) return 5000;      // 5 km
-        if (totalMeters >= 5000) return 1000;       // 1 km
-        if (totalMeters >= 1000) return 500;        // 500 m
-        if (totalMeters >= 200) return 100;         // 100 m
-        return 50;                                  // 50 m
+    function getRulerIntervalStep() {
+        // Hitung jarak nyata yang setara dengan target ~110px pada layar monitor di level zoom aktif
+        let metersPerScreenStep = 1000;
+        try {
+            if (typeof map !== 'undefined' && map) {
+                const center = map.getCenter();
+                const pt1 = map.latLngToContainerPoint(center);
+                const pt2 = L.point(pt1.x + 110, pt1.y);
+                const latLng2 = map.containerPointToLatLng(pt2);
+                metersPerScreenStep = map.distance(center, latLng2);
+            }
+        } catch (e) {
+            metersPerScreenStep = 1000;
+        }
+
+        // Skala interval alami (Nice Steps)
+        const niceSteps = [
+            10, 20, 50, 100, 200, 500,
+            1000, 2000, 5000, 10000, 20000, 50000,
+            100000, 200000, 500000, 1000000, 2000000, 5000000
+        ];
+
+        let chosenStep = niceSteps[niceSteps.length - 1];
+        for (let step of niceSteps) {
+            if (step >= metersPerScreenStep) {
+                chosenStep = step;
+                break;
+            }
+        }
+
+        return Math.max(10, chosenStep);
     }
 
     function getSegmentAngle(p1, p2) {
@@ -4396,9 +4420,9 @@ function initGmapContextMenu() {
                 opacity: 0.95
             }).addTo(map);
 
-            // Hitung total jarak keseluruhan
-            const totalDist = calculateTotalDistance();
-            const step = getRulerIntervalStep(totalDist);
+            // Hitung total jarak keseluruhan dan interval adaptif murni berdasarkan level zoom
+            const step = getRulerIntervalStep();
+            const viewBounds = map.getBounds().pad(0.3); // Area pandang layar + buffer 30%
 
             // Hitung dan tempatkan penanda interval graduasi (ticks & labels) sepanjang segmen
             let accumulatedDist = 0;
@@ -4420,22 +4444,25 @@ function initGmapContextMenu() {
                         const tickLng = p1.lng + fraction * (p2.lng - p1.lng);
                         const tickPos = L.latLng(tickLat, tickLng);
 
-                        const labelText = formatRulerTickLabel(nextMilestone);
+                        // Optimasi: Hanya buat elemen DOM jika penanda berada di dalam/dekat layar
+                        if (viewBounds.contains(tickPos)) {
+                            const labelText = formatRulerTickLabel(nextMilestone);
 
-                        const tickIcon = L.divIcon({
-                            className: 'gmap-ruler-tick-wrapper-icon',
-                            html: `
-                                <div class="gmap-ruler-tick-wrapper" style="transform: rotate(${angle}deg);">
-                                    <div class="gmap-ruler-tick-mark ${theme.themeClass}"></div>
-                                    <div class="gmap-ruler-tick-label ${theme.themeClass}">${labelText}</div>
-                                </div>
-                            `,
-                            iconSize: [80, 30],
-                            iconAnchor: [40, 15]
-                        });
+                            const tickIcon = L.divIcon({
+                                className: 'gmap-ruler-tick-wrapper-icon',
+                                html: `
+                                    <div class="gmap-ruler-tick-wrapper" style="transform: rotate(${angle}deg);">
+                                        <div class="gmap-ruler-tick-mark ${theme.themeClass}"></div>
+                                        <div class="gmap-ruler-tick-label ${theme.themeClass}">${labelText}</div>
+                                    </div>
+                                `,
+                                iconSize: [80, 30],
+                                iconAnchor: [40, 15]
+                            });
 
-                        const tickMarker = L.marker(tickPos, { icon: tickIcon, interactive: false }).addTo(map);
-                        measureTickMarkers.push(tickMarker);
+                            const tickMarker = L.marker(tickPos, { icon: tickIcon, interactive: false }).addTo(map);
+                            measureTickMarkers.push(tickMarker);
+                        }
                     }
                     nextMilestone += step;
                 }
@@ -4575,8 +4602,11 @@ function initGmapContextMenu() {
         }
     });
 
-    // Render ulang saat zoom agar sudut dan posisi label tetap presisi
+    // Render ulang saat zoom atau pan agar sudut, kerapatan interval, dan posisi label selalu presisi
     map.on('zoomend', () => {
+        if (isMeasuring) renderMeasureRuler();
+    });
+    map.on('moveend', () => {
         if (isMeasuring) renderMeasureRuler();
     });
 
