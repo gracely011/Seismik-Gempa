@@ -6331,21 +6331,63 @@ body {
     display: none !important;
 }
 
+/* ==================== GMAP CONTEXT INFO POPUPS ==================== */
+.gmap-info-popup {
+    font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
+    color: var(--text-primary);
+    padding: 2px 0;
+    min-width: 190px;
+    max-width: 320px;
+    line-height: 1.45;
+}
+
+.gmap-info-popup-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a73e8;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    word-break: break-word;
+}
+
+body.theme-dark .gmap-info-popup-title {
+    color: #8ab4f8;
+}
+
+.gmap-info-popup-desc {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.gmap-info-popup-coords {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Roboto Mono', Consolas, monospace;
+    letter-spacing: 0.2px;
+}
+
 /* ==================== GOOGLE MAPS PIXEL-PERFECT CONTEXT MENU (DESKTOP ONLY) ==================== */
 .gmap-context-menu {
     position: fixed;
     z-index: 1000000;
-    background: #ffffff;
-    border-radius: 4px;
-    min-width: 112px;
-    max-width: 280px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    min-width: 120px;
+    max-width: 290px;
     max-height: 500px;
     padding: 6px 0;
-    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+    box-shadow: var(--shadow-panel);
     display: flex;
     flex-direction: column;
-    outline-offset: -2px;
-    font-family: Roboto, "Segoe UI", Arial, sans-serif;
+    outline: none;
+    font-family: "Google Sans Text", Roboto, "Segoe UI", Arial, sans-serif;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -6357,38 +6399,38 @@ body {
     padding: 0 16px;
     font-size: 13px;
     font-weight: 400;
-    color: #3c4043;
+    color: var(--text-primary);
     cursor: pointer;
     position: relative;
     white-space: nowrap;
-    transition: background-color 0.1s ease;
+    transition: background-color 0.1s ease, color 0.1s ease;
 }
 
 .gmap-menu-item:hover {
-    background-color: #f1f3f4;
-    color: #202124;
+    background-color: var(--bg-card-hover);
+    color: var(--text-primary);
 }
 
 .gmap-menu-item.item-coords {
-    font-weight: 500;
-    color: #202124;
+    font-weight: 600;
+    color: var(--text-primary);
     letter-spacing: 0.2px;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #f1f3f4;
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
     margin-top: -6px;
     margin-bottom: 4px;
     padding-top: 2px;
     min-height: 34px;
-    border-radius: 4px 4px 0 0;
+    border-radius: 5px 5px 0 0;
 }
 
 .gmap-menu-item.item-coords:hover {
-    background-color: #e8eaed;
+    background-color: var(--bg-card-hover);
 }
 
 .gmap-menu-divider {
     height: 1px;
-    background-color: #e8eaed;
+    background-color: var(--border-color);
     margin: 4px 0;
 }
 
@@ -6398,14 +6440,15 @@ body {
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #ffffff;
-    border-radius: 4px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     padding: 14px 18px;
     min-width: 270px;
     max-width: 360px;
-    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+    box-shadow: var(--shadow-panel);
     z-index: 1000000;
-    font-family: Roboto, "Segoe UI", Arial, sans-serif;
+    font-family: "Google Sans Text", Roboto, "Segoe UI", Arial, sans-serif;
     user-select: none;
     -webkit-user-select: none;
     animation: gmapMeasureCardIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -6429,7 +6472,7 @@ body {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #5f6368;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6440,29 +6483,29 @@ body {
 }
 
 .gmap-measure-close-btn:hover {
-    background-color: #f1f3f4;
-    color: #202124;
+    background-color: var(--bg-card-hover);
+    color: var(--text-primary);
 }
 
 .gmap-measure-title {
     font-size: 14px;
-    font-weight: 500;
-    color: #202124;
+    font-weight: 600;
+    color: var(--text-primary);
     margin-bottom: 3px;
     line-height: 1.3;
 }
 
 .gmap-measure-subtitle {
     font-size: 12px;
-    color: #5f6368;
+    color: var(--text-secondary);
     margin-bottom: 8px;
     line-height: 1.35;
 }
 
 .gmap-measure-result {
     font-size: 13.5px;
-    font-weight: 500;
-    color: #202124;
+    font-weight: 600;
+    color: var(--text-primary);
     letter-spacing: 0.1px;
 }
 

@@ -4678,15 +4678,16 @@ function initGmapContextMenu() {
                         }
 
                         if (typeof L !== 'undefined' && map) {
-                            L.popup({ autoClose: true, closeOnClick: true })
+                            L.popup({ autoClose: true, closeOnClick: true, className: 'gmap-context-popup' })
                                 .setLatLng([activeContextLat, activeContextLng])
                                 .setContent(`
-                                    <div style="font-size:13px; font-family:Roboto, 'Segoe UI', Arial, sans-serif; line-height:1.45; color:#202124; padding:2px; min-width:180px;">
-                                        <div style="font-weight:700; color:#1a73e8; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
-                                            <span>📍 ${locationTitle}</span>
+                                    <div class="gmap-info-popup">
+                                        <div class="gmap-info-popup-title">
+                                            <span class="google-symbols" style="font-size: 16px; color: #ea4335;">&#xe0c8;</span>
+                                            <span>${locationTitle}</span>
                                         </div>
-                                        <div style="font-size:12.5px; color:#3c4043; margin-bottom:5px; font-weight:500;">${locationSubtitle}</div>
-                                        <div style="font-size:11px; color:#70757a; font-family:monospace;">${latStr}, ${lngStr}</div>
+                                        <div class="gmap-info-popup-desc">${locationSubtitle}</div>
+                                        <div class="gmap-info-popup-coords">${latStr}, ${lngStr}</div>
                                     </div>
                                 `)
                                 .openOn(map);
@@ -4712,13 +4713,16 @@ function initGmapContextMenu() {
                         dashArray: '6, 6'
                     }).addTo(map);
 
-                    L.popup({ autoClose: true, closeOnClick: true })
+                    L.popup({ autoClose: true, closeOnClick: true, className: 'gmap-context-popup' })
                         .setLatLng([activeContextLat, activeContextLng])
                         .setContent(`
-                            <div style="font-size:13px; font-family:Roboto, 'Segoe UI', Arial, sans-serif; line-height:1.45; color:#202124; padding:2px; min-width:180px;">
-                                <div style="font-weight:700; color:#1a73e8; margin-bottom:3px;">📡 Radius Pemantauan Gempa</div>
-                                <div style="font-size:12px; color:#3c4043; margin-bottom:4px;">Radius pemantauan 250 km aktif di titik ini.</div>
-                                <div style="font-size:11px; color:#70757a; font-family:monospace;">${latStr}, ${lngStr}</div>
+                            <div class="gmap-info-popup">
+                                <div class="gmap-info-popup-title">
+                                    <span class="google-symbols" style="font-size: 16px; color: #1a73e8;">&#xe1ff;</span>
+                                    <span>Radius Pemantauan Gempa</span>
+                                </div>
+                                <div class="gmap-info-popup-desc">Pemantauan gempa bumi aktif dalam radius 250 km dari titik ini.</div>
+                                <div class="gmap-info-popup-coords">${latStr}, ${lngStr}</div>
                             </div>
                         `)
                         .openOn(map);
