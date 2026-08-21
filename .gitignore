@@ -28,3 +28,4 @@ logs/
 scratch/
 backup/
 *.bak
+gemini-code-*.md

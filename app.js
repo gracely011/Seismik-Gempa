@@ -459,6 +459,7 @@ function applyMapLayer(layerName) {
     updateSatelliteLabelsUI();
     setTimeout(() => { map.invalidateSize(); }, 50);
     if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
+    if (typeof updateMeasureTheme === 'function') updateMeasureTheme();
 }
 
 function openLayerBottomSheet() {
@@ -707,9 +708,20 @@ function showPlacePinMarker(lat, lon, name) {
     }
 
     searchPlaceMarker.bindPopup(createAreaPopupHTML(placeObj, lat, lon), {
-        maxWidth: 320,
+        maxWidth: 360,
         className: 'custom-area-popup'
     }).openPopup();
+}
+
+function formatAccuracyText(acc) {
+    if (!acc || isNaN(acc)) return "Lokasi Anda (GPS)";
+    const rounded = Math.round(acc);
+    if (rounded < 1000) {
+        return `Lokasi Anda (GPS) • ±${rounded}m`;
+    } else {
+        const km = Math.round(rounded / 1000);
+        return `Perkiraan Lokasi (Jaringan) • ±${km} km`;
+    }
 }
 
 function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
@@ -717,12 +729,12 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
     hasUserGPS = true;
 
     let placeObj = userPlaceObj || { main: "Batam", admin: "Kota Batam", province: "Kepulauan Riau" };
-    const accText = `Lokasi Anda (GPS) • ±${Math.round(accuracy)}m`;
+    const accText = formatAccuracyText(accuracy);
     const popupHtml = createAreaPopupHTML(placeObj, lat, lon, accText);
 
     if (!gpsMarker) {
         gpsMarker = L.marker([lat, lon], { icon: gpsPulseIcon, zIndexOffset: 1000 }).addTo(map);
-        gpsMarker.bindPopup(popupHtml, { maxWidth: 320 });
+        gpsMarker.bindPopup(popupHtml, { maxWidth: 360, className: 'custom-area-popup' });
     } else {
         gpsMarker.setLatLng([lat, lon]);
         gpsMarker.getPopup() && gpsMarker.setPopupContent(popupHtml);
@@ -1515,86 +1527,85 @@ async function loadMapData(silent = false) {
         console.warn("BMKG Gempadirasakan fetch error:", e);
     }
 
-    // 4. USGS Real-time API (Mode Global Seluruh Dunia vs Wilayah Indonesia)
+    // 4. USGS Real-time API (Wilayah Indonesia 30 Hari + Feed Global saat isGlobalQuakeMode aktif)
     try {
+        // A. SELALU ambil katalog 30 hari khusus teritori Indonesia dari USGS (agar data historis mikro Indonesia 100% lengkap)
+        const now = new Date();
+        const pastDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const startTimeStr = pastDate.toISOString().split('T')[0];
+        const usgsIndoUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTimeStr}&minmagnitude=1.0&minlatitude=-11&maxlatitude=6&minlongitude=95&maxlongitude=141`;
+
+        const fetchPromises = [fetch(usgsIndoUrl)];
+
+        // B. Jika Mode Gempa Seluruh Dunia AKTIF, tambahkan feed USGS Global (24 jam M2.5+ & 7 hari M4.5+)
         if (isGlobalQuakeMode) {
-            // Mode Seluruh Dunia: Ambil Feed Global Real-time USGS (M 2.5+ 24 jam & M 4.5+ 7 hari)
-            const [resGlobalDay, resGlobalWeek] = await Promise.allSettled([
-                fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"),
-                fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson")
-            ]);
+            fetchPromises.push(fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"));
+            fetchPromises.push(fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson"));
+        }
 
-            const globalFeatures = [];
-            if (resGlobalDay.status === 'fulfilled' && resGlobalDay.value.ok) {
-                const dataDay = await resGlobalDay.value.json();
-                if (dataDay.features) globalFeatures.push(...dataDay.features);
-            }
-            if (resGlobalWeek.status === 'fulfilled' && resGlobalWeek.value.ok) {
-                const dataWeek = await resGlobalWeek.value.json();
-                if (dataWeek.features) globalFeatures.push(...dataWeek.features);
-            }
+        const usgsResponses = await Promise.allSettled(fetchPromises);
 
-            globalFeatures.forEach(f => {
-                if (!f.geometry || !f.geometry.coordinates) return;
-                let [lon, lat, depth] = f.geometry.coordinates;
-                let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
-                let mag = parseFloat(f.properties.mag) || 0;
-                let place = f.properties.place || "Global Region";
-                rawQuakes.push({
-                    lat, lon, mag,
-                    time: timeStr,
-                    iso: new Date(f.properties.time).toISOString(),
-                    place: place,
-                    depth: `${Math.round(depth || 10)} km`,
-                    src: "USGS Global",
-                    priority: 5
-                });
-            });
-        } else {
-            // Mode Wilayah Indonesia (Default): Rentang 30 Hari Terakhir Khusus Teritori Indonesia
-            const now = new Date();
-            const pastDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-            const startTimeStr = pastDate.toISOString().split('T')[0];
-            const usgsUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTimeStr}&minmagnitude=1.0&minlatitude=-11&maxlatitude=6&minlongitude=95&maxlongitude=141`;
+        // Proses Respons Indonesia 30 Hari
+        if (usgsResponses[0] && usgsResponses[0].status === 'fulfilled' && usgsResponses[0].value.ok) {
+            const dataIndo = await usgsResponses[0].value.json();
+            if (dataIndo.features && dataIndo.features.length > 0) {
+                dataIndo.features.forEach(f => {
+                    if (!f.geometry || !f.geometry.coordinates) return;
+                    let [lon, lat, depth] = f.geometry.coordinates;
+                    let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
+                    let mag = parseFloat(f.properties.mag) || 0;
+                    let place = f.properties.place || "";
 
-            const resUSGS = await fetch(usgsUrl);
-            if (resUSGS.ok) {
-                const dataUSGS = await resUSGS.json();
-                if (dataUSGS.features && dataUSGS.features.length > 0) {
-                    dataUSGS.features.forEach(f => {
-                        if (!f.geometry || !f.geometry.coordinates) return;
-                        let [lon, lat, depth] = f.geometry.coordinates;
-                        let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
-                        let mag = parseFloat(f.properties.mag) || 0;
-                        let place = f.properties.place || "";
+                    const pLow = place.toLowerCase();
+                    const isForeign = [
+                        "philippines", "mindanao", "sarangani", "davao", "cotabato", "zamboanga", "manila", "visayas", "luzon", "generalsantos",
+                        "malaysia", "sabah", "sarawak", "kuala lumpur", "penang", "johor",
+                        "papua new guinea", "new britain", "bougainville", "port moresby",
+                        "timor-leste", "east timor", "dili",
+                        "brunei", "singapore", "australia", "thailand", "vietnam"
+                    ].some(country => pLow.includes(country));
 
-                        // Filter ketat: Jangan masukkan gempa negara tetangga (Filipina, Malaysia, PNG, dll) saat mode Indonesia
-                        const pLow = place.toLowerCase();
-                        const isForeign = [
-                            "philippines", "mindanao", "sarangani", "davao", "cotabato", "zamboanga", "manila", "visayas", "luzon", "generalsantos",
-                            "malaysia", "sabah", "sarawak", "kuala lumpur", "penang", "johor",
-                            "papua new guinea", "new britain", "bougainville", "port moresby",
-                            "timor-leste", "east timor", "dili",
-                            "brunei", "singapore", "australia", "thailand", "vietnam"
-                        ].some(country => pLow.includes(country));
+                    if (isForeign) return;
+                    if (lat > 4.5 && lon >= 120 && lon <= 128 && !pLow.includes("indonesia") && !pLow.includes("talaud") && !pLow.includes("sangihe")) {
+                        return;
+                    }
 
-                        if (isForeign) return;
-
-                        // Pengecekan batas utara: Mindanao/Sarangani berada di lat > 4.5 dan lon 120-128
-                        if (lat > 4.5 && lon >= 120 && lon <= 128 && !pLow.includes("indonesia") && !pLow.includes("talaud") && !pLow.includes("sangihe")) {
-                            return;
-                        }
-
-                        rawQuakes.push({
-                            lat, lon, mag,
-                            time: timeStr,
-                            iso: new Date(f.properties.time).toISOString(),
-                            place: place || "Wilayah Indonesia",
-                            depth: `${Math.round(depth || 10)} km`,
-                            src: "USGS",
-                            priority: 5
-                        });
+                    rawQuakes.push({
+                        lat, lon, mag,
+                        time: timeStr,
+                        iso: new Date(f.properties.time).toISOString(),
+                        place: place || "Wilayah Indonesia",
+                        depth: `${Math.round(depth || 10)} km`,
+                        src: "USGS",
+                        priority: 4
                     });
+                });
+            }
+        }
+
+        // Proses Respons Global jika aktif
+        if (isGlobalQuakeMode) {
+            for (let i = 1; i < usgsResponses.length; i++) {
+                if (usgsResponses[i] && usgsResponses[i].status === 'fulfilled' && usgsResponses[i].value.ok) {
+                    const dataGlobal = await usgsResponses[i].value.json();
+                    if (dataGlobal.features) {
+                        dataGlobal.features.forEach(f => {
+                            if (!f.geometry || !f.geometry.coordinates) return;
+                            let [lon, lat, depth] = f.geometry.coordinates;
+                            let timeStr = new Date(f.properties.time).toLocaleString('id-ID');
+                            let mag = parseFloat(f.properties.mag) || 0;
+                            let place = f.properties.place || "Global Region";
+                            rawQuakes.push({
+                                lat, lon, mag,
+                                time: timeStr,
+                                iso: new Date(f.properties.time).toISOString(),
+                                place: place,
+                                depth: `${Math.round(depth || 10)} km`,
+                                src: "USGS Global",
+                                priority: 5
+                            });
+                        });
+                    }
                 }
             }
         }
@@ -1602,19 +1613,29 @@ async function loadMapData(silent = false) {
         console.warn("USGS fetch warning:", err);
     }
 
-    // Deduplikasi Pintar (Gabungkan entri yang berdekatan koordinat & waktu)
+    // Deduplikasi Pintar & Penggabungan Multi-Sumber (Prioritas BMKG > USGS)
+    // Urutkan rawQuakes berdasarkan prioritas (1=BMKG AutoGempa, 2=BMKG M5+, 3=BMKG Dirasakan, 4=USGS Indo, 5=USGS Global)
+    rawQuakes.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+
     const uniqueQuakes = [];
     rawQuakes.forEach(item => {
         if (!item.lat || !item.lon || isNaN(item.lat) || isNaN(item.lon)) return;
 
-        const isDuplicate = uniqueQuakes.some(existing => {
+        const existingIdx = uniqueQuakes.findIndex(existing => {
             const dist = calcDistance(existing.lat, existing.lon, item.lat, item.lon);
-            const timeSame = existing.time === item.time || (existing.iso && item.iso && existing.iso.slice(0, 13) === item.iso.slice(0, 13));
-            return dist < 35 && (timeSame || Math.abs(existing.mag - item.mag) < 0.3);
+            const timeSame = existing.time === item.time || (existing.iso && item.iso && Math.abs(new Date(existing.iso).getTime() - new Date(item.iso).getTime()) < 30 * 60 * 1000);
+            return dist < 35 && (timeSame || Math.abs(existing.mag - item.mag) < 0.35);
         });
 
-        if (!isDuplicate) {
+        if (existingIdx === -1) {
             uniqueQuakes.push(item);
+        } else {
+            // Gabungkan metadata: Jika entri prioritas utama kekurangan informasi tambahan, lengkapi dari feed kedua
+            let existing = uniqueQuakes[existingIdx];
+            if (!existing.potensi && item.potensi) existing.potensi = item.potensi;
+            if ((!existing.dirasakan || existing.dirasakan === '-') && item.dirasakan && item.dirasakan !== '-') {
+                existing.dirasakan = item.dirasakan;
+            }
         }
     });
 
@@ -1640,6 +1661,32 @@ async function loadMapData(silent = false) {
     updateRecentQuakesUI();
     checkProximityRisk();
     if (loadingEl) loadingEl.style.display = "none";
+}
+
+// ==================== TEXT NORMALIZATION (POTENSI & STATUS GEMPA) ====================
+function cleanPotensiText(rawPotensi, isSpeech = false) {
+    if (!rawPotensi || typeof rawPotensi !== 'string' || rawPotensi.trim() === '-' || rawPotensi.trim() === '') {
+        return isSpeech ? "Gempa ini tidak berpotensi tsunami." : "Tidak berpotensi tsunami";
+    }
+
+    let p = rawPotensi.trim();
+
+    // Normalisasi teks aneh birokrasi BMKG: "Gempa ini dirasakan untuk diteruskan pada masyarakat"
+    if (/dirasakan untuk diteruskan/i.test(p) || /diteruskan pada masyarakat/i.test(p)) {
+        return isSpeech
+            ? "Gempa ini dirasakan oleh masyarakat di sekitar pusat gempa dan tidak berpotensi tsunami."
+            : "Informasi resmi: Gempa dirasakan oleh masyarakat";
+    }
+
+    if (/tidak berpotensi tsunami/i.test(p)) {
+        return isSpeech ? "Gempa ini tidak berpotensi tsunami." : "Tidak berpotensi tsunami";
+    }
+
+    if (/berpotensi tsunami/i.test(p) && !/tidak/i.test(p)) {
+        return isSpeech ? "Peringatan dini: Gempa ini berpotensi menimbulkan tsunami!" : "⚠️ Berpotensi Tsunami";
+    }
+
+    return p;
 }
 
 function addEarthquakeMarker(q, isLatest = false) {
@@ -1682,7 +1729,8 @@ function addEarthquakeMarker(q, isLatest = false) {
     const safePlace = escapeQuotes(place);
     const safeTime = escapeQuotes(time);
     const safeDepth = escapeQuotes(depth || '10 km');
-    const safePotensi = escapeQuotes(potensi || 'Tidak berpotensi tsunami');
+    const cleanPotensi = cleanPotensiText(potensi, false);
+    const safePotensi = escapeQuotes(cleanPotensi);
 
     let popupContent = `
         <div class="quake-popup-box">
@@ -1700,7 +1748,7 @@ function addEarthquakeMarker(q, isLatest = false) {
             <div class="quake-popup-place"><span class="google-symbols" style="font-size: 14px; color: #ea4335;">&#xe0c8;</span> ${place}</div>
             <div class="quake-popup-meta-row">Kedalaman: <b>${depth || '-'}</b></div>
             ${dirasakan && dirasakan !== '-' ? `<div class="quake-popup-alert-felt">⚠️ Dirasakan: <b>${dirasakan}</b></div>` : ''}
-            ${potensi ? `<div class="quake-popup-alert-potensi">🛡️ ${potensi}</div>` : ''}
+            ${cleanPotensi ? `<div class="quake-popup-alert-potensi">🛡️ ${cleanPotensi}</div>` : ''}
             ${dist !== null ? `<div class="quake-popup-dist">📏 Jarak: ${dist} km dari lokasi Anda</div>` : ''}
             <div class="quake-popup-coord">Koordinat: ${lat.toFixed(2)}, ${lon.toFixed(2)}</div>
             <div class="quake-popup-divider">
@@ -1739,7 +1787,8 @@ function addEarthquakeMarker(q, isLatest = false) {
 function shareQuakeTo(platform, place, mag, time, depth, potensi, e) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const magVal = typeof mag === 'number' ? mag.toFixed(1) : parseFloat(mag).toFixed(1);
-    const text = `⚠️ *INFORMASI GEMPA BUMI*\n📍 *Lokasi:* ${place}\n💥 *Magnitudo:* M ${magVal}\n🕒 *Waktu:* ${time}\n🌊 *Kedalaman:* ${depth} | ${potensi || 'Tidak berpotensi tsunami'}\n\n🌐 *Pantau Langsung Live Seismograf:*\nhttps://seismik.gracely.my.id/`;
+    const cleanPot = cleanPotensiText(potensi, false);
+    const text = `⚠️ *INFORMASI GEMPA BUMI*\n📍 *Lokasi:* ${place}\n💥 *Magnitudo:* M ${magVal}\n🕒 *Waktu:* ${time}\n🌊 *Kedalaman:* ${depth} | ${cleanPot}\n\n🌐 *Pantau Langsung Live Seismograf:*\nhttps://seismik.gracely.my.id/`;
     const shareUrl = 'https://seismik.gracely.my.id/';
 
     switch (platform) {
@@ -4039,16 +4088,10 @@ function checkForNewEarthquakeEvent(uniqueQuakes) {
     }
 }
 
-function broadcastQuakeEvent(q, isAutoTrigger = false) {
-    if (!q || isMuted) return;
+async function getQuakeLocationDetail(lat, lon, fallbackPlace) {
+    let placeSpeech = (fallbackPlace || "Wilayah Indonesia").trim();
 
-    const btn = document.getElementById("btnAutoBroadcast");
-    const txt = document.getElementById("autoBroadcastText");
-
-    const mag = q.mag ? q.mag.toFixed(1) : "0";
-    let placeSpeech = q.place || "Wilayah Indonesia";
-
-    // Optimasi teks tempat untuk pelafalan suara Indonesia yang fasih
+    // Normalisasi singkatan arah mata angin & unit untuk ucapan yang fasih
     placeSpeech = placeSpeech
         .replace(/\bkm\b/gi, 'kilometer')
         .replace(/\bS of\b/gi, 'Selatan')
@@ -4058,17 +4101,94 @@ function broadcastQuakeEvent(q, isAutoTrigger = false) {
         .replace(/\bSW of\b/gi, 'Barat Daya')
         .replace(/\bNW of\b/gi, 'Barat Laut')
         .replace(/\bSE of\b/gi, 'Tenggara')
-        .replace(/\bNE of\b/gi, 'Timur Laut');
+        .replace(/\bNE of\b/gi, 'Timur Laut')
+        .replace(/\bTimurLaut\b/gi, 'Timur Laut')
+        .replace(/\bBaratDaya\b/gi, 'Barat Daya')
+        .replace(/\bBaratLaut\b/gi, 'Barat Laut')
+        .replace(/\bTenggara\b/gi, 'Tenggara')
+        .replace(/\bKab\.\b/gi, 'Kabupaten ')
+        .replace(/\bKec\.\b/gi, 'Kecamatan ');
 
+    // Cek apakah fallbackPlace sudah menyebutkan darat secara eksplisit
+    let isExplicitLand = /di darat/i.test(fallbackPlace);
+    let isExplicitSea = /di laut/i.test(fallbackPlace);
+
+    let resObj = {
+        isLand: isExplicitLand,
+        village: "",
+        district: "",
+        city: "",
+        province: "",
+        detailNarrative: "",
+        placeSpeech: placeSpeech
+    };
+
+    // Panggil reverse geocoding cepat dengan timeout 1200ms saat sirene awal berbunyi
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.address) {
+                const addr = data.address;
+                const formatted = typeof formatIndonesianPlace === 'function' ? formatIndonesianPlace(addr, lat, lon) : null;
+
+                let village = addr.village || addr.suburb || addr.neighbourhood || addr.hamlet || addr.quarter || addr.residential || "";
+                let district = addr.district || addr.city_district || addr.county_subdivision || addr.municipality || addr.subdistrict || "";
+                let city = addr.county || addr.city || addr.town || addr.regency || "";
+                let prov = addr.state || addr.province || addr.region || "";
+
+                village = village.replace(/^(Kelurahan|Desa|Gampong|Nagari|Dusun|Pekan)\s+/i, '').trim();
+                district = district.replace(/^(Kecamatan|Kec\.)\s+/i, '').trim();
+                city = city.replace(/^(Kabupaten|Kab\.|Kota)\s+/i, '').trim();
+
+                if (formatted && typeof formatted === 'object') {
+                    if (formatted.province) prov = formatted.province;
+                }
+
+                // Jika ada nama desa, kelurahan, kecamatan, atau kota, berarti koordinat episenter berada di DARATAN
+                if (village || district || city) {
+                    resObj.isLand = true;
+                    resObj.village = village;
+                    resObj.district = district;
+                    resObj.city = city;
+                    resObj.province = prov;
+
+                    let parts = [];
+                    if (village) parts.push(`Desa atau Kelurahan ${village}`);
+                    if (district) parts.push(`Kecamatan ${district}`);
+                    if (city) parts.push(`Kabupaten atau Kota ${city}`);
+                    if (prov) parts.push(`Provinsi ${prov}`);
+
+                    resObj.detailNarrative = parts.join(', ');
+                }
+            }
+        }
+    } catch (e) {
+        // Geocode fallback aman
+    }
+
+    if (!resObj.isLand && !isExplicitSea) {
+        resObj.isLand = false;
+    }
+
+    return resObj;
+}
+
+async function broadcastQuakeEvent(q, isAutoTrigger = false) {
+    if (!q || isMuted) return;
+
+    const btn = document.getElementById("btnAutoBroadcast");
+    const txt = document.getElementById("autoBroadcastText");
+
+    const mag = q.mag ? q.mag.toFixed(1) : "0";
     let depthSpeech = q.depth ? String(q.depth).replace(/\bkm\b/gi, 'kilometer') : "10 kilometer";
-    let timeSpeech = q.time || "baru saja";
-    let potensiSpeech = q.potensi || "Tidak berpotensi tsunami";
-
-    const latDeg = Math.abs(q.lat).toFixed(2);
-    const lonDeg = Math.abs(q.lon).toFixed(2);
-    const latDir = q.lat >= 0 ? "Lintang Utara" : "Lintang Selatan";
-    const lonDir = q.lon >= 0 ? "Bujur Timur" : "Bujur Barat";
-    const coordSpeech = `${latDeg} derajat ${latDir}, dan ${lonDeg} derajat ${lonDir}`;
+    let potensiSpeech = cleanPotensiText(q.potensi, true);
 
     const dist = hasUserGPS ? calcDistance(userCoords[0], userCoords[1], q.lat, q.lon) : null;
 
@@ -4078,19 +4198,7 @@ function broadcastQuakeEvent(q, isAutoTrigger = false) {
     // 2. Arahkan peta ke lokasi gempa
     focusQuake(q.lat, q.lon);
 
-    // 3. Rangkai naskah siaran suara
-    let speechText = isAutoTrigger ? `Peringatan gempa bumi baru terdeteksi! ` : `Peringatan gempa bumi terkini! `;
-    speechText += `Gempa bermagnitudo ${mag} mengguncang ${placeSpeech}. `;
-    speechText += `Waktu kejadian: ${timeSpeech}. `;
-    speechText += `Kedalaman gempa: ${depthSpeech}. `;
-    speechText += `Koordinat pusat gempa: ${coordSpeech}. `;
-    speechText += `Status: ${potensiSpeech}. `;
-    if (dist !== null) {
-        speechText += `Pusat gempa berjarak sekitar ${dist} kilometer dari lokasi Anda saat ini. `;
-    }
-    speechText += `Warga dihimbau tetap tenang dan waspada terhadap kemungkinan gempa susulan.`;
-
-    // 4. Update visual tombol
+    // 3. Update visual tombol siaran
     isBroadcastingAlert = true;
     if (btn) {
         btn.classList.add("speaking");
@@ -4099,12 +4207,37 @@ function broadcastQuakeEvent(q, isAutoTrigger = false) {
         if (icon) icon.innerHTML = '&#xe047;';
     }
 
-    // 5. Eksekusi SpeechSynthesis
+    // 4. Pindai lokasi detail desa / kecamatan / darat vs laut selama jeda sirene berbunyi
+    const locDetail = await getQuakeLocationDetail(q.lat, q.lon, q.place);
+
+    // 5. Rangkai naskah siaran suara yang fasih, detail, dan alami
+    let speechText = isAutoTrigger ? `Peringatan gempa bumi baru terdeteksi! ` : `Peringatan gempa bumi terkini! `;
+    speechText += `Gempa bumi bermagnitudo ${mag}. `;
+
+    if (locDetail.isLand) {
+        if (locDetail.detailNarrative) {
+            speechText += `Pusat gempa berada di darat, tepatnya di ${locDetail.detailNarrative}, pada kedalaman ${depthSpeech}. `;
+        } else {
+            speechText += `Pusat gempa berada di darat, ${locDetail.placeSpeech}, pada kedalaman ${depthSpeech}. `;
+        }
+    } else {
+        speechText += `Pusat gempa berada di laut, ${locDetail.placeSpeech}, pada kedalaman ${depthSpeech}. `;
+    }
+
+    speechText += `${potensiSpeech} `;
+
+    if (dist !== null) {
+        speechText += `Pusat gempa berjarak sekitar ${dist} kilometer dari posisi Anda saat ini. `;
+    }
+
+    speechText += `Warga diimbau tetap tenang, waspada terhadap potensi gempa susulan, dan menghindari bangunan yang retak atau rawan roboh.`;
+
+    // 6. Eksekusi SpeechSynthesis
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(speechText);
         utterance.lang = 'id-ID';
-        utterance.rate = 0.98;
+        utterance.rate = 0.96;
         utterance.pitch = 1.0;
 
         const resetBtnState = () => {
@@ -4116,7 +4249,7 @@ function broadcastQuakeEvent(q, isAutoTrigger = false) {
         utterance.onend = resetBtnState;
         utterance.onerror = resetBtnState;
 
-        // Beri jeda 1.2 detik agar sirene peringatan awal terdengar sebelum suara berbicara
+        // Beri jeda 1.2 detik agar sirene peringatan awal selesai sebelum suara berbicara
         setTimeout(() => {
             if (isBroadcastingAlert) {
                 window.speechSynthesis.speak(utterance);
@@ -4143,5 +4276,460 @@ window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     console.log('[PWA] Seismik App successfully installed!');
 });
+
+// ==================== GOOGLE MAPS PIXEL-PERFECT CONTEXT MENU & MEASURE TOOL (DESKTOP ONLY) ====================
+function initGmapContextMenu() {
+    const contextMenu = document.getElementById('gmapContextMenu');
+    const measureCard = document.getElementById('gmapMeasureCard');
+    const measureResultEl = document.getElementById('gmapMeasureResult');
+    const measureCloseBtn = document.getElementById('gmapMeasureCloseBtn');
+
+    if (!contextMenu || typeof map === 'undefined' || !map) return;
+
+    let activeContextLat = 0;
+    let activeContextLng = 0;
+
+    // Status Mode Ukur Jarak (Penggaris Multi-Titik)
+    let isMeasuring = false;
+    let measurePoints = [];
+    let measureMarkers = [];
+    let measureTickMarkers = [];
+    let measurePolyline = null;
+
+    function getMeasureTheme() {
+        const isDark = (typeof currentMapLayer !== 'undefined') && (currentMapLayer === 'sat' || currentMapLayer === 'dark');
+        return {
+            isDark,
+            lineColor: isDark ? '#ffffff' : '#000000',
+            markerBorder: isDark ? '#202124' : '#000000',
+            markerFill: '#ffffff',
+            themeClass: isDark ? 'theme-light' : 'theme-dark'
+        };
+    }
+
+    function formatMeasureDistance(meters) {
+        if (meters >= 1000) {
+            const km = meters / 1000;
+            const miles = km * 0.621371;
+            const kmStr = km.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const miStr = miles.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return `Jarak total: ${kmStr} km (${miStr} mil)`;
+        } else {
+            const feet = Math.round(meters * 3.28084);
+            const mStr = Math.round(meters).toLocaleString('id-ID');
+            const ftStr = feet.toLocaleString('id-ID');
+            return `Jarak total: ${mStr} m (${ftStr} kaki)`;
+        }
+    }
+
+    function formatRulerTickLabel(meters) {
+        if (meters >= 1000) {
+            const km = meters / 1000;
+            return `${km.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km`;
+        }
+        return `${Math.round(meters).toLocaleString('id-ID')} m`;
+    }
+
+    function getRulerIntervalStep(totalMeters) {
+        if (totalMeters >= 1000000) return 100000;  // 100 km
+        if (totalMeters >= 400000) return 50000;    // 50 km
+        if (totalMeters >= 150000) return 25000;    // 25 km
+        if (totalMeters >= 50000) return 10000;     // 10 km
+        if (totalMeters >= 15000) return 5000;      // 5 km
+        if (totalMeters >= 5000) return 1000;       // 1 km
+        if (totalMeters >= 1000) return 500;        // 500 m
+        if (totalMeters >= 200) return 100;         // 100 m
+        return 50;                                  // 50 m
+    }
+
+    function getSegmentAngle(p1, p2) {
+        try {
+            const pt1 = map.latLngToContainerPoint(p1);
+            const pt2 = map.latLngToContainerPoint(p2);
+            const dx = pt2.x - pt1.x;
+            const dy = pt2.y - pt1.y;
+            let deg = Math.atan2(dy, dx) * (180 / Math.PI);
+            if (deg > 90) deg -= 180;
+            if (deg < -90) deg += 180;
+            return deg;
+        } catch (err) {
+            return 0;
+        }
+    }
+
+    function calculateTotalDistance() {
+        let total = 0;
+        for (let i = 0; i < measurePoints.length - 1; i++) {
+            total += map.distance(measurePoints[i], measurePoints[i + 1]);
+        }
+        return total;
+    }
+
+    function renderMeasureRuler() {
+        if (!isMeasuring || typeof map === 'undefined' || !map) return;
+
+        const theme = getMeasureTheme();
+
+        // 1. Bersihkan layer garis lama, marker titik, dan penanda interval
+        if (measurePolyline) {
+            try { map.removeLayer(measurePolyline); } catch (e) {}
+            measurePolyline = null;
+        }
+
+        measureMarkers.forEach((m) => {
+            try { map.removeLayer(m); } catch (e) {}
+        });
+        measureMarkers = [];
+
+        measureTickMarkers.forEach((t) => {
+            try { map.removeLayer(t); } catch (e) {}
+        });
+        measureTickMarkers = [];
+
+        if (measurePoints.length === 0) return;
+
+        // 2. Gambar garis polyline solid jika ada >= 2 titik
+        if (measurePoints.length >= 2) {
+            measurePolyline = L.polyline(measurePoints, {
+                color: theme.lineColor,
+                weight: 3.5,
+                opacity: 0.95
+            }).addTo(map);
+
+            // Hitung total jarak keseluruhan
+            const totalDist = calculateTotalDistance();
+            const step = getRulerIntervalStep(totalDist);
+
+            // Hitung dan tempatkan penanda interval graduasi (ticks & labels) sepanjang segmen
+            let accumulatedDist = 0;
+            let nextMilestone = step;
+
+            for (let i = 0; i < measurePoints.length - 1; i++) {
+                const p1 = measurePoints[i];
+                const p2 = measurePoints[i + 1];
+                const segDist = map.distance(p1, p2);
+                const segStart = accumulatedDist;
+                const segEnd = accumulatedDist + segDist;
+
+                const angle = getSegmentAngle(p1, p2);
+
+                while (nextMilestone <= segEnd) {
+                    if (nextMilestone > segStart) {
+                        const fraction = (nextMilestone - segStart) / segDist;
+                        const tickLat = p1.lat + fraction * (p2.lat - p1.lat);
+                        const tickLng = p1.lng + fraction * (p2.lng - p1.lng);
+                        const tickPos = L.latLng(tickLat, tickLng);
+
+                        const labelText = formatRulerTickLabel(nextMilestone);
+
+                        const tickIcon = L.divIcon({
+                            className: 'gmap-ruler-tick-wrapper-icon',
+                            html: `
+                                <div class="gmap-ruler-tick-wrapper" style="transform: rotate(${angle}deg);">
+                                    <div class="gmap-ruler-tick-mark ${theme.themeClass}"></div>
+                                    <div class="gmap-ruler-tick-label ${theme.themeClass}">${labelText}</div>
+                                </div>
+                            `,
+                            iconSize: [80, 30],
+                            iconAnchor: [40, 15]
+                        });
+
+                        const tickMarker = L.marker(tickPos, { icon: tickIcon, interactive: false }).addTo(map);
+                        measureTickMarkers.push(tickMarker);
+                    }
+                    nextMilestone += step;
+                }
+
+                accumulatedDist = segEnd;
+            }
+        }
+
+        // 3. Gambar marker lingkaran titik simpul (vertices)
+        measurePoints.forEach((pt) => {
+            const marker = L.circleMarker(pt, {
+                radius: 5.5,
+                color: theme.markerBorder,
+                fillColor: theme.markerFill,
+                fillOpacity: 1,
+                weight: 2.5
+            }).addTo(map);
+            measureMarkers.push(marker);
+        });
+
+        // 4. Perbarui kartu info total jarak di bawah
+        const total = calculateTotalDistance();
+        if (measureResultEl) {
+            measureResultEl.textContent = formatMeasureDistance(total);
+        }
+    }
+
+    // Expose fungsi update tema agar terpicu saat user mengganti lapisan peta
+    window.updateMeasureTheme = renderMeasureRuler;
+
+    function closeContextMenu() {
+        if (contextMenu && contextMenu.style.display !== 'none') {
+            contextMenu.style.display = 'none';
+        }
+    }
+
+    function stopMeasureTool() {
+        isMeasuring = false;
+        if (measureCard) measureCard.style.display = 'none';
+
+        if (measurePolyline) {
+            try { map.removeLayer(measurePolyline); } catch (e) {}
+            measurePolyline = null;
+        }
+
+        measureMarkers.forEach((marker) => {
+            try { map.removeLayer(marker); } catch (e) {}
+        });
+        measureMarkers = [];
+
+        measureTickMarkers.forEach((tick) => {
+            try { map.removeLayer(tick); } catch (e) {}
+        });
+        measureTickMarkers = [];
+
+        measurePoints = [];
+
+        const mapContainer = map.getContainer();
+        if (mapContainer) mapContainer.style.cursor = '';
+    }
+
+    function startMeasureTool(startLat, startLng) {
+        stopMeasureTool();
+
+        isMeasuring = true;
+        const startPoint = L.latLng(startLat, startLng);
+        measurePoints.push(startPoint);
+
+        // Tampilkan kartu panel info jarak permanen di bawah
+        if (measureCard) {
+            measureCard.style.display = 'block';
+            if (measureResultEl) {
+                measureResultEl.textContent = formatMeasureDistance(0);
+            }
+        }
+
+        const mapContainer = map.getContainer();
+        if (mapContainer) mapContainer.style.cursor = 'crosshair';
+
+        // Render titik awal
+        renderMeasureRuler();
+    }
+
+    // Pasang handler tombol tutup [X] pada kartu pengukur jarak
+    if (measureCloseBtn) {
+        measureCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stopMeasureTool();
+        });
+    }
+
+    // 1. Event Listener Klik Kanan Peta Leaflet (Khusus Layar Desktop)
+    map.on('contextmenu', (e) => {
+        // Abaikan jika layar berada dalam mode mobile
+        if (window.innerWidth <= 768) {
+            return;
+        }
+
+        if (e.originalEvent) {
+            e.originalEvent.preventDefault();
+            e.originalEvent.stopPropagation();
+        }
+
+        activeContextLat = e.latlng.lat;
+        activeContextLng = e.latlng.lng;
+
+        const coordsItem = contextMenu.querySelector('.item-coords');
+        if (coordsItem) {
+            coordsItem.textContent = `${activeContextLat.toFixed(6)}, ${activeContextLng.toFixed(6)}`;
+        }
+
+        contextMenu.style.display = 'flex';
+
+        const mouseX = e.originalEvent.clientX;
+        const mouseY = e.originalEvent.clientY;
+        const menuWidth = contextMenu.offsetWidth || 210;
+        const menuHeight = contextMenu.offsetHeight || 370;
+
+        let posX = mouseX + menuWidth > window.innerWidth ? window.innerWidth - menuWidth - 8 : mouseX;
+        let posY = mouseY + menuHeight > window.innerHeight ? window.innerHeight - menuHeight - 8 : mouseY;
+
+        if (posX < 8) posX = 8;
+        if (posY < 8) posY = 8;
+
+        contextMenu.style.left = `${posX}px`;
+        contextMenu.style.top = `${posY}px`;
+    });
+
+    // Event klik kiri pada peta: tutup context menu atau tambah titik ukur jika mode ukur aktif
+    map.on('click', (e) => {
+        closeContextMenu();
+
+        if (isMeasuring) {
+            const newPoint = e.latlng;
+            measurePoints.push(newPoint);
+            renderMeasureRuler();
+        }
+    });
+
+    // Render ulang saat zoom agar sudut dan posisi label tetap presisi
+    map.on('zoomend', () => {
+        if (isMeasuring) renderMeasureRuler();
+    });
+
+    map.on('movestart', closeContextMenu);
+    window.addEventListener('resize', closeContextMenu);
+
+    // 2. Handler Klik Tiap Item Menu
+    contextMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.gmap-menu-item');
+        if (!item) return;
+
+        const action = item.getAttribute('data-action');
+        const latStr = activeContextLat.toFixed(6);
+        const lngStr = activeContextLng.toFixed(6);
+
+        switch (action) {
+            case 'copy-coords':
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(`${latStr}, ${lngStr}`).then(() => {
+                        showToastNotification('📍 Koordinat disalin ke papan klip');
+                    }).catch(() => {
+                        showToastNotification(`📍 Koordinat: ${latStr}, ${lngStr}`);
+                    });
+                } else {
+                    showToastNotification(`📍 Koordinat: ${latStr}, ${lngStr}`);
+                }
+                break;
+
+            case 'share':
+                const currentZoom = (typeof map !== 'undefined' && map) ? Math.round(map.getZoom() * 10) / 10 : 10;
+                const shareUrl = `${window.location.origin}${window.location.pathname}#/@${latStr},${lngStr},${currentZoom}z`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        showToastNotification('🔗 Tautan lokasi disalin ke papan klip');
+                    }).catch(() => {
+                        showToastNotification('🔗 Tautan lokasi siap dibagikan!');
+                    });
+                } else {
+                    showToastNotification('🔗 Tautan lokasi siap dibagikan!');
+                }
+                break;
+
+            case 'route-from':
+                window.open(`https://www.google.com/maps/dir/${latStr},${lngStr}/`, '_blank');
+                break;
+
+            case 'route-to':
+                window.open(`https://www.google.com/maps/dir//${latStr},${lngStr}/`, '_blank');
+                break;
+
+            case 'whats-here':
+                showToastNotification('🔍 Mencari informasi lokasi...');
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latStr}&lon=${lngStr}&zoom=18&addressdetails=1`)
+                    .then((res) => res.json())
+                    .then((data) => {
+                        let locationTitle = 'Lokasi Terpilih';
+                        let locationSubtitle = data.display_name || 'Lokasi tidak ditemukan';
+
+                        if (typeof formatIndonesianPlace === 'function') {
+                            const formatted = formatIndonesianPlace(data.address || {}, activeContextLat, activeContextLng);
+                            if (formatted && typeof formatted === 'object') {
+                                locationTitle = formatted.main || 'Lokasi Terpilih';
+                                const adminPart = formatted.admin ? formatted.admin : '';
+                                const provPart = formatted.province ? formatted.province : '';
+                                locationSubtitle = [adminPart, provPart].filter(Boolean).join(', ') || data.display_name || 'Indonesia';
+                            } else if (typeof formatted === 'string') {
+                                locationSubtitle = formatted;
+                            }
+                        }
+
+                        if (typeof L !== 'undefined' && map) {
+                            L.popup({ autoClose: true, closeOnClick: true })
+                                .setLatLng([activeContextLat, activeContextLng])
+                                .setContent(`
+                                    <div style="font-size:13px; font-family:Roboto, 'Segoe UI', Arial, sans-serif; line-height:1.45; color:#202124; padding:2px; min-width:180px;">
+                                        <div style="font-weight:700; color:#1a73e8; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
+                                            <span>📍 ${locationTitle}</span>
+                                        </div>
+                                        <div style="font-size:12.5px; color:#3c4043; margin-bottom:5px; font-weight:500;">${locationSubtitle}</div>
+                                        <div style="font-size:11px; color:#70757a; font-family:monospace;">${latStr}, ${lngStr}</div>
+                                    </div>
+                                `)
+                                .openOn(map);
+                        }
+                    })
+                    .catch(() => {
+                        showToastNotification('Gagal memuat detail lokasi');
+                    });
+                break;
+
+            case 'search-quakes':
+                showToastNotification('🔍 Memindai gempa dalam radius 250 km...');
+                if (typeof L !== 'undefined' && map) {
+                    if (window.activeRadiusCircle) {
+                        try { map.removeLayer(window.activeRadiusCircle); } catch (e) {}
+                    }
+                    window.activeRadiusCircle = L.circle([activeContextLat, activeContextLng], {
+                        radius: 250000,
+                        color: '#1a73e8',
+                        fillColor: '#1a73e8',
+                        fillOpacity: 0.08,
+                        weight: 1.5,
+                        dashArray: '6, 6'
+                    }).addTo(map);
+
+                    L.popup({ autoClose: true, closeOnClick: true })
+                        .setLatLng([activeContextLat, activeContextLng])
+                        .setContent(`
+                            <div style="font-size:13px; font-family:Roboto, 'Segoe UI', Arial, sans-serif; line-height:1.45; color:#202124; padding:2px; min-width:180px;">
+                                <div style="font-weight:700; color:#1a73e8; margin-bottom:3px;">📡 Radius Pemantauan Gempa</div>
+                                <div style="font-size:12px; color:#3c4043; margin-bottom:4px;">Radius pemantauan 250 km aktif di titik ini.</div>
+                                <div style="font-size:11px; color:#70757a; font-family:monospace;">${latStr}, ${lngStr}</div>
+                            </div>
+                        `)
+                        .openOn(map);
+                }
+                break;
+
+            case 'measure':
+                startMeasureTool(activeContextLat, activeContextLng);
+                break;
+
+            case 'print':
+                if (typeof openPrintPreviewModal === 'function') {
+                    openPrintPreviewModal();
+                } else {
+                    window.print();
+                }
+                break;
+        }
+
+        closeContextMenu();
+    });
+
+    // 3. Listener Tombol Escape & Global Click
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeContextMenu();
+            if (isMeasuring) stopMeasureTool();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (contextMenu && !contextMenu.contains(e.target)) {
+            closeContextMenu();
+        }
+    });
+}
+
+// Inisialisasi Google Maps Context Menu saat aplikasi siap
+initGmapContextMenu();
+
+
+
 
 

@@ -994,6 +994,31 @@
         </div>
     </div>
 
+    <!-- CUSTOM GOOGLE MAPS CONTEXT MENU (DESKTOP ONLY) -->
+    <div id="gmapContextMenu" class="gmap-context-menu" role="menu" style="display: none;">
+        <div class="gmap-menu-item item-coords" data-action="copy-coords">0.000000, 0.000000</div>
+        <div class="gmap-menu-item" data-action="share">Bagikan lokasi ini</div>
+        <div class="gmap-menu-divider"></div>
+        <div class="gmap-menu-item" data-action="whats-here">Ada apa di sini?</div>
+        <div class="gmap-menu-item" data-action="search-quakes">Cari gempa di sekitar titik ini</div>
+        <div class="gmap-menu-item" data-action="measure">Ukur jarak</div>
+        <div class="gmap-menu-divider"></div>
+        <div class="gmap-menu-item" data-action="route-from">Rute dari sini</div>
+        <div class="gmap-menu-item" data-action="route-to">Rute ke sini</div>
+        <div class="gmap-menu-divider"></div>
+        <div class="gmap-menu-item" data-action="print">Cetak peta ini</div>
+    </div>
+
+    <!-- GOOGLE MAPS MEASURE DISTANCE PANEL (DESKTOP ONLY) -->
+    <div id="gmapMeasureCard" class="gmap-measure-card" style="display: none;">
+        <button class="gmap-measure-close-btn" id="gmapMeasureCloseBtn" title="Tutup" aria-label="Tutup">
+            <span class="google-symbols" style="font-size: 18px;">&#xe5cd;</span>
+        </button>
+        <div class="gmap-measure-title">Ukur jarak</div>
+        <div class="gmap-measure-subtitle">Klik pada peta untuk menambahkan jalur Anda</div>
+        <div class="gmap-measure-result" id="gmapMeasureResult">Jarak total: 0 m (0 kaki)</div>
+    </div>
+
     <!-- LEAFLET JS ENGINE (DEFERRED & OPTIMIZED) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
