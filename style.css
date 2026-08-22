@@ -354,6 +354,9 @@ body.theme-dark .map-dot.dot-3 {
         border-radius: 50% !important;
         margin-top: 14px !important;
         padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     .wR3cXd.rail-menu-btn .NP7r5c {
@@ -363,6 +366,15 @@ body.theme-dark .map-dot.dot-3 {
         min-height: 44px !important;
         aspect-ratio: 1 / 1 !important;
         border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+    }
+
+    .wR3cXd.rail-menu-btn .NP7r5c svg {
+        display: block;
+        margin: auto;
     }
 
     /* Tombol Disimpan / Terbaru */
@@ -377,9 +389,9 @@ body.theme-dark .map-dot.dot-3 {
         width: 56px;
         height: 32px;
         border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         transition: background 0.2s cubic-bezier(0.2, 0, 0, 1), color 0.2s ease;
     }
 
@@ -5479,7 +5491,7 @@ body.theme-dark .popup-btn-bookmark.active {
     }
 
     .tIuFw {
-        color: var(--text-secondary);
+        color: #5e5e5e !important;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -5492,7 +5504,8 @@ body.theme-dark .popup-btn-bookmark.active {
         width: 24px;
         height: 24px;
         display: block;
-        fill: currentColor;
+        fill: #5e5e5e !important;
+        color: #5e5e5e !important;
     }
 
     .fontBodyMedium.gFio1e {

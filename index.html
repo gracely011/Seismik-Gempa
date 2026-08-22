@@ -100,7 +100,7 @@
     </noscript>
 
     <!-- CORE STYLESHEET -->
-    <link rel="stylesheet" href="style.css?v=19.0">
+    <link rel="stylesheet" href="style.css?v=22.0">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -302,10 +302,10 @@
         <ul class="ODXihb Hk4XGb" role="list">
             <!-- 1. MENU (HAMBURGER) -->
             <li>
-                <button class="wR3cXd rail-menu-btn active" id="railMenuBtn" onclick="handleMenuBtnClick()" title="Menu / Setelan" aria-label="Menu">
+                <button class="wR3cXd rail-menu-btn active notranslate" id="railMenuBtn" onclick="handleMenuBtnClick()" title="Menu / Setelan" aria-label="Menu" translate="no">
                     <div class="NP7r5c o0KWTd">
                         <div class="OyjIsf"></div>
-                        <span class="cc4Ofc google-symbols" aria-hidden="true" style="font-size: 24px;">&#xe5d2;</span>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="cc4Ofc notranslate" translate="no"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
                     </div>
                 </button>
             </li>
@@ -315,7 +315,7 @@
                 <button class="wR3cXd fontLabelMedium" id="railBtnSaved" onclick="switchNavTab('saved')" title="Disimpan (Anda)" aria-label="Disimpan">
                     <div class="NP7r5c deIIj">
                         <div class="OyjIsf"></div>
-                        <span class="cc4Ofc avo2Le google-symbols" aria-hidden="true" style="font-size: 24px;">&#xe866;</span>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="cc4Ofc avo2Le notranslate" translate="no"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
                     </div>
                     <div class="d0UoQ">
                         <div class="cGRe9e tujHCe">Disimpan</div>
@@ -328,7 +328,7 @@
                 <button class="wR3cXd fontLabelMedium" id="railBtnRecent" onclick="switchNavTab('recent')" title="Aktivitas &amp; Gempa Terbaru" aria-label="Terbaru">
                     <div class="NP7r5c deIIj">
                         <div class="OyjIsf"></div>
-                        <span class="cc4Ofc avo2Le google-symbols" aria-hidden="true" style="font-size: 24px;">&#xe8b5;</span>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="cc4Ofc avo2Le notranslate" translate="no"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
                     </div>
                     <div class="d0UoQ">
                         <div class="cGRe9e">Terbaru</div>
@@ -430,7 +430,7 @@
                 <div class="QGvUHe">
                     <li class="AJqepd">
                         <div class="IpXlkd T2ozWe" onclick="toggleGlobalEarthquakeMode()">
-                            <span class="tIuFw wch72" style="color: #1a73e8;">
+                            <span class="tIuFw wch72">
                                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e" id="i18nGlobalQuakes">Peta Gempa Seluruh Dunia</label>
@@ -457,7 +457,7 @@
                     </li>
                     <li class="AJqepd">
                         <button class="T2ozWe" onclick="handleSettingsNav('guide')" role="menuitem">
-                            <span class="tIuFw wch72" style="color: #ea4335;">
+                            <span class="tIuFw wch72">
                                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e">Panduan Siaga Bencana</label>
@@ -521,26 +521,26 @@
         <!-- GOOGLE MAPS SEARCH BAR -->
         <div class="search-box-card" id="searchBoxCard">
             <!-- MENU HAMBURGER BUTTON (VISIBLE WHEN SIDEBAR/NAV-RAIL IS COLLAPSED) -->
-            <button class="search-menu-btn" id="searchMenuBtn" onclick="toggleDesktopSettings()" aria-label="Menu" title="Menu">
-                <span class="google-symbols" style="font-size: 24px;">&#xe5d2;</span>
+            <button class="search-menu-btn notranslate" id="searchMenuBtn" onclick="toggleDesktopSettings()" aria-label="Menu" title="Menu" translate="no">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
             </button>
             <!-- SEARCH ICON BUTTON (VISIBLE WHEN SIDEBAR IS OPEN & ON MOBILE) -->
-            <button class="search-icon-btn" id="searchIconBtn" onclick="document.getElementById('searchInput').focus()" title="Cari">
-                <span class="google-symbols" style="font-size: 20px;">&#xe8b6;</span>
+            <button class="search-icon-btn notranslate" id="searchIconBtn" onclick="document.getElementById('searchInput').focus()" title="Cari" translate="no">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             </button>
             <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)" autocomplete="off">
-            <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Hapus Pencarian">
-                <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
+            <button id="searchClearBtn" class="search-clear-btn notranslate" onclick="clearSearch()" title="Hapus Pencarian" translate="no">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
             </button>
             <!-- SEARCH SUBMIT BUTTON (MAGNIFYING GLASS NEXT TO INPUT ON COLLAPSED STATE) -->
-            <button class="search-submit-btn" id="searchSubmitBtn" onclick="triggerSearchCity()" title="Telusuri">
-                <span class="google-symbols" style="font-size: 22px;">&#xe8b6;</span>
+            <button class="search-submit-btn notranslate" id="searchSubmitBtn" onclick="triggerSearchCity()" title="Telusuri" translate="no">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             </button>
             <!-- VERTICAL DIVIDER -->
             <div class="search-divider-vertical" id="searchDividerVertical"></div>
             <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
-            <button class="directions-btn" onclick="triggerSearchCity()" title="Cari Kota / Arahkan">
-                <span class="google-symbols" style="font-size: 20px;">&#xe52e;</span>
+            <button class="directions-btn notranslate" onclick="triggerSearchCity()" title="Cari Kota / Arahkan" translate="no">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41zM14 14.5V12h-4v3H8v-4c0-.55.45-1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>
             </button>
         </div>
 
@@ -1109,17 +1109,30 @@
         <div class="gmap-measure-result" id="gmapMeasureResult">Jarak total: 0 m (0 kaki)</div>
     </div>
 
+    <!-- GOOGLE TRANSLATE ENGINE CONTAINER & INIT (STEALTH) -->
+    <div id="google_translate_element" style="display: none !important;"></div>
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'id',
+                autoDisplay: false,
+                includedLanguages: 'af,az,id,ms,bs,ca,cs,da,de,et,en,es,eu,fil,fr,gl,hr,zu,is,it,sw,lv,lt,hu,nl,no,uz,pl,pt,ro,sq,sk,sl,fi,sv,vi,tr,el,bg,ky,kk,mk,mn,ru,sr,uk,ka,hy,iw,ur,ar,fa,am,ne,hi,mr,bn,pa,gu,ta,te,kn,ml,si,th,lo,my,km,ko,ja,zh-CN,zh-TW'
+            }, 'google_translate_element');
+        }
+    </script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
+
     <!-- LEAFLET JS ENGINE (DEFERRED & OPTIMIZED) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=19.0"></script>
+    <script src="faults.js?v=22.0"></script>
 
     <!-- SECONDARY MODULES & ON-DEMAND MODALS SCRIPT -->
-    <script src="modals.js?v=19.0"></script>
+    <script src="modals.js?v=22.0"></script>
 
     <!-- MAIN CORE APP SCRIPT -->
-    <script src="app.js?v=19.0"></script>
+    <script src="app.js?v=22.0"></script>
 </body>
 
 </html>

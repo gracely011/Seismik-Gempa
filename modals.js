@@ -173,7 +173,22 @@ function ensureLanguageModalDOM() {
 function openLanguageModal() {
     if (typeof closeDesktopSettings === 'function') closeDesktopSettings();
     const modal = ensureLanguageModalDOM();
-    if (modal) modal.style.display = "flex";
+    if (modal) {
+        modal.querySelectorAll(".lang-item").forEach(el => {
+            const isSelected = (el.getAttribute("data-lang") === currentAppLanguage);
+            el.classList.toggle("active-lang", isSelected);
+            if (isSelected) {
+                if (!el.querySelector(".QxsAAd")) {
+                    const text = el.textContent.trim();
+                    el.innerHTML = `<span class="QxsAAd">&#x202A;${text}&#x202C;</span>`;
+                }
+            } else {
+                const span = el.querySelector(".QxsAAd");
+                if (span) el.innerHTML = `&#x202A;${span.textContent.trim()}&#x202C;`;
+            }
+        });
+        modal.style.display = "flex";
+    }
 }
 
 function closeLanguageModal(e) {
@@ -184,41 +199,44 @@ function closeLanguageModal(e) {
 
 function setAppLanguage(langCode, langName) {
     currentAppLanguage = langCode;
-    localStorage.setItem("seismik_lang", langCode);
+    try { localStorage.setItem("seismik_lang", langCode); } catch (e) {}
     closeLanguageModal();
 
+    const targetCode = (langCode === 'zh-cn' ? 'zh-CN' : (langCode === 'zh-tw' ? 'zh-TW' : (langCode === 'pt-br' ? 'pt' : (langCode === 'pt-pt' ? 'pt' : (langCode === 'es-419' ? 'es' : langCode)))));
+
+    // 1. Manage Google Translate Cookie (googtrans)
+    const host = window.location.hostname;
     if (langCode === 'id') {
         document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "googtrans=/id/id; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        if (host) {
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + host;
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=." + host;
+        }
         document.cookie = "googtrans=/id/id; path=/;";
-        try {
-            if (window.location.hostname) {
-                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
-                document.cookie = "googtrans=/id/id; path=/; domain=" + window.location.hostname;
-            }
-        } catch (e) {}
     } else {
-        document.cookie = `googtrans=/id/${langCode}; path=/;`;
-        try {
-            if (window.location.hostname) {
-                document.cookie = `googtrans=/id/${langCode}; path=/; domain=${window.location.hostname}`;
-                document.cookie = `googtrans=/id/${langCode}; path=/; domain=.${window.location.hostname}`;
-            }
-        } catch (e) {}
+        document.cookie = `googtrans=/id/${targetCode}; path=/;`;
+        if (host) {
+            document.cookie = `googtrans=/id/${targetCode}; path=/; domain=${host}`;
+            document.cookie = `googtrans=/id/${targetCode}; path=/; domain=.${host}`;
+        }
     }
 
-    triggerGoogleTranslate(langCode);
+    // 2. Trigger Google Translate Engine & Local Dictionary
+    triggerGoogleTranslate(targetCode);
     applyLanguage(langCode);
 
-    if (typeof showNotification === 'function') {
-        showNotification(`Bahasa diubah ke ${langName}`);
+    if (typeof showToastNotification === 'function') {
+        showToastNotification(`🌐 Bahasa diubah ke ${langName}`);
+    } else if (typeof showNotification === 'function') {
+        showNotification(`🌐 Bahasa diubah ke ${langName}`);
     }
 }
 
-function triggerGoogleTranslate(langCode) {
-    const targetCode = (langCode === 'zh-cn' ? 'zh-CN' : (langCode === 'zh-tw' ? 'zh-TW' : langCode));
+function triggerGoogleTranslate(targetCode) {
     const combo = document.querySelector('.goog-te-combo');
     if (combo) {
-        combo.value = (langCode === 'id' ? 'id' : targetCode);
+        combo.value = (targetCode === 'id' ? '' : targetCode);
         combo.dispatchEvent(new Event('change'));
     } else {
         let attempts = 0;
@@ -227,9 +245,9 @@ function triggerGoogleTranslate(langCode) {
             const c = document.querySelector('.goog-te-combo');
             if (c) {
                 clearInterval(interval);
-                c.value = (langCode === 'id' ? 'id' : targetCode);
+                c.value = (targetCode === 'id' ? '' : targetCode);
                 c.dispatchEvent(new Event('change'));
-            } else if (attempts > 20) {
+            } else if (attempts > 30) {
                 clearInterval(interval);
             }
         }, 150);
@@ -261,12 +279,12 @@ function applyLanguage(langCode) {
         el.classList.toggle("active-lang", isSelected);
         if (isSelected) {
             if (!el.querySelector(".QxsAAd")) {
-                const text = el.textContent;
-                el.innerHTML = `<span class="QxsAAd">${text}</span>`;
+                const text = el.textContent.trim();
+                el.innerHTML = `<span class="QxsAAd">&#x202A;${text}&#x202C;</span>`;
             }
         } else {
             const span = el.querySelector(".QxsAAd");
-            if (span) el.textContent = span.textContent;
+            if (span) el.innerHTML = `&#x202A;${span.textContent.trim()}&#x202C;`;
         }
     });
 }
@@ -869,3 +887,19 @@ document.addEventListener("keydown", (e) => {
         closeLanguageModal();
     }
 });
+
+// Inisialisasi bahasa tersimpan saat halaman dimuat
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        const savedLang = localStorage.getItem("seismik_lang");
+        if (savedLang && savedLang !== 'id') {
+            currentAppLanguage = savedLang;
+            const targetCode = (savedLang === 'zh-cn' ? 'zh-CN' : (savedLang === 'zh-tw' ? 'zh-TW' : (savedLang === 'pt-br' ? 'pt' : (savedLang === 'pt-pt' ? 'pt' : (savedLang === 'es-419' ? 'es' : savedLang)))));
+            setTimeout(() => {
+                triggerGoogleTranslate(targetCode);
+                applyLanguage(savedLang);
+            }, 350);
+        }
+    } catch(e){}
+});
+
