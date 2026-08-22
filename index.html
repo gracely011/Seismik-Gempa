@@ -100,7 +100,7 @@
     </noscript>
 
     <!-- CORE STYLESHEET -->
-    <link rel="stylesheet" href="style.css?v=16.0">
+    <link rel="stylesheet" href="style.css?v=19.0">
 
     <!-- SCHEMA.ORG JSON-LD STRUCTURED DATA (GOOGLE RICH SNIPPETS) -->
     <script type="application/ld+json">
@@ -947,58 +947,39 @@
     <!-- ==================== MOBILE LAYER BOTTOM SHEET (GOOGLE MAPS STYLE) ==================== -->
     <div class="mobile-bottom-sheet-backdrop" id="mobileLayerBackdrop" onclick="closeLayerBottomSheet()">
         <div class="mobile-layer-bottom-sheet" id="mobileLayerBottomSheet" onclick="event.stopPropagation()">
+            <!-- Drag Handle Indicator -->
+            <div class="mobile-sheet-drag-handle"></div>
+
             <div class="mobile-sheet-header">
-                <h3 class="mobile-sheet-title">Detail peta</h3>
+                <h3 class="mobile-sheet-title">Jenis peta</h3>
                 <button class="mobile-sheet-close-btn" onclick="closeLayerBottomSheet()" title="Tutup" aria-label="Tutup">
-                    <span class="google-symbols" style="font-size: 20px;">&#xe5cd;</span>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
                 </button>
             </div>
             <div class="mobile-sheet-body">
-                <!-- 1. DETAIL PETA -->
-                <div class="mobile-sheet-section-divider" style="margin-top: 0;"></div>
-                <h4 class="mobile-sheet-subtitle">Detail peta</h4>
-                <div class="mobile-sheet-grid-details" id="mobileLayerDetailsGrid">
-                    <!-- Medan -->
-                    <div class="mobile-sheet-item" id="mobLayerOptTerrain" onclick="selectMapLayer('terrain')">
-                        <div class="mobile-sheet-thumb">
-                            <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#f1f3f4"/><path d="M6 28l9-12 6 7 9-11" fill="none" stroke="#5f6368" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 28h24" stroke="#80868b" stroke-width="2"/></svg>
-                        </div>
-                        <span class="mobile-sheet-label">Medan</span>
-                    </div>
-
-                    <!-- Sesar Aktif -->
-                    <div class="mobile-sheet-item" id="mobLayerOptFaults" onclick="toggleFaultsLayer()">
-                        <div class="mobile-sheet-thumb">
-                            <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#fce8e6"/><path d="M18 6L4 30h28L18 6z" fill="#ea4335"/><path d="M18 14v8m0 4v2" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/></svg>
-                        </div>
-                        <span class="mobile-sheet-label">Sesar Aktif</span>
-                    </div>
-
-                    <!-- Kontainer Dinamis untuk Detail Ekstra Mobile (Injeksi JS) -->
-                    <div id="mobileExtraDetailsHook" style="display: contents;"></div>
-                </div>
-
-                <!-- 2. ALAT PETA -->
-                <div class="mobile-sheet-section-divider"></div>
-                <h4 class="mobile-sheet-subtitle">Alat peta</h4>
-                <div class="mobile-sheet-grid-details">
-                    <!-- Ukur Jarak -->
-                    <div class="mobile-sheet-item" id="mobLayerOptMeasure" onclick="startMeasureFromLayer(); closeLayerBottomSheet();">
-                        <div class="mobile-sheet-thumb">
-                            <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M8 28L28 8" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="28" r="2.5" fill="#ffffff" stroke="#1a73e8" stroke-width="2"/><circle cx="28" cy="8" r="2.5" fill="#ffffff" stroke="#1a73e8" stroke-width="2"/><path d="M12 20l3-3m3-3l3-3" stroke="#1a73e8" stroke-width="1.5"/></svg>
-                        </div>
-                        <span class="mobile-sheet-label">Ukur</span>
-                    </div>
-                </div>
-
-                <!-- 3. JENIS PETA -->
-                <div class="mobile-sheet-section-divider"></div>
-                <h4 class="mobile-sheet-subtitle">Jenis peta</h4>
+                <!-- 1. JENIS PETA (BASE MAPS) -->
                 <div class="mobile-sheet-grid-main">
                     <!-- DEFAULT / STANDAR -->
                     <div class="mobile-sheet-item active" id="mobLayerOptLight" onclick="selectMapLayer('light')">
                         <div class="mobile-sheet-thumb">
-                            <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M8 28c4-8 12-6 20-16" stroke="#4285f4" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M6 14c6 2 12-2 24 6" stroke="#fbbc04" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="24" cy="15" r="3" fill="#ea4335"/></svg>
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <clipPath id="sqClipDef"><rect width="64" height="64" rx="16"/></clipPath>
+                                </defs>
+                                <g clip-path="url(#sqClipDef)">
+                                    <rect width="64" height="64" fill="#aadaff"/>
+                                    <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#cbe6a3"/>
+                                    <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#e8f0d8"/>
+                                    <path d="M8 32 Q14 26 22 34 Q18 44 10 40 Z" fill="#b7df94"/>
+                                    <path d="M42 42 Q50 36 58 44 Q52 56 40 52 Z" fill="#b7df94"/>
+                                    <path d="M-5 45 Q20 38 48 58" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M26 12 Q32 30 38 66" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#ffffff" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#8ab4f8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
+                                    <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#fbbc04" stroke-width="4" fill="none" stroke-linecap="round"/>
+                                </g>
+                            </svg>
                         </div>
                         <span class="mobile-sheet-label">Default</span>
                     </div>
@@ -1006,19 +987,98 @@
                     <!-- SATELIT -->
                     <div class="mobile-sheet-item" id="mobLayerOptSat" onclick="selectMapLayer('sat')">
                         <div class="mobile-sheet-thumb">
-                            <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#3c4043"/><path d="M4 4h28v28H4z" fill="#2d3748"/><path d="M8 28l6-8 5 4 9-12" fill="none" stroke="#a0aec0" stroke-width="2"/><circle cx="24" cy="12" r="2" fill="#ecc94b"/></svg>
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <clipPath id="sqClipSat"><rect width="64" height="64" rx="16"/></clipPath>
+                                    <linearGradient id="satLandGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#4a5d4e"/>
+                                        <stop offset="50%" stop-color="#2d3e32"/>
+                                        <stop offset="100%" stop-color="#5c6d54"/>
+                                    </linearGradient>
+                                    <linearGradient id="satFieldGrad" x1="0" y1="1" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#697762"/>
+                                        <stop offset="100%" stop-color="#3d4c38"/>
+                                    </linearGradient>
+                                </defs>
+                                <g clip-path="url(#sqClipSat)">
+                                    <rect width="64" height="64" fill="url(#satLandGrad)"/>
+                                    <path d="M0 0 L40 0 L28 28 L0 20 Z" fill="url(#satFieldGrad)" opacity="0.9"/>
+                                    <path d="M38 34 L64 26 L64 64 L24 64 Z" fill="#384534" opacity="0.95"/>
+                                    <path d="M0 24 L24 30 L16 64 L0 64 Z" fill="#58674f"/>
+                                    <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#2b2d2f" stroke-width="7" fill="none" stroke-linecap="round"/>
+                                    <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#686b6e" stroke-width="5" fill="none" stroke-linecap="round"/>
+                                    <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" fill="none"/>
+                                    <path d="M-4 56 Q24 50 48 28 Q58 16 72 10" stroke="#2b2d2f" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M-4 56 Q24 50 48 28 Q58 16 72 10" stroke="#686b6e" stroke-width="4" fill="none" stroke-linecap="round"/>
+                                    <path d="M32 66 Q36 44 58 36" stroke="#9aa0a6" stroke-width="2.5" fill="none"/>
+                                </g>
+                            </svg>
                         </div>
                         <span class="mobile-sheet-label">Satelit</span>
+                    </div>
+
+                    <!-- MEDAN -->
+                    <div class="mobile-sheet-item" id="mobLayerOptTerrain" onclick="selectMapLayer('terrain')">
+                        <div class="mobile-sheet-thumb">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <clipPath id="sqClipTerr"><rect width="64" height="64" rx="16"/></clipPath>
+                                    <linearGradient id="terrGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#d4dec8"/>
+                                        <stop offset="50%" stop-color="#b6c8a7"/>
+                                        <stop offset="100%" stop-color="#9cb08d"/>
+                                    </linearGradient>
+                                </defs>
+                                <g clip-path="url(#sqClipTerr)">
+                                    <rect width="64" height="64" fill="url(#terrGrad)"/>
+                                    <path d="M-10 64 Q10 40 26 44 Q42 48 64 24 L64 64 Z" fill="#889c79" opacity="0.75"/>
+                                    <path d="M-10 42 Q14 26 30 32 Q46 38 68 14 L68 0 L-10 0 Z" fill="#e8eee0" opacity="0.8"/>
+                                    <path d="M12 64 Q28 36 46 34 Q58 32 74 16 L74 64 Z" fill="#758866" opacity="0.6"/>
+                                    <path d="M-6 24 Q18 12 36 18 Q50 24 70 6" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+                                    <path d="M-8 46 Q18 36 34 40 Q48 44 70 20" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M22 66 Q36 38 52 36 Q62 34 76 22" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M4 64 Q22 48 28 32 Q32 18 30 -4" stroke="#a0b490" stroke-width="1.8" fill="none" stroke-dasharray="2,2"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="mobile-sheet-label">Medan</span>
                     </div>
                 </div>
 
                 <!-- CHECKBOX LABEL SATELIT (MOBILE) -->
-                <div class="mobile-sheet-checkboxes">
+                <div class="mobile-sheet-checkboxes" id="mobSatLabelWrapper" style="display: none;">
                     <label class="layer-checkbox-item" id="mobSatLabelRow" title="Tampilkan nama kota, jalan, dan batas wilayah pada peta satelit">
                         <input type="checkbox" id="mobSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
                         <span class="custom-chk-box"></span>
-                        <span class="layer-chk-label">Label</span>
+                        <span class="layer-chk-label">Label nama tempat</span>
                     </label>
+                </div>
+
+                <!-- 2. DETAIL PETA (MAP DETAILS) -->
+                <div class="mobile-sheet-section-divider"></div>
+                <h4 class="mobile-sheet-subtitle">Detail peta</h4>
+                <div class="mobile-sheet-grid-details" id="mobileLayerDetailsGrid">
+                    <!-- Kontainer Dinamis untuk Detail Ekstra Mobile (Injeksi JS: Transportasi, Lalu Lintas, Bersepeda, 3D, Street View, Kebakaran, Kualitas Udara) -->
+                    <div id="mobileExtraDetailsHook" style="display: contents;"></div>
+
+                    <!-- Sesar Aktif & Megathrust -->
+                    <div class="mobile-sheet-item" id="mobLayerOptFaults" onclick="toggleFaultsLayer()">
+                        <div class="mobile-sheet-thumb">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <clipPath id="sqClipFault"><rect width="64" height="64" rx="16"/></clipPath>
+                                </defs>
+                                <g clip-path="url(#sqClipFault)">
+                                    <rect width="64" height="64" fill="#fce8e6"/>
+                                    <path d="M0 20 L64 20 M0 44 L64 44 M20 0 L20 64 M44 0 L44 64" stroke="#fad2cf" stroke-width="1.5"/>
+                                    <path d="M32 10 L54 48 L10 48 Z" fill="#ea4335" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                    <rect x="30" y="22" width="4" height="13" rx="2" fill="#ffffff"/>
+                                    <circle cx="32" cy="41" r="2.3" fill="#ffffff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="mobile-sheet-label">Sesar Aktif</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1053,13 +1113,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
-    <script src="faults.js?v=16.0"></script>
+    <script src="faults.js?v=19.0"></script>
 
     <!-- SECONDARY MODULES & ON-DEMAND MODALS SCRIPT -->
-    <script src="modals.js?v=16.0"></script>
+    <script src="modals.js?v=19.0"></script>
 
     <!-- MAIN CORE APP SCRIPT -->
-    <script src="app.js?v=16.0"></script>
+    <script src="app.js?v=19.0"></script>
 </body>
 
 </html>

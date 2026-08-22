@@ -352,6 +352,18 @@ let transitTileLayer = null;
 let isBikeLayerActive = (localStorage.getItem('seismo_bike_active') === '1');
 let bikeTileLayer = null;
 
+let is3DBuildingsActive = (localStorage.getItem('seismo_3d_active') === '1');
+let buildingsTileLayer = null;
+
+let isStreetViewActive = (localStorage.getItem('seismo_sv_active') === '1');
+let streetViewCoverageLayer = null;
+
+let isWildfireActive = (localStorage.getItem('seismo_wildfire_active') === '1');
+let wildfireTileLayer = null;
+
+let isAirQualityActive = (localStorage.getItem('seismo_aq_active') === '1');
+let airQualityTileLayer = null;
+
 function toggleTrafficLayer() {
     isTrafficLayerActive = !isTrafficLayerActive;
     try { localStorage.setItem('seismo_traffic_active', isTrafficLayerActive ? '1' : '0'); } catch(e){}
@@ -436,31 +448,138 @@ function toggleBikeLayer() {
     updateLayerDetailUI();
 }
 
+function toggle3DBuildingsLayer() {
+    is3DBuildingsActive = !is3DBuildingsActive;
+    try { localStorage.setItem('seismo_3d_active', is3DBuildingsActive ? '1' : '0'); } catch(e){}
+    
+    if (is3DBuildingsActive) {
+        if (!buildingsTileLayer) {
+            buildingsTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=r,app:ikb&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                keepBuffer: 16,
+                updateWhenIdle: false,
+                pane: 'overlayPane',
+                zIndex: 435
+            });
+        }
+        if (map && !map.hasLayer(buildingsTileLayer)) {
+            map.addLayer(buildingsTileLayer);
+        }
+        showToastNotification("🏢 Lapisan Bangunan Vertikal 3D Aktif");
+    } else {
+        if (map && buildingsTileLayer && map.hasLayer(buildingsTileLayer)) {
+            map.removeLayer(buildingsTileLayer);
+        }
+        showToastNotification("🏢 Lapisan Bangunan Vertikal Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
+function toggleStreetViewLayer() {
+    isStreetViewActive = !isStreetViewActive;
+    try { localStorage.setItem('seismo_sv_active', isStreetViewActive ? '1' : '0'); } catch(e){}
+    
+    if (isStreetViewActive) {
+        if (!streetViewCoverageLayer) {
+            streetViewCoverageLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20,
+                keepBuffer: 16,
+                updateWhenIdle: false,
+                pane: 'overlayPane',
+                zIndex: 455
+            });
+        }
+        if (map && !map.hasLayer(streetViewCoverageLayer)) {
+            map.addLayer(streetViewCoverageLayer);
+        }
+        showToastNotification("🚶 Lapisan Cakupan Google Street View Aktif (Jalur Biru)");
+    } else {
+        if (map && streetViewCoverageLayer && map.hasLayer(streetViewCoverageLayer)) {
+            map.removeLayer(streetViewCoverageLayer);
+        }
+        showToastNotification("🚶 Lapisan Street View Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
+function toggleWildfireLayer() {
+    isWildfireActive = !isWildfireActive;
+    try { localStorage.setItem('seismo_wildfire_active', isWildfireActive ? '1' : '0'); } catch(e){}
+    
+    if (isWildfireActive) {
+        if (!wildfireTileLayer) {
+            wildfireTileLayer = L.tileLayer('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires/{z}/{x}/{y}', {
+                subdomains: ['a', 'b', 'c'],
+                maxZoom: 18,
+                pane: 'overlayPane',
+                zIndex: 460,
+                opacity: 0.85
+            });
+        }
+        if (map && !map.hasLayer(wildfireTileLayer)) {
+            map.addLayer(wildfireTileLayer);
+        }
+        showToastNotification("🔥 Lapisan Titik Panas Kebakaran Hutan (NASA FIRMS) Aktif");
+    } else {
+        if (map && wildfireTileLayer && map.hasLayer(wildfireTileLayer)) {
+            map.removeLayer(wildfireTileLayer);
+        }
+        showToastNotification("🔥 Lapisan Kebakaran Hutan Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
+function toggleAirQualityLayer() {
+    isAirQualityActive = !isAirQualityActive;
+    try { localStorage.setItem('seismo_aq_active', isAirQualityActive ? '1' : '0'); } catch(e){}
+    
+    if (isAirQualityActive) {
+        if (!airQualityTileLayer) {
+            airQualityTileLayer = L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=demo', {
+                maxZoom: 18,
+                pane: 'overlayPane',
+                zIndex: 465,
+                opacity: 0.85
+            });
+        }
+        if (map && !map.hasLayer(airQualityTileLayer)) {
+            map.addLayer(airQualityTileLayer);
+        }
+        showToastNotification("🍃 Lapisan Indeks Kualitas Udara (Air Quality) Aktif");
+    } else {
+        if (map && airQualityTileLayer && map.hasLayer(airQualityTileLayer)) {
+            map.removeLayer(airQualityTileLayer);
+        }
+        showToastNotification("🍃 Lapisan Kualitas Udara Dinonaktifkan");
+    }
+    updateLayerDetailUI();
+}
+
 function startMeasureFromLayer() {
     const center = map.getCenter();
     startMeasureTool(center.lat, center.lng);
 }
 
 function updateLayerDetailUI() {
-    const trafficBtnDesk = document.getElementById('layerOptTraffic');
-    const trafficBtnMob = document.getElementById('mobLayerOptTraffic');
-    if (trafficBtnDesk) trafficBtnDesk.classList.toggle('active', !!isTrafficLayerActive);
-    if (trafficBtnMob) trafficBtnMob.classList.toggle('active', !!isTrafficLayerActive);
+    const pairs = [
+        { desk: 'layerOptTraffic', mob: 'mobLayerOptTraffic', active: isTrafficLayerActive },
+        { desk: 'layerOptTransit', mob: 'mobLayerOptTransit', active: isTransitLayerActive },
+        { desk: 'layerOptBike', mob: 'mobLayerOptBike', active: isBikeLayerActive },
+        { desk: 'layerOpt3D', mob: 'mobLayerOpt3D', active: is3DBuildingsActive },
+        { desk: 'layerOptStreetView', mob: 'mobLayerOptStreetView', active: isStreetViewActive },
+        { desk: 'layerOptWildfire', mob: 'mobLayerOptWildfire', active: isWildfireActive },
+        { desk: 'layerOptAirQuality', mob: 'mobLayerOptAirQuality', active: isAirQualityActive },
+        { desk: 'layerOptFaults', mob: 'mobLayerOptFaults', active: isFaultsLayerVisible }
+    ];
 
-    const transitBtnDesk = document.getElementById('layerOptTransit');
-    const transitBtnMob = document.getElementById('mobLayerOptTransit');
-    if (transitBtnDesk) transitBtnDesk.classList.toggle('active', !!isTransitLayerActive);
-    if (transitBtnMob) transitBtnMob.classList.toggle('active', !!isTransitLayerActive);
-
-    const bikeBtnDesk = document.getElementById('layerOptBike');
-    const bikeBtnMob = document.getElementById('mobLayerOptBike');
-    if (bikeBtnDesk) bikeBtnDesk.classList.toggle('active', !!isBikeLayerActive);
-    if (bikeBtnMob) bikeBtnMob.classList.toggle('active', !!isBikeLayerActive);
-
-    const faultsBtnDesk = document.getElementById('layerOptFaults');
-    const faultsBtnMob = document.getElementById('mobLayerOptFaults');
-    if (faultsBtnDesk) faultsBtnDesk.classList.toggle('active', !!isFaultsLayerVisible);
-    if (faultsBtnMob) faultsBtnMob.classList.toggle('active', !!isFaultsLayerVisible);
+    pairs.forEach(p => {
+        const deskBtn = document.getElementById(p.desk);
+        const mobBtn = document.getElementById(p.mob);
+        if (deskBtn) deskBtn.classList.toggle('active', !!p.active);
+        if (mobBtn) mobBtn.classList.toggle('active', !!p.active);
+    });
 }
 
 // ==================== DYNAMIC DOM INJECTION & PURGE MODULE (STEALTH) ====================
@@ -489,7 +608,7 @@ function injectGoogleMapsVersionUI() {
         if (sw) sw.setAttribute('aria-checked', isGoogleMapsEngineActive ? 'true' : 'false');
     }
 
-    // 2. Inject Extra Layer Details (Traffic, Transit, Bike) into Desktop Layer Popup
+    // 2. Inject Extra Layer Details into Desktop Layer Popup
     const deskHook = document.getElementById('desktopExtraDetailsHook');
     if (deskHook && !document.getElementById('layerOptTraffic')) {
         deskHook.innerHTML = `
@@ -511,33 +630,153 @@ function injectGoogleMapsVersionUI() {
                 </div>
                 <span class="layer-opt-label">Bersepeda</span>
             </div>
+            <div class="layer-option-item ${is3DBuildingsActive ? 'active' : ''}" id="layerOpt3D" onclick="toggle3DBuildingsLayer()" title="Bangunan 3D Google">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#f1f3f4"/><path d="M10 12l10-4 6 4-10 4z" fill="#dadce0"/><path d="M10 12l10 4v12l-10-4z" fill="#bdc1c6"/><path d="M20 16l6-4v12l-6 4z" fill="#9aa0a6"/></svg>
+                </div>
+                <span class="layer-opt-label">3D</span>
+            </div>
         `;
     }
 
-    // 3. Inject Extra Layer Details into Mobile Bottom Sheet
+    // 3. Inject Full Set of 8 Extra Layer Details into Mobile Bottom Sheet
     const mobHook = document.getElementById('mobileExtraDetailsHook');
-    if (mobHook && !document.getElementById('mobLayerOptTraffic')) {
+    if (mobHook) {
         mobHook.innerHTML = `
-            <div class="mobile-sheet-item ${isTrafficLayerActive ? 'active' : ''}" id="mobLayerOptTraffic" onclick="toggleTrafficLayer()">
-                <div class="mobile-sheet-thumb">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M18 4v28M4 18h28" stroke="#dadce0" stroke-width="6" stroke-linecap="round"/><path d="M18 10v16" stroke="#34a853" stroke-width="3.5" stroke-linecap="round"/><path d="M18 18h10" stroke="#ea4335" stroke-width="3.5" stroke-linecap="round"/><path d="M10 18h8" stroke="#fbbc04" stroke-width="3.5" stroke-linecap="round"/></svg>
-                </div>
-                <span class="mobile-sheet-label">Lalu lintas</span>
-            </div>
+            <!-- 1. Transportasi umum -->
             <div class="mobile-sheet-item ${isTransitLayerActive ? 'active' : ''}" id="mobLayerOptTransit" onclick="toggleTransitLayer()">
                 <div class="mobile-sheet-thumb">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M8 12h20v14a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2v-14z" fill="#1a73e8"/><circle cx="12" cy="22" r="1.5" fill="#ffffff"/><circle cx="24" cy="22" r="1.5" fill="#ffffff"/><rect x="10" y="14" width="16" height="5" rx="1" fill="#ffffff"/><path d="M10 28l-2 3m18-3l2 3" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMobTrans"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMobTrans)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 22 L68 22" stroke="#7baaf7" stroke-width="4"/>
+                            <path d="M-4 32 L68 32" stroke="#8430ce" stroke-width="5"/>
+                            <path d="M28 22 L36 32" stroke="#ea4335" stroke-width="3"/>
+                            <rect x="12" y="10" width="18" height="18" rx="4" fill="#1a73e8"/>
+                            <text x="21" y="24" font-family="'Google Sans', Roboto, sans-serif" font-weight="900" font-size="13" fill="#ffffff" text-anchor="middle">M</text>
+                            <rect x="34" y="26" width="18" height="18" rx="4" fill="#0288d1"/>
+                            <rect x="38" y="30" width="10" height="7" rx="1.5" fill="#ffffff"/>
+                            <circle cx="40" cy="40.5" r="1.2" fill="#ffffff"/>
+                            <circle cx="46" cy="40.5" r="1.2" fill="#ffffff"/>
+                        </g>
+                    </svg>
                 </div>
-                <span class="mobile-sheet-label">Transportasi</span>
+                <span class="mobile-sheet-label">Transportasi umum</span>
             </div>
+
+            <!-- 2. Lalu Lintas -->
+            <div class="mobile-sheet-item ${isTrafficLayerActive ? 'active' : ''}" id="mobLayerOptTraffic" onclick="toggleTrafficLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMobTraf"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMobTraf)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 32 L68 32" stroke="#dadce0" stroke-width="16"/>
+                            <path d="M32 -4 L32 68" stroke="#dadce0" stroke-width="16"/>
+                            <path d="M-4 26 L26 26 Q38 26 38 -4" stroke="#34a853" stroke-width="5" fill="none" stroke-linecap="round"/>
+                            <path d="M38 68 L38 38 Q38 26 68 26" stroke="#fbbc04" stroke-width="5" fill="none" stroke-linecap="round"/>
+                            <path d="M26 68 L26 38 Q26 38 -4 38" stroke="#ea4335" stroke-width="5" fill="none" stroke-linecap="round"/>
+                            <path d="M26 -4 L26 26 Q26 38 68 38" stroke="#34a853" stroke-width="5" fill="none" stroke-linecap="round"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="mobile-sheet-label">Lalu Lintas</span>
+            </div>
+
+            <!-- 3. Bersepeda -->
             <div class="mobile-sheet-item ${isBikeLayerActive ? 'active' : ''}" id="mobLayerOptBike" onclick="toggleBikeLayer()">
                 <div class="mobile-sheet-thumb">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e6f4ea"/><circle cx="12" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><circle cx="24" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><path d="M12 22l4-7h5l3 7m-7-7v7m2-10h3" fill="none" stroke="#137333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMobBike"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMobBike)">
+                            <rect width="64" height="64" fill="#e6f4ea"/>
+                            <circle cx="20" cy="38" r="9" stroke="#137333" stroke-width="3" fill="none"/>
+                            <circle cx="44" cy="38" r="9" stroke="#137333" stroke-width="3" fill="none"/>
+                            <circle cx="32" cy="20" r="11" stroke="#34a853" stroke-width="3.5" fill="none" stroke-dasharray="5,3"/>
+                            <path d="M20 38 L30 26 L38 26 L44 38 M30 26 L34 38 M27 22 L33 22" stroke="#137333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </g>
+                    </svg>
                 </div>
                 <span class="mobile-sheet-label">Bersepeda</span>
             </div>
+
+            <!-- 4. Bangunan vertikal -->
+            <div class="mobile-sheet-item ${is3DBuildingsActive ? 'active' : ''}" id="mobLayerOpt3D" onclick="toggle3DBuildingsLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMob3D"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMob3D)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 56 Q28 44 68 48 L68 68 L-4 68 Z" fill="#81c995"/>
+                            <polygon points="20,18 34,12 44,18 30,24" fill="#e8eaed" stroke="#bdc1c6" stroke-width="0.5"/>
+                            <polygon points="20,18 30,24 30,48 20,42" fill="#bdc1c6"/>
+                            <polygon points="30,24 44,18 44,42 30,48" fill="#9aa0a6"/>
+                            <polygon points="38,28 48,22 56,27 46,33" fill="#e8eaed" stroke="#bdc1c6" stroke-width="0.5"/>
+                            <polygon points="38,28 46,33 46,50 38,45" fill="#bdc1c6"/>
+                            <polygon points="46,33 56,27 56,44 46,50" fill="#9aa0a6"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="mobile-sheet-label">Bangunan vertikal</span>
+            </div>
+
+            <!-- 5. Street View -->
+            <div class="mobile-sheet-item ${isStreetViewActive ? 'active' : ''}" id="mobLayerOptStreetView" onclick="toggleStreetViewLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMobSV"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMobSV)">
+                            <rect width="64" height="64" fill="#e8f0fe"/>
+                            <path d="M-4 38 Q32 30 68 38" stroke="#8ab4f8" stroke-width="8" fill="none"/>
+                            <path d="M32 -4 L32 68" stroke="#8ab4f8" stroke-width="8" fill="none"/>
+                            <circle cx="32" cy="18" r="4.5" fill="#fbbc04"/>
+                            <path d="M28 25 C28 23 36 23 36 25 L38 36 L34 36 L33 48 L31 48 L30 36 L26 36 Z" fill="#fbbc04" stroke="#e37400" stroke-width="0.7"/>
+                            <path d="M25 28 L28 32 M39 28 L36 32" stroke="#fbbc04" stroke-width="2.5" stroke-linecap="round"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="mobile-sheet-label">Street View</span>
+            </div>
+
+            <!-- 6. Kebakaran hutan -->
+            <div class="mobile-sheet-item ${isWildfireActive ? 'active' : ''}" id="mobLayerOptWildfire" onclick="toggleWildfireLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMobFire"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMobFire)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#e8eaed" stroke-width="8"/>
+                            <circle cx="32" cy="32" r="18" fill="#ea4335"/>
+                            <path d="M32 18 C32 18 36 23 36 27 C36 28.5 35.5 29.5 34.5 30.5 C36.5 30 38 32 38 34.5 C38 38 35 41 32 41 C29 41 26 38 26 34.5 C26 31 29 27.5 29 27.5 C29 27.5 30 26 30 24 C30 21.5 32 18 32 18 Z" fill="#ffffff"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="mobile-sheet-label">Kebakaran hutan</span>
+            </div>
+
+            <!-- 7. Kualitas Udara -->
+            <div class="mobile-sheet-item ${isAirQualityActive ? 'active' : ''}" id="mobLayerOptAirQuality" onclick="toggleAirQualityLayer()">
+                <div class="mobile-sheet-thumb">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipMobAQ"><rect width="64" height="64" rx="16"/></clipPath></defs>
+                        <g clip-path="url(#sqClipMobAQ)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#e8eaed" stroke-width="8"/>
+                            <circle cx="32" cy="32" r="18" fill="#34a853"/>
+                            <path d="M22 26 Q27 23 32 26 T42 26" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                            <path d="M22 32 Q27 29 32 32 T42 32" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                            <path d="M22 38 Q27 35 32 38 T42 38" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="mobile-sheet-label">Kualitas Udara</span>
+            </div>
         `;
     }
+
+    const mobDetailsGrid = document.getElementById('mobileLayerDetailsGrid');
+    if (mobDetailsGrid) mobDetailsGrid.classList.add('gmaps-active');
 
     updateLayerDetailUI();
 }
@@ -553,19 +792,34 @@ function purgeGoogleMapsVersionUI() {
     const mobHook = document.getElementById('mobileExtraDetailsHook');
     if (mobHook) mobHook.innerHTML = '';
 
+    const mobDetailsGrid = document.getElementById('mobileLayerDetailsGrid');
+    if (mobDetailsGrid) mobDetailsGrid.classList.remove('gmaps-active');
+
     // 3. Remove active Google Overlay Layers from Map
     if (map) {
         if (trafficTileLayer && map.hasLayer(trafficTileLayer)) map.removeLayer(trafficTileLayer);
         if (transitTileLayer && map.hasLayer(transitTileLayer)) map.removeLayer(transitTileLayer);
         if (bikeTileLayer && map.hasLayer(bikeTileLayer)) map.removeLayer(bikeTileLayer);
+        if (buildingsTileLayer && map.hasLayer(buildingsTileLayer)) map.removeLayer(buildingsTileLayer);
+        if (streetViewCoverageLayer && map.hasLayer(streetViewCoverageLayer)) map.removeLayer(streetViewCoverageLayer);
+        if (wildfireTileLayer && map.hasLayer(wildfireTileLayer)) map.removeLayer(wildfireTileLayer);
+        if (airQualityTileLayer && map.hasLayer(airQualityTileLayer)) map.removeLayer(airQualityTileLayer);
     }
     isTrafficLayerActive = false;
     isTransitLayerActive = false;
     isBikeLayerActive = false;
+    is3DBuildingsActive = false;
+    isStreetViewActive = false;
+    isWildfireActive = false;
+    isAirQualityActive = false;
     try {
         localStorage.removeItem('seismo_traffic_active');
         localStorage.removeItem('seismo_transit_active');
         localStorage.removeItem('seismo_bike_active');
+        localStorage.removeItem('seismo_3d_active');
+        localStorage.removeItem('seismo_sv_active');
+        localStorage.removeItem('seismo_wildfire_active');
+        localStorage.removeItem('seismo_aq_active');
     } catch(e){}
 }
 
@@ -786,10 +1040,14 @@ function applyMapLayer(layerName) {
     if (badge) badge.innerText = "Lapisan";
 
     // Update active highlight on desktop popup drawer options
-    document.querySelectorAll('.layer-option-item').forEach(el => el.classList.remove('active'));
-    // Update active highlight on mobile bottom sheet options (kecuali faults)
-    document.querySelectorAll('.mobile-sheet-item').forEach(el => {
-        if (el.id !== 'mobLayerOptFaults') el.classList.remove('active');
+    ['layerOptLight', 'layerOptSat', 'layerOptDark', 'layerOptTerrain'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+    // Update active highlight on mobile bottom sheet base layer options
+    ['mobLayerOptLight', 'mobLayerOptSat', 'mobLayerOptTerrain', 'mobLayerOptDark'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
     });
 
     if (layerName === 'sat') {
