@@ -205,56 +205,58 @@
             </div>
         </div>
 
-        <!-- FULLSCREEN LEAFLET MAP -->
-        <div id="map">
-            <!-- GOOGLE MAPS STYLE MAP PRELOADER OVERLAY -->
-            <div id="map-loader" class="map-loader-overlay" aria-hidden="true">
-                <div class="map-loader-content">
-                    <div class="map-loader-brand">
-                        <span class="map-loader-brand-bold">seismik</span>.gracely.my.id
-                    </div>
-                    <div class="map-loader-dots">
-                        <span class="map-dot dot-1"></span>
-                        <span class="map-dot dot-2"></span>
-                        <span class="map-dot dot-3"></span>
+        <!-- FULLSCREEN LEAFLET MAP & 3D STAGE -->
+        <div class="map-3d-stage" id="map3DStage">
+            <div id="map">
+                <!-- GOOGLE MAPS STYLE MAP PRELOADER OVERLAY -->
+                <div id="map-loader" class="map-loader-overlay" aria-hidden="true">
+                    <div class="map-loader-content">
+                        <div class="map-loader-brand">
+                            <span class="map-loader-brand-bold">seismik</span>.gracely.my.id
+                        </div>
+                        <div class="map-loader-dots">
+                            <span class="map-dot dot-1"></span>
+                            <span class="map-dot dot-2"></span>
+                            <span class="map-dot dot-3"></span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="print-map-watermark" aria-hidden="true">
-                <span class="site-wm-bold">seismik</span>.gracely.my.id
-            </div>
-
-            <!-- FLOATING PRINT NAVIGATION CONTROLS (1:1 GOOGLE MAPS .zeJi9d) -->
-            <div class="print-floating-controls" id="printFloatingControls">
-                <!-- Tombol Pan / Geser Peta -->
-                <div class="print-pan-control" title="Geser Peta">
-                    <button type="button" class="print-pan-btn pan-up" onclick="panPrintMap('up')" aria-label="Geser ke Atas" title="Geser ke Atas">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4l-6 6h12z"/></svg>
-                    </button>
-                    <div class="print-pan-middle">
-                        <button type="button" class="print-pan-btn pan-left" onclick="panPrintMap('left')" aria-label="Geser ke Kiri" title="Geser ke Kiri">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M4 12l6-6v12z"/></svg>
-                        </button>
-                        <div class="print-pan-center-dot" onclick="panPrintMap('reset')" title="Reset ke Titik Awal"></div>
-                        <button type="button" class="print-pan-btn pan-right" onclick="panPrintMap('right')" aria-label="Geser ke Kanan" title="Geser ke Kanan">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 12l-6 6V6z"/></svg>
-                        </button>
-                    </div>
-                    <button type="button" class="print-pan-btn pan-down" onclick="panPrintMap('down')" aria-label="Geser ke Bawah" title="Geser ke Bawah">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 20l6-6H6z"/></svg>
-                    </button>
+                <div class="print-map-watermark" aria-hidden="true">
+                    <span class="site-wm-bold">seismik</span>.gracely.my.id
                 </div>
 
-                <!-- Tombol Zoom In / Out (.t5jFcc) -->
-                <div class="print-zoom-control">
-                    <button type="button" class="print-zoom-btn zoom-in" onclick="zoomInPrintMap()" aria-label="Perbesar" title="Perbesar">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                    </button>
-                    <div class="print-zoom-divider"></div>
-                    <button type="button" class="print-zoom-btn zoom-out" onclick="zoomOutPrintMap()" aria-label="Perkecil" title="Perkecil">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
-                    </button>
+                <!-- FLOATING PRINT NAVIGATION CONTROLS (1:1 GOOGLE MAPS .zeJi9d) -->
+                <div class="print-floating-controls" id="printFloatingControls">
+                    <!-- Tombol Pan / Geser Peta -->
+                    <div class="print-pan-control" title="Geser Peta">
+                        <button type="button" class="print-pan-btn pan-up" onclick="panPrintMap('up')" aria-label="Geser ke Atas" title="Geser ke Atas">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4l-6 6h12z"/></svg>
+                        </button>
+                        <div class="print-pan-middle">
+                            <button type="button" class="print-pan-btn pan-left" onclick="panPrintMap('left')" aria-label="Geser ke Kiri" title="Geser ke Kiri">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M4 12l6-6v12z"/></svg>
+                            </button>
+                            <div class="print-pan-center-dot" onclick="panPrintMap('reset')" title="Reset ke Titik Awal"></div>
+                            <button type="button" class="print-pan-btn pan-right" onclick="panPrintMap('right')" aria-label="Geser ke Kanan" title="Geser ke Kanan">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 12l-6 6V6z"/></svg>
+                            </button>
+                        </div>
+                        <button type="button" class="print-pan-btn pan-down" onclick="panPrintMap('down')" aria-label="Geser ke Bawah" title="Geser ke Bawah">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 20l6-6H6z"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Tombol Zoom In / Out (.t5jFcc) -->
+                    <div class="print-zoom-control">
+                        <button type="button" class="print-zoom-btn zoom-in" onclick="zoomInPrintMap()" aria-label="Perbesar" title="Perbesar">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        </button>
+                        <div class="print-zoom-divider"></div>
+                        <button type="button" class="print-zoom-btn zoom-out" onclick="zoomOutPrintMap()" aria-label="Perkecil" title="Perkecil">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -277,8 +279,32 @@
     <!-- SYNC BADGE -->
     <div id="loading">SINKRONISASI DATA...</div>
 
-    <!-- GOOGLE MAPS BOTTOM-RIGHT MAP CONTROLS GROUP (GPS LOCATE + ZOOM +/-) -->
+    <!-- GOOGLE MAPS BOTTOM-RIGHT MAP CONTROLS GROUP (COMPASS + 3D + GPS LOCATE + ZOOM +/-) -->
     <div class="gmap-map-controls" id="gmapControlsGroup">
+        <!-- 1. WIDGET KOMPAS (Khusus Desktop & Satelit) -->
+        <div class="kYXcfd x2DJP gmap-sat-ctrl" id="gmapCompassWrap">
+            <div class="GyRqef RLEGzd" id="gmapCompassWidget" jsaction="blur:compass.main; focus:compass.main; mouseover:compass.main; mouseout:compass.main">
+                <button class="yXeyW RLEGzd" id="gmapCompassLeft" jsaction="compass.left" aria-label="Rotate the view counterclockwise" onclick="rotateMap(-90)" title="Putar 90° berlawanan arah jarum jam"></button>
+                <div class="KQ226b RLEGzd" id="gmapCompassNeedle" aria-valuemax="360" aria-valuemin="0" role="slider" jsaction="compass.needle" aria-valuenow="0" aria-label="Reset the view" style="transform: rotate(-1080deg);" disabled="" onclick="resetMapOrientation()" title="Reset pandangan ke Utara">
+                    <div class="aRstU bpRNae"></div>
+                    <div class="aRstU lBUYh"></div>
+                </div>
+                <button class="KHLy7b RLEGzd" id="gmapCompassRight" jsaction="compass.right" aria-label="Rotate the view clockwise" onclick="rotateMap(90)" title="Putar 90° searah jarum jam"></button>
+                <div class="KCMZEb HdBtQb"><div class="Rjaxcc"><div class="s3uvtf"><label><span>Rotate the view</span><div><hr><span>Ctrl + mouse drag for full 3D</span></div></label></div></div><div class="g4SPvf" jsaction="compass.left"></div></div>
+            </div>
+        </div>
+
+        <!-- 2. WIDGET TILT 3D/2D (Khusus Desktop & Satelit) -->
+        <div class="kYXcfd E7r2qb gmap-sat-ctrl" id="gmapTiltWrap">
+            <div class="qGnq1" id="gmapTiltControl" jsaction="tilt.onTiltClick; blur:tilt.main; focus:tilt.main; mouseover:tilt.main; mouseout:tilt.main">
+                <button role="switch" class="tWxNdf" id="gmapTiltBtn" aria-checked="false" jslog="64857; track:click; mutable:true" aria-label="Tilt the view" onclick="toggleMap3DMode()" title="Miringkan tampilan (3D)">
+                    <div class="zooMee"><div><span id="gmapTiltLabel">3D</span></div></div>
+                </button>
+                <div class="p4AXSd OYx8rb"><div class="PvEaAb"><div class="VGIDFe"><label><span id="gmapTiltTooltipTitle">Tilt the view</span><div><hr><span>Ctrl + mouse drag for full 3D</span></div></label></div></div><div class="eexIbe"></div></div>
+            </div>
+        </div>
+
+        <!-- 3. TOMBOL LOKASI GPS SAYA (Eksisting) -->
         <button class="gmap-ctrl-btn gmap-locate-btn" onclick="centerToUserLocation()" title="Pusatkan ke Titik Lokasi Saya (GPS)" aria-label="Lokasi Saya">
             <span class="gmap-gps-blue-dot" aria-hidden="true">
                 <span class="gmap-gps-dot-ring"></span>

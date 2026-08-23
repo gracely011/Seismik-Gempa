@@ -9,6 +9,7 @@ const PRECACHE_ASSETS = [
     'index.html',
     'manifest.json',
     'icon.svg',
+    'icon-sprite-1x.png',
     'faults.js?v=22.0',
     'style.css?v=22.0',
     'app.js?v=22.0',

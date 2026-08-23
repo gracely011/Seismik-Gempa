@@ -289,13 +289,16 @@ const map = L.map("map", {
     attributionControl: false,
     zoomControl: false,
     zoomAnimation: true,
+    zoomAnimationThreshold: 4,
     fadeAnimation: true,
     markerZoomAnimation: true,
-    zoomSnap: 0.1,
+    zoomSnap: 0.25,
     zoomDelta: 0.5,
-    wheelPxPerZoomLevel: 120,
+    wheelPxPerZoomLevel: 100,
+    wheelDebounceTime: 40,
     inertia: true,
-    inertiaDeceleration: 3000
+    inertiaDeceleration: 3400,
+    inertiaMaxSpeed: 2000
 }).setView(initialCenter, initialZoom);
 
 // ==================== APP SHELL & MAP PRELOADER OVERLAY ====================
@@ -319,15 +322,15 @@ function hideMapLoader() {
 // Batas waktu aman (Safety fallback timeout) agar overlay tidak macet jika koneksi internet lambat
 setTimeout(hideMapLoader, 2200);
 
-// Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat (Super Smooth Dragging)
+// Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat (Super Smooth 60 FPS Continuous)
 const tileCommonOptions = {
     maxZoom: 20,
     tileSize: 256,
     zoomOffset: 0,
-    keepBuffer: 16,
-    updateWhenIdle: false, // Memuat ubin terus menerus secara realtime saat digeser
+    keepBuffer: 4,
+    updateWhenIdle: false,
     updateWhenZooming: true,
-    updateInterval: 30
+    updateInterval: 50
 };
 
 const tileLayersCache = {};
@@ -345,10 +348,10 @@ function getGoogleMapsTileLayer(lyrsCode, isDark = false) {
             subdomains: ['0', '1', '2', '3'],
             maxZoom: 20,
             tileSize: 256,
-            keepBuffer: 16,
+            keepBuffer: 4,
             updateWhenIdle: false,
             updateWhenZooming: true,
-            updateInterval: 30,
+            updateInterval: 50,
             crossOrigin: true,
             className: isDark ? 'gmap-dark-filter-tile' : ''
         });
@@ -387,8 +390,8 @@ function toggleTrafficLayer() {
             trafficTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=h,traffic&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
                 subdomains: ['0', '1', '2', '3'],
                 maxZoom: 20,
-                keepBuffer: 16,
-                updateWhenIdle: false,
+                keepBuffer: 3,
+                updateWhenIdle: true,
                 pane: 'overlayPane',
                 zIndex: 450
             });
@@ -415,8 +418,8 @@ function toggleTransitLayer() {
             transitTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
                 subdomains: ['0', '1', '2', '3'],
                 maxZoom: 20,
-                keepBuffer: 16,
-                updateWhenIdle: false,
+                keepBuffer: 3,
+                updateWhenIdle: true,
                 pane: 'overlayPane',
                 zIndex: 440
             });
@@ -443,8 +446,8 @@ function toggleBikeLayer() {
             bikeTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
                 subdomains: ['0', '1', '2', '3'],
                 maxZoom: 20,
-                keepBuffer: 16,
-                updateWhenIdle: false,
+                keepBuffer: 3,
+                updateWhenIdle: true,
                 pane: 'overlayPane',
                 zIndex: 445
             });
@@ -471,8 +474,8 @@ function toggle3DBuildingsLayer() {
             buildingsTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=r,app:ikb&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
                 subdomains: ['0', '1', '2', '3'],
                 maxZoom: 20,
-                keepBuffer: 16,
-                updateWhenIdle: false,
+                keepBuffer: 3,
+                updateWhenIdle: true,
                 pane: 'overlayPane',
                 zIndex: 435
             });
@@ -499,8 +502,8 @@ function toggleStreetViewLayer() {
             streetViewCoverageLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
                 subdomains: ['0', '1', '2', '3'],
                 maxZoom: 20,
-                keepBuffer: 16,
-                updateWhenIdle: false,
+                keepBuffer: 3,
+                updateWhenIdle: true,
                 pane: 'overlayPane',
                 zIndex: 455
             });
@@ -1235,12 +1238,176 @@ function applyMapLayer(layerName) {
 
     currentMapLayer = layerName;
     localStorage.setItem('seismo_layer', layerName);
+    document.body.classList.toggle('layer-sat-active', layerName === 'sat');
+    if (layerName !== 'sat' && (isMap3DActive || currentMapBearing !== 0)) {
+        resetMapOrientation();
+    }
     updateSatelliteLabelsLayer();
     updateSatelliteLabelsUI();
     if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
     setTimeout(() => { map.invalidateSize(); }, 50);
     if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
     if (typeof updateMeasureTheme === 'function') updateMeasureTheme();
+}
+
+// ==================== GOOGLE MAPS 3D TILT & COMPASS CONTROLS ====================
+let isMap3DActive = false;
+let currentMapBearing = 0;
+let currentCompassNeedleAngle = -1080;
+
+// Expand tile loading bounds in all directions to prevent missing tiles on 3D tilt and rotation
+if (typeof L !== 'undefined' && L.GridLayer) {
+    L.GridLayer.include({
+        _getTiledPixelBounds: function (center) {
+            const map = this._map;
+            const mapZoom = map._animatingZoom ? Math.max(map._animateToZoom, map.getZoom()) : map.getZoom();
+            const scale = map.getZoomScale(mapZoom, this._tileZoom);
+            const pixelCenter = map.project(center, this._tileZoom).floor();
+            const halfSize = map.getSize().divideBy(scale * 2);
+            const padMultiplier = 1.25;
+            return new L.Bounds(
+                pixelCenter.subtract(halfSize.multiplyBy(padMultiplier)),
+                pixelCenter.add(halfSize.multiplyBy(padMultiplier))
+            );
+        }
+    });
+}
+
+// Rotate drag delta vector by -currentMapBearing to maintain natural 1:1 mouse movement direction
+if (typeof L !== 'undefined' && L.Draggable) {
+    const origOnMove = L.Draggable.prototype._onMove;
+    L.Draggable.prototype._onMove = function (e) {
+        if (currentMapBearing !== 0 && this._startPoint) {
+            const first = (e.touches && e.touches.length) ? e.touches[0] : e;
+            const rawPoint = new L.Point(first.clientX, first.clientY);
+            const dx = rawPoint.x - this._startPoint.x;
+            const dy = rawPoint.y - this._startPoint.y;
+            const rad = (-currentMapBearing * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const rotDx = dx * cos - dy * sin;
+            const rotDy = dx * sin + dy * cos;
+            
+            this._newPos = this._startPos.add(new L.Point(rotDx, rotDy));
+            this.fire('predrag');
+            L.DomUtil.setPosition(this._element, this._newPos);
+            this.fire('drag');
+            return;
+        }
+        origOnMove.call(this, e);
+    };
+}
+
+// Intercept wheel zoom when 3D or rotation is active to zoom straight into map center smoothly
+document.addEventListener('wheel', function (e) {
+    if (typeof map === 'undefined' || !map) return;
+    if (!isMap3DActive && currentMapBearing === 0) return;
+    
+    const stage = document.getElementById("map3DStage");
+    if (!stage || !stage.contains(e.target)) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const delta = e.deltaY;
+    if (Math.abs(delta) < 10) return;
+    
+    const now = Date.now();
+    if (map._lastCustomWheel && now - map._lastCustomWheel < 80) return;
+    map._lastCustomWheel = now;
+    
+    const currentZoom = map.getZoom();
+    const step = 0.5;
+    if (delta < 0) {
+        map.setZoomAround(map.getCenter(), Math.min(map.getMaxZoom(), currentZoom + step));
+    } else {
+        map.setZoomAround(map.getCenter(), Math.max(map.getMinZoom(), currentZoom - step));
+    }
+}, { passive: false, capture: true });
+
+function toggleMap3DMode() {
+    isMap3DActive = !isMap3DActive;
+    const tiltBtn = document.getElementById("gmapTiltBtn");
+    const tiltLabel = document.getElementById("gmapTiltLabel");
+    
+    if (tiltBtn) {
+        tiltBtn.setAttribute("aria-checked", isMap3DActive ? "true" : "false");
+        tiltBtn.title = isMap3DActive ? "Kembali ke tampilan 2D datar" : "Miringkan tampilan (3D)";
+    }
+    if (tiltLabel) {
+        tiltLabel.textContent = isMap3DActive ? "2D" : "3D";
+    }
+    
+    updateMapTransform();
+}
+
+function rotateMap(deltaAngle) {
+    // deltaAngle is -90 for left, +90 for right
+    currentCompassNeedleAngle += deltaAngle;
+    
+    currentMapBearing = (currentMapBearing - deltaAngle) % 360;
+    if (currentMapBearing < 0) currentMapBearing += 360;
+    
+    updateMapTransform();
+}
+
+function resetMapOrientation() {
+    currentMapBearing = 0;
+    // Align needle smoothly back to 0° baseline (-1080deg or nearest 360 multiple)
+    const remainder = currentCompassNeedleAngle % 360;
+    if (remainder !== 0) {
+        currentCompassNeedleAngle = currentCompassNeedleAngle - remainder;
+    }
+    isMap3DActive = false;
+    
+    const tiltBtn = document.getElementById("gmapTiltBtn");
+    const tiltLabel = document.getElementById("gmapTiltLabel");
+    
+    if (tiltBtn) {
+        tiltBtn.setAttribute("aria-checked", "false");
+        tiltBtn.title = "Miringkan tampilan (3D)";
+    }
+    if (tiltLabel) {
+        tiltLabel.textContent = "3D";
+    }
+    
+    updateMapTransform();
+}
+
+function updateMapTransform() {
+    const needle = document.getElementById("gmapCompassNeedle");
+    if (needle) {
+        needle.style.transform = `rotate(${currentCompassNeedleAngle}deg)`;
+        const ariaVal = (360 - currentMapBearing) % 360;
+        needle.setAttribute("aria-valuenow", ariaVal.toString());
+        if (currentMapBearing === 0) {
+            needle.setAttribute("disabled", "");
+        } else {
+            needle.removeAttribute("disabled");
+        }
+    }
+    
+    const stage = document.getElementById("map3DStage");
+    const mapEl = document.getElementById("map");
+    if (!stage || !mapEl) return;
+    
+    const isTransformed = isMap3DActive || currentMapBearing !== 0;
+    stage.classList.toggle("map-3d-active", isTransformed);
+    
+    if (isTransformed) {
+        const tiltX = isMap3DActive ? 42 : 0;
+        const translateY = isMap3DActive ? -35 : 0;
+        const scale = isMap3DActive ? 1.15 : 1;
+        mapEl.style.transform = `translateY(${translateY}px) scale(${scale}) rotateX(${tiltX}deg) rotateZ(${currentMapBearing}deg)`;
+    } else {
+        mapEl.style.transform = '';
+    }
+    
+    setTimeout(() => {
+        if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+            map.invalidateSize();
+        }
+    }, 60);
 }
 
 function openLayerBottomSheet() {
@@ -5597,6 +5764,17 @@ function initGmapContextMenu() {
 initGmapContextMenu();
 if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
 if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
+
+// Expose fungsi 3D Tilt dan Kompas ke window
+window.toggleMap3DMode = toggleMap3DMode;
+window.rotateMap = rotateMap;
+window.resetMapOrientation = resetMapOrientation;
+
+// Sinkronisasi status layer-sat-active awal
+if (typeof currentMapLayer !== 'undefined') {
+    document.body.classList.toggle('layer-sat-active', currentMapLayer === 'sat');
+}
+
 
 
 

@@ -30,7 +30,7 @@
 /* LIGHT THEME (GOOGLE MAPS LIGHT MODE) */
 body.theme-light {
     --bg-body: #e5e5e5;
-    --bg-rail: #ffffff;
+    --bg-rail: #F5FBFC;
     --bg-panel: #ffffff;
     --bg-card: #f8f9fa;
     --bg-card-hover: #f1f3f4;
@@ -87,19 +87,47 @@ body {
     border: 0;
 }
 
-/* ==================== FULLSCREEN LEAFLET MAP ==================== */
-#map {
+/* ==================== FULLSCREEN LEAFLET MAP & 3D STAGE ==================== */
+.map-3d-stage {
     position: absolute;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
+    perspective: 1400px;
+    z-index: 1;
+    background-color: #000000;
+}
+
+#map {
+    position: absolute;
+    top: calc(50vh - 75vmax);
+    left: calc(50vw - 75vmax);
+    width: 150vmax;
+    height: 150vmax;
     z-index: 1;
     background-color: #171717;
+    transform-origin: center center;
+    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
 }
 
 body.theme-light #map {
     background-color: #f1f3f4;
+}
+
+/* ==================== GPU HARDWARE ACCELERATION FOR LEAFLET TILES ==================== */
+.leaflet-tile-container {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.leaflet-tile {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 /* ==================== GOOGLE MAPS STYLE MAP PRELOADER OVERLAY ==================== */
@@ -1548,9 +1576,223 @@ body.theme-dark .weather-pill-gmap {
     right: 14px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 8px;
     z-index: 1000;
     pointer-events: auto;
+    width: 48px;
+}
+
+/* ==================== SATELLITE ONLY CONTROLS (COMPASS + 3D) ==================== */
+.gmap-sat-ctrl {
+    display: none !important;
+}
+
+@media (min-width: 769px) {
+    body.layer-sat-active .gmap-sat-ctrl {
+        display: flex !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .gmap-sat-ctrl {
+        display: none !important;
+    }
+}
+
+.kYXcfd {
+    pointer-events: auto;
+    margin-top: 0;
+    transform: translateZ(0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.kYXcfd.x2DJP {
+    margin-bottom: -4px;
+}
+
+/* 1. GOOGLE MAPS COMPASS (.GyRqef.RLEGzd) */
+.RLEGzd {
+    background: transparent url('icon-sprite-1x.png') 0 0 no-repeat;
+    background-size: 154px 48px;
+}
+
+.GyRqef {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+    outline: none;
+    user-select: none;
+    cursor: default;
+}
+
+.GyRqef .yXeyW {
+    cursor: pointer;
+    background-position: -109px 0;
+    position: absolute;
+    width: 13px;
+    height: 48px;
+    left: 0;
+    z-index: 2;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    padding: 0;
+    transition: transform 0.15s ease;
+}
+
+.GyRqef .yXeyW:active {
+    transform: scale(0.92);
+}
+
+.GyRqef .KQ226b {
+    cursor: pointer;
+    background-position: -48px -4px;
+    border-radius: 0;
+    position: absolute;
+    width: 12px;
+    height: 40px;
+    left: 18px;
+    top: 4px;
+    z-index: 3;
+    transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+    transform-origin: 6px 20px;
+}
+
+/* Needle elements styling: Red North & White South */
+.GyRqef .aRstU {
+    position: absolute;
+    left: 1px;
+    width: 10px;
+    height: 18px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.GyRqef .aRstU.bpRNae {
+    top: 2px;
+    background: #ea4335;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    -webkit-clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.GyRqef .aRstU.lBUYh {
+    bottom: 2px;
+    background: #e8eaed;
+    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+    -webkit-clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+}
+
+.GyRqef .KHLy7b {
+    cursor: pointer;
+    background-position: -109px 0;
+    position: absolute;
+    width: 13px;
+    height: 48px;
+    right: 2px;
+    z-index: 1;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    padding: 0;
+    transform: scaleX(-1);
+    transition: transform 0.15s ease;
+}
+
+.GyRqef .KHLy7b:active {
+    transform: scaleX(-1) scale(0.92);
+}
+
+.KCMZEb.HdBtQb, .p4AXSd.OYx8rb {
+    display: none;
+}
+
+/* 2. GOOGLE MAPS 3D/2D SWITCH (.qGnq1 & .tWxNdf) */
+.qGnq1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
+.tWxNdf {
+    background-color: var(--bg-panel, #ffffff);
+    display: block;
+    border-radius: 8px;
+    width: 29px;
+    height: 29px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color 0.16s ease-out, transform 0.15s ease, color 0.15s ease;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    padding: 0;
+    margin: 0 auto;
+    color: var(--text-primary);
+}
+
+.tWxNdf:hover {
+    background-color: var(--bg-card-hover);
+}
+
+.tWxNdf:active {
+    transform: scale(0.92);
+}
+
+body.theme-dark .tWxNdf,
+body.layer-sat-active .tWxNdf {
+    background-color: #000000 !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    border: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.theme-dark .tWxNdf:hover,
+body.layer-sat-active .tWxNdf:hover {
+    background-color: #202124 !important;
+}
+
+.zooMee {
+    color: #5e5e5e !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    font-family: "Google Sans", Roboto, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    line-height: 1;
+    transition: color 0.16s ease-out;
+}
+
+.tWxNdf:hover .zooMee,
+body.layer-sat-active .tWxNdf:hover .zooMee {
+    color: #ffffff !important;
+}
+
+/* SATELLITE LAYER DARK CONTROLS (#000 BG, #FFF COLOR) */
+body.layer-sat-active .gmap-ctrl-btn,
+body.layer-sat-active .gmap-zoom-group {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.layer-sat-active .gmap-ctrl-btn:hover {
+    background-color: #202124 !important;
+    color: #ffffff !important;
+}
+
+body.layer-sat-active .gmap-zoom-divider {
+    background-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .gmap-ctrl-btn {
