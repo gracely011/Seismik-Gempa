@@ -1679,11 +1679,31 @@ body.theme-dark .weather-pill-gmap {
         transform: scale(0.97);
     }
 
+    .layer-card-svg-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 6px;
+        z-index: 1;
+    }
+
+    .layer-card-svg-bg svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
     .layer-thumbnail-badge {
         position: absolute;
         bottom: 0;
         left: 0;
         right: 0;
+        z-index: 2;
         background: rgba(0, 0, 0, 0.65) !important;
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
@@ -1776,21 +1796,26 @@ body.theme-light .layer-popup-menu {
     align-items: center;
     cursor: pointer;
     text-align: center;
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.15s ease;
     user-select: none;
-    width: 48px;
+    width: 52px;
     flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .layer-option-item:hover {
     transform: translateY(-2px);
 }
 
+.layer-option-item:active .layer-thumb-preview {
+    transform: scale(0.93);
+}
+
 .layer-thumb-preview {
     position: relative;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
     background-size: cover;
     background-position: center;
     border: 2px solid transparent;
@@ -1799,8 +1824,13 @@ body.theme-light .layer-popup-menu {
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    background-color: var(--bg-card);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.theme-dark .layer-thumb-preview {
+    background-color: #202124;
 }
 
 .layer-thumb-preview svg {
@@ -1809,10 +1839,15 @@ body.theme-light .layer-popup-menu {
     height: 100%;
 }
 
-/* Item aktif: Frame outline Google Maps murni */
+/* Item aktif: Frame outline Google Maps teal murni + soft glow */
 .layer-option-item.active .layer-thumb-preview {
-    border-color: #1a73e8;
-    box-shadow: 0 0 0 1px #1a73e8;
+    border-color: #007b83;
+    box-shadow: 0 0 0 1px #007b83, 0 3px 8px rgba(0, 123, 131, 0.3);
+}
+
+body.theme-dark .layer-option-item.active .layer-thumb-preview {
+    border-color: #8ab4f8;
+    box-shadow: 0 0 0 1px #8ab4f8, 0 3px 8px rgba(138, 180, 248, 0.3);
 }
 
 /* Label nama di bawah thumbnail untuk semua item */
@@ -1828,8 +1863,12 @@ body.theme-light .layer-popup-menu {
 }
 
 .layer-option-item.active .layer-opt-label {
-    color: #1a73e8;
+    color: #007b83;
     font-weight: 600;
+}
+
+body.theme-dark .layer-option-item.active .layer-opt-label {
+    color: #8ab4f8;
 }
 
 /* Akselerasi Hardware & Smooth Dragging Leaflet Tiles */
@@ -3934,6 +3973,10 @@ body.dark-mode .saved-chips-dropdown-item.active {
         justify-content: center;
         color: var(--text-primary);
         font-size: 20px;
+    }
+
+    .layer-card-svg-bg {
+        display: none !important;
     }
 
     .layer-thumbnail-badge {

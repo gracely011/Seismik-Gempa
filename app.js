@@ -557,9 +557,13 @@ function toggleAirQualityLayer() {
     updateLayerDetailUI();
 }
 
-function startMeasureFromLayer() {
-    const center = map.getCenter();
-    startMeasureTool(center.lat, center.lng);
+function toggleMeasureFromLayer() {
+    if (typeof window.toggleMeasureTool === 'function') {
+        window.toggleMeasureTool();
+    } else {
+        const deskMeasureBtn = document.getElementById('layerOptMeasure');
+        if (deskMeasureBtn) deskMeasureBtn.classList.toggle('active');
+    }
 }
 
 function updateLayerDetailUI() {
@@ -614,25 +618,71 @@ function injectGoogleMapsVersionUI() {
         deskHook.innerHTML = `
             <div class="layer-option-item ${isTrafficLayerActive ? 'active' : ''}" id="layerOptTraffic" onclick="toggleTrafficLayer()" title="Kondisi Lalu Lintas Live Google">
                 <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M18 4v28M4 18h28" stroke="#dadce0" stroke-width="6" stroke-linecap="round"/><path d="M18 10v16" stroke="#34a853" stroke-width="3.5" stroke-linecap="round"/><path d="M18 18h10" stroke="#ea4335" stroke-width="3.5" stroke-linecap="round"/><path d="M10 18h8" stroke="#fbbc04" stroke-width="3.5" stroke-linecap="round"/></svg>
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskDTraf"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskDTraf)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 32 L68 32" stroke="#dadce0" stroke-width="16"/>
+                            <path d="M32 -4 L32 68" stroke="#dadce0" stroke-width="16"/>
+                            <path d="M-4 26 L26 26 Q38 26 38 -4" stroke="#34a853" stroke-width="5" fill="none" stroke-linecap="round"/>
+                            <path d="M38 68 L38 38 Q38 26 68 26" stroke="#fbbc04" stroke-width="5" fill="none" stroke-linecap="round"/>
+                            <path d="M26 68 L26 38 Q26 38 -4 38" stroke="#ea4335" stroke-width="5" fill="none" stroke-linecap="round"/>
+                            <path d="M26 -4 L26 26 Q26 38 68 38" stroke="#34a853" stroke-width="5" fill="none" stroke-linecap="round"/>
+                        </g>
+                    </svg>
                 </div>
                 <span class="layer-opt-label">Lalu lintas</span>
             </div>
             <div class="layer-option-item ${isTransitLayerActive ? 'active' : ''}" id="layerOptTransit" onclick="toggleTransitLayer()" title="Jalur Transportasi Umum Google">
                 <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e8f0fe"/><path d="M8 12h20v14a2 2 0 0 1-2 2h-16a2 2 0 0 1-2-2v-14z" fill="#1a73e8"/><circle cx="12" cy="22" r="1.5" fill="#ffffff"/><circle cx="24" cy="22" r="1.5" fill="#ffffff"/><rect x="10" y="14" width="16" height="5" rx="1" fill="#ffffff"/><path d="M10 28l-2 3m18-3l2 3" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskDTrans"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskDTrans)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 22 L68 22" stroke="#7baaf7" stroke-width="4"/>
+                            <path d="M-4 32 L68 32" stroke="#8430ce" stroke-width="5"/>
+                            <path d="M28 22 L36 32" stroke="#ea4335" stroke-width="3"/>
+                            <rect x="12" y="10" width="18" height="18" rx="4" fill="#1a73e8"/>
+                            <text x="21" y="24" font-family="'Google Sans', Roboto, sans-serif" font-weight="900" font-size="13" fill="#ffffff" text-anchor="middle">M</text>
+                            <rect x="34" y="26" width="18" height="18" rx="4" fill="#0288d1"/>
+                            <rect x="38" y="30" width="10" height="7" rx="1.5" fill="#ffffff"/>
+                            <circle cx="40" cy="40.5" r="1.2" fill="#ffffff"/>
+                            <circle cx="46" cy="40.5" r="1.2" fill="#ffffff"/>
+                        </g>
+                    </svg>
                 </div>
                 <span class="layer-opt-label">Transportasi</span>
             </div>
             <div class="layer-option-item ${isBikeLayerActive ? 'active' : ''}" id="layerOptBike" onclick="toggleBikeLayer()" title="Jalur Sepeda Google">
                 <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#e6f4ea"/><circle cx="12" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><circle cx="24" cy="22" r="4.5" fill="none" stroke="#137333" stroke-width="2"/><path d="M12 22l4-7h5l3 7m-7-7v7m2-10h3" fill="none" stroke="#137333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskDBike"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskDBike)">
+                            <rect width="64" height="64" fill="#e6f4ea"/>
+                            <circle cx="20" cy="38" r="9" stroke="#137333" stroke-width="3" fill="none"/>
+                            <circle cx="44" cy="38" r="9" stroke="#137333" stroke-width="3" fill="none"/>
+                            <circle cx="32" cy="20" r="11" stroke="#34a853" stroke-width="3.5" fill="none" stroke-dasharray="5,3"/>
+                            <path d="M20 38 L30 26 L38 26 L44 38 M30 26 L34 38 M27 22 L33 22" stroke="#137333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </g>
+                    </svg>
                 </div>
                 <span class="layer-opt-label">Bersepeda</span>
             </div>
             <div class="layer-option-item ${is3DBuildingsActive ? 'active' : ''}" id="layerOpt3D" onclick="toggle3DBuildingsLayer()" title="Bangunan 3D Google">
                 <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" rx="8" fill="#f1f3f4"/><path d="M10 12l10-4 6 4-10 4z" fill="#dadce0"/><path d="M10 12l10 4v12l-10-4z" fill="#bdc1c6"/><path d="M20 16l6-4v12l-6 4z" fill="#9aa0a6"/></svg>
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskD3D"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskD3D)">
+                            <rect width="64" height="64" fill="#f8f9fa"/>
+                            <path d="M-4 56 Q28 44 68 48 L68 68 L-4 68 Z" fill="#81c995"/>
+                            <polygon points="20,18 34,12 44,18 30,24" fill="#e8eaed" stroke="#bdc1c6" stroke-width="0.5"/>
+                            <polygon points="20,18 30,24 30,48 20,42" fill="#bdc1c6"/>
+                            <polygon points="30,24 44,18 44,42 30,48" fill="#9aa0a6"/>
+                            <polygon points="38,28 48,22 56,27 46,33" fill="#e8eaed" stroke="#bdc1c6" stroke-width="0.5"/>
+                            <polygon points="38,28 46,33 46,50 38,45" fill="#bdc1c6"/>
+                            <polygon points="46,33 56,27 56,44 46,50" fill="#9aa0a6"/>
+                        </g>
+                    </svg>
                 </div>
                 <span class="layer-opt-label">3D</span>
             </div>
@@ -1022,6 +1072,92 @@ function updateSatelliteLabelsLayer() {
 
 const MAP_LAYERS_ORDER = ['light', 'sat', 'terrain', 'dark'];
 
+const LAYER_TRIGGER_SVGS = {
+    sat: `<svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+        <defs>
+            <clipPath id="sqClipTrigSat"><rect width="64" height="64"/></clipPath>
+            <linearGradient id="satTrigLGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#4a5d4e"/>
+                <stop offset="50%" stop-color="#2d3e32"/>
+                <stop offset="100%" stop-color="#5c6d54"/>
+            </linearGradient>
+            <linearGradient id="satTrigFGrad" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#697762"/>
+                <stop offset="100%" stop-color="#3d4c38"/>
+            </linearGradient>
+        </defs>
+        <g clip-path="url(#sqClipTrigSat)">
+            <rect width="64" height="64" fill="url(#satTrigLGrad)"/>
+            <path d="M0 0 L40 0 L28 28 L0 20 Z" fill="url(#satTrigFGrad)" opacity="0.9"/>
+            <path d="M38 34 L64 26 L64 64 L24 64 Z" fill="#384534" opacity="0.95"/>
+            <path d="M0 24 L24 30 L16 64 L0 64 Z" fill="#58674f"/>
+            <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#2b2d2f" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#686b6e" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" fill="none"/>
+            <path d="M-4 56 Q24 50 48 28 Q58 16 72 10" stroke="#2b2d2f" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+            <path d="M-4 56 Q24 50 48 28 Q58 16 72 10" stroke="#686b6e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M32 66 Q36 44 58 36" stroke="#9aa0a6" stroke-width="2.5" fill="none"/>
+        </g>
+    </svg>`,
+    terrain: `<svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+        <defs>
+            <clipPath id="sqClipTrigTerr"><rect width="64" height="64"/></clipPath>
+            <linearGradient id="terrTrigGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#d4dec8"/>
+                <stop offset="50%" stop-color="#b6c8a7"/>
+                <stop offset="100%" stop-color="#9cb08d"/>
+            </linearGradient>
+        </defs>
+        <g clip-path="url(#sqClipTrigTerr)">
+            <rect width="64" height="64" fill="url(#terrTrigGrad)"/>
+            <path d="M-10 64 Q10 40 26 44 Q42 48 64 24 L64 64 Z" fill="#889c79" opacity="0.75"/>
+            <path d="M-10 42 Q14 26 30 32 Q46 38 68 14 L68 0 L-10 0 Z" fill="#e8eee0" opacity="0.8"/>
+            <path d="M12 64 Q28 36 46 34 Q58 32 74 16 L74 64 Z" fill="#758866" opacity="0.6"/>
+            <path d="M-6 24 Q18 12 36 18 Q50 24 70 6" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+            <path d="M-8 46 Q18 36 34 40 Q48 44 70 20" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M22 66 Q36 38 52 36 Q62 34 76 22" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M4 64 Q22 48 28 32 Q32 18 30 -4" stroke="#a0b490" stroke-width="1.8" fill="none" stroke-dasharray="2,2"/>
+        </g>
+    </svg>`,
+    dark: `<svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+        <defs>
+            <clipPath id="sqClipTrigDark"><rect width="64" height="64"/></clipPath>
+            <linearGradient id="darkTrigGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1e222d"/>
+                <stop offset="50%" stop-color="#151922"/>
+                <stop offset="100%" stop-color="#0f1117"/>
+            </linearGradient>
+        </defs>
+        <g clip-path="url(#sqClipTrigDark)">
+            <rect width="64" height="64" fill="url(#darkTrigGrad)"/>
+            <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#242b38"/>
+            <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#1b202a"/>
+            <path d="M-5 45 Q20 38 48 58" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M26 12 Q32 30 38 66" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#4f46e5" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
+            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#38bdf8" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"/>
+        </g>
+    </svg>`,
+    light: `<svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+        <defs>
+            <clipPath id="sqClipTrigDef"><rect width="64" height="64"/></clipPath>
+        </defs>
+        <g clip-path="url(#sqClipTrigDef)">
+            <rect width="64" height="64" fill="#aadaff"/>
+            <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#cbe6a3"/>
+            <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#e8f0d8"/>
+            <path d="M8 32 Q14 26 22 34 Q18 44 10 40 Z" fill="#b7df94"/>
+            <path d="M42 42 Q50 36 58 44 Q52 56 40 52 Z" fill="#b7df94"/>
+            <path d="M-5 45 Q20 38 48 58" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M26 12 Q32 30 38 66" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#ffffff" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#8ab4f8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#fbbc04" stroke-width="4" fill="none" stroke-linecap="round"/>
+        </g>
+    </svg>`
+};
+
 function applyMapLayer(layerName) {
     const targetLayer = getTileLayer(layerName);
     if (activeTileLayerInstance && activeTileLayerInstance !== targetLayer && map.hasLayer(activeTileLayerInstance)) {
@@ -1036,8 +1172,10 @@ function applyMapLayer(layerName) {
     activeTileLayerInstance = targetLayer;
 
     const card = document.getElementById("layerCard");
+    const cardSvgBg = document.getElementById("layerCardSvgBg");
     const badge = document.getElementById("layerBadgeText");
     if (badge) badge.innerText = "Lapisan";
+    if (card) card.style.backgroundImage = 'none';
 
     // Update active highlight on desktop popup drawer options
     ['layerOptLight', 'layerOptSat', 'layerOptDark', 'layerOptTerrain'].forEach(id => {
@@ -1052,21 +1190,21 @@ function applyMapLayer(layerName) {
 
     if (layerName === 'sat') {
         // Thumbnail menampilkan preview lapisan berikutnya (Medan)
-        if (card) card.style.backgroundImage = "url('https://a.tile.opentopomap.org/4/8/6.png')";
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.terrain;
         const opt = document.getElementById("layerOptSat");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptSat");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'terrain') {
         // Thumbnail menampilkan preview lapisan berikutnya (Gelap)
-        if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/dark_all/4/8/6.png')";
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.dark;
         const opt = document.getElementById("layerOptTerrain");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptTerrain");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'dark') {
         // Thumbnail menampilkan preview lapisan berikutnya (Standar)
-        if (card) card.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/rastertiles/voyager/4/8/6.png')";
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.light;
         const opt = document.getElementById("layerOptDark");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptDark");
@@ -1074,7 +1212,7 @@ function applyMapLayer(layerName) {
     } else {
         // default: light / standar
         // Thumbnail menampilkan preview lapisan berikutnya (Satelit) persis seperti Google Maps
-        if (card) card.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/4/8/13')";
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.sat;
         const opt = document.getElementById("layerOptLight");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptLight");
@@ -5174,14 +5312,19 @@ function initGmapContextMenu() {
 
         const mapContainer = map.getContainer();
         if (mapContainer) mapContainer.style.cursor = '';
+
+        const deskMeasureBtn = document.getElementById('layerOptMeasure');
+        if (deskMeasureBtn) deskMeasureBtn.classList.remove('active');
     }
 
     function startMeasureTool(startLat, startLng) {
         stopMeasureTool();
 
         isMeasuring = true;
-        const startPoint = L.latLng(startLat, startLng);
-        measurePoints.push(startPoint);
+        if (typeof startLat === 'number' && typeof startLng === 'number') {
+            const startPoint = L.latLng(startLat, startLng);
+            measurePoints.push(startPoint);
+        }
 
         // Tampilkan kartu panel info jarak permanen di bawah
         if (measureCard) {
@@ -5194,9 +5337,30 @@ function initGmapContextMenu() {
         const mapContainer = map.getContainer();
         if (mapContainer) mapContainer.style.cursor = 'crosshair';
 
-        // Render titik awal
-        renderMeasureRuler();
+        const deskMeasureBtn = document.getElementById('layerOptMeasure');
+        if (deskMeasureBtn) deskMeasureBtn.classList.add('active');
+
+        // Render titik awal jika ada
+        if (measurePoints.length > 0) {
+            renderMeasureRuler();
+        }
     }
+
+    // Ekspor fungsi ukur ke window agar dapat dipanggil dari popup menu layer
+    window.startMeasureTool = startMeasureTool;
+    window.stopMeasureTool = stopMeasureTool;
+    window.isMeasuringActive = () => isMeasuring;
+    window.toggleMeasureTool = function(lat, lng) {
+        if (isMeasuring) {
+            stopMeasureTool();
+            showToastNotification("📏 Pengukuran jarak dinonaktifkan");
+        } else {
+            const cLat = typeof lat === 'number' ? lat : (map ? map.getCenter().lat : 0);
+            const cLng = typeof lng === 'number' ? lng : (map ? map.getCenter().lng : 0);
+            startMeasureTool(cLat, cLng);
+            showToastNotification("📏 Mode Ukur Jarak Aktif - Klik pada peta untuk menambah titik");
+        }
+    };
 
     // Pasang handler tombol tutup [X] pada kartu pengukur jarak
     if (measureCloseBtn) {
