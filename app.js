@@ -60,14 +60,28 @@ let currentMapLayer = localStorage.getItem('seismo_layer') || 'light';
 let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') === 'true';
 let isSatelliteLabelsEnabled = localStorage.getItem('seismo_sat_labels') !== '0'; // Default: Aktif (true)
 
-// Google Symbols Icons for Light / Dark Mode (Unicode PUA)
-const SYM_MOON = '<span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe51c;</span>';
-const SYM_SUN = '<span class="google-symbols" id="themeIcon" style="font-size: 24px;">&#xe518;</span>';
+// Google Symbols Inline SVG untuk Mode Terang / Gelap (Standar Google Maps)
+const SVG_THEME_MOON = `<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M380-160q133 0 226.5-93.5T700-480q0-133-93.5-226.5T380-800h-21q-10 0-19 2 57 66 88.5 147.5T460-480q0 89-31.5 170.5T340-162q9 2 19 2h21Zm0 80q-53 0-103.5-13.5T180-134q93-54 146.5-146T380-480q0-108-53.5-200T180-826q46-27 96.5-40.5T380-880q83 0 156 31.5T663-763q54 54 85.5 127T780-480q0 83-31.5 156T663-197q-54 54-127 85.5T380-80Zm80-400Z"/></svg>`;
+const SVG_THEME_SUN = `<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-360q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Zm0 80q-83 0-141.5-58.5T280-480q0-83 58.5-141.5T480-680q83 0 141.5 58.5T680-480q0 83-58.5 141.5T480-280ZM200-440H40v-80h160v80Zm720 0H760v-80h160v80ZM440-760v-160h80v160h-80Zm0 720v-160h80v160h-80ZM256-650l-101-97 57-59 96 100-52 56Zm492 496-97-101 53-55 101 97-57 59Zm-98-550 97-101 59 57-100 96-56-52ZM154-154l98-102 56 54-95 102-59-54Z"/></svg>`;
 
 function updateThemeIcon(isLight) {
+    const iconEl = document.getElementById('settingsThemeIcon');
+    const labelEl = document.getElementById('settingsThemeLabel');
+    const lang = (typeof currentAppLanguage !== 'undefined' ? currentAppLanguage : (localStorage.getItem('seismik_lang') || 'id'));
+
+    if (isLight) {
+        // Saat aplikasi berada dalam Mode Terang: tampilkan tombol untuk beralih ke Mode Gelap
+        if (iconEl) iconEl.innerHTML = SVG_THEME_MOON;
+        if (labelEl) labelEl.textContent = (lang === 'en' ? 'Dark mode' : 'Mode Gelap');
+    } else {
+        // Saat aplikasi berada dalam Mode Gelap: tampilkan tombol untuk beralih ke Mode Terang
+        if (iconEl) iconEl.innerHTML = SVG_THEME_SUN;
+        if (labelEl) labelEl.textContent = (lang === 'en' ? 'Light mode' : 'Mode Terang');
+    }
+
     const indicator = document.getElementById('themeIconIndicator');
     if (indicator) {
-        indicator.innerHTML = isLight ? SYM_SUN : SYM_MOON;
+        indicator.innerHTML = isLight ? SVG_THEME_SUN : SVG_THEME_MOON;
     }
 }
 
@@ -596,7 +610,7 @@ function injectGoogleMapsVersionUI() {
                 <li class="AJqepd" id="settingsGmapsVersionItem">
                     <div class="IpXlkd T2ozWe" onclick="toggleGoogleMapsEngineMode()">
                         <span class="tIuFw wch72">
-                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="m600-120-240-84-186 72q-20 8-37-4.5T120-170v-560q0-13 7.5-23t20.5-15l212-72 240 84 186-72q20-8 37 4.5t17 33.5v560q0 13-7.5 23T812-192l-212 72Zm-40-98v-468l-160-56v468l160 56Zm80 0 120-40v-474l-120 46v468Zm-440-10 120-46v-468l-120 40v474Zm440-458v468-468Zm-320-56v468-468Z"/></svg>
                         </span>
                         <label class="fontBodyMedium gFio1e" style="font-weight: 500;">Google Maps Version</label>
                         <button role="switch" class="Ud5kdf LdO2ac" id="settingsGmapsVersionSwitch" aria-checked="${isGoogleMapsEngineActive ? 'true' : 'false'}" aria-label="Google Maps Version">
@@ -1913,6 +1927,9 @@ function updateDesktopNavRailActiveState() {
         if (recentBtn) recentBtn.classList.toggle("active", currentNavTab === 'recent');
         if (guideBtn) guideBtn.classList.toggle("active", currentNavTab === 'guide');
     }
+
+    const savedSpan = document.getElementById("railSavedIconSpan");
+    if (savedSpan) savedSpan.classList.toggle("NhBTye", currentNavTab === 'saved' && !isPanelCollapsed);
 }
 
 function toggleSidebar(forceOpen = null) {

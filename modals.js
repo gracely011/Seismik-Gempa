@@ -273,6 +273,9 @@ function applyLanguage(langCode) {
     if (helpEl) helpEl.textContent = dict.help;
     if (langEl) langEl.textContent = dict.lang;
     if (searchInput) searchInput.setAttribute("placeholder", dict.searchPlaceholder);
+    if (typeof updateThemeIcon === "function") {
+        updateThemeIcon(document.body.classList.contains("theme-light"));
+    }
 
     document.querySelectorAll(".lang-item").forEach(el => {
         const isSelected = el.getAttribute("data-lang") === langCode;

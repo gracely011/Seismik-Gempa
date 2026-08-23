@@ -315,7 +315,12 @@
                 <button class="wR3cXd fontLabelMedium" id="railBtnSaved" onclick="switchNavTab('saved')" title="Disimpan (Anda)" aria-label="Disimpan">
                     <div class="NP7r5c deIIj">
                         <div class="OyjIsf"></div>
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="cc4Ofc avo2Le notranslate" translate="no"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                        <span class="cc4Ofc avo2Le google-symbols notranslate" id="railSavedIconSpan" aria-hidden="true" style="font-size: 24px; display: inline-flex; align-items: center; justify-content: center;" translate="no">
+                            <!-- Outline (saat tidak aktif) -->
+                            <svg class="icon-outline" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                            <!-- Filled (saat aktif / penuh) -->
+                            <svg class="icon-filled" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                        </span>
                     </div>
                     <div class="d0UoQ">
                         <div class="cGRe9e tujHCe">Disimpan</div>
@@ -328,7 +333,7 @@
                 <button class="wR3cXd fontLabelMedium" id="railBtnRecent" onclick="switchNavTab('recent')" title="Aktivitas &amp; Gempa Terbaru" aria-label="Terbaru">
                     <div class="NP7r5c deIIj">
                         <div class="OyjIsf"></div>
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="cc4Ofc avo2Le notranslate" translate="no"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="cc4Ofc avo2Le notranslate" translate="no"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                     </div>
                     <div class="d0UoQ">
                         <div class="cGRe9e">Terbaru</div>
@@ -353,7 +358,10 @@
         <!-- 2. ANDA -->
         <button class="mobile-nav-btn" id="mobileNavBtnSaved" onclick="switchNavTab('saved')" title="Anda" aria-label="Anda">
             <div class="mobile-icon-indicator">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                <span class="cc4Ofc avo2Le google-symbols notranslate" aria-hidden="true" style="font-size: 24px; display: inline-flex; align-items: center; justify-content: center;" translate="no">
+                    <svg class="icon-outline" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                    <svg class="icon-filled" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                </span>
             </div>
             <span class="mobile-nav-label">Anda</span>
         </button>
@@ -387,8 +395,8 @@
                 <div class="tGLDjb QGvUHe">
                     <li class="AJqepd">
                         <div class="IpXlkd T2ozWe" onclick="toggleSidebarFromSettings()">
-                            <span class="tIuFw b4mHNe">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-7 14H5V6h7v12zm7 0h-5V6h5v12z"/></svg>
+                            <span class="tIuFw b4mHNe google-symbols" aria-hidden="true" style="font-size: 24px;">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-12 14H5V6h2v12zm12 0H9V6h10v12z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e">Tampilkan sidebar</label>
                             <button role="switch" class="Ud5kdf LdO2ac" id="settingsSidebarSwitch" aria-checked="true" aria-label="Tampilkan sidebar">
@@ -419,7 +427,7 @@
                     <li class="AJqepd">
                         <button class="T2ozWe" onclick="handleSettingsNav('contribution')" role="menuitem">
                             <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M240-400h122l200-200q9-9 13.5-20.5T580-643q0-11-5-21.5T562-684l-36-38q-9-9-20-13.5t-23-4.5q-11 0-22.5 4.5T440-722L240-522v122Zm280-243-37-37 37 37ZM300-460v-38l101-101 20 18 18 20-101 101h-38Zm121-121 18 20-38-38 20 18Zm26 181h273v-80H527l-80 80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e">Kontribusi Anda</label>
                         </button>
@@ -431,7 +439,7 @@
                     <li class="AJqepd">
                         <div class="IpXlkd T2ozWe" onclick="toggleGlobalEarthquakeMode()">
                             <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q146 0 255.5 91.5T872-559h-82q-19-73-68.5-130.5T600-776v16q0 33-23.5 56.5T520-680h-80v80q0 17-11.5 28.5T400-560h-80v80h80v120h-40L168-552q-3 18-5.5 36t-2.5 36q0 131 92 225t228 95v80Zm364-20L716-228q-21 12-45 20t-51 8q-75 0-127.5-52.5T440-380q0-75 52.5-127.5T620-560q75 0 127.5 52.5T800-380q0 27-8 51t-20 45l128 128-56 56ZM691-309q29-29 29-71t-29-71q-29-29-71-29t-71 29q-29 29-29 71t29 71q29 29 71 29t71-29Z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e" id="i18nGlobalQuakes">Peta Gempa Seluruh Dunia</label>
                             <button role="switch" class="Ud5kdf LdO2ac" id="settingsGlobalQuakeSwitch" aria-checked="false" aria-label="Peta Gempa Seluruh Dunia">
@@ -442,7 +450,7 @@
                     <li class="AJqepd" id="settingsShareLocationItem">
                         <button class="T2ozWe" onclick="focusUserGPS(); closeDesktopSettings();" role="menuitem">
                             <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="m798-322-62-62q44-41 69-97t25-119q0-63-25-118t-69-96l62-64q56 53 89 125t33 153q0 81-33 153t-89 125ZM670-450l-64-64q18-17 29-38.5t11-47.5q0-26-11-47.5T606-686l64-64q32 29 50 67.5t18 82.5q0 44-18 82.5T670-450Zm-310 10q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-120v-112q0-33 17-62t47-44q51-26 115-44t141-18q77 0 141 18t115 44q30 15 47 44t17 62v112H40Zm80-80h480v-32q0-11-5.5-20T580-266q-36-18-92.5-36T360-320q-71 0-127.5 18T140-266q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-567 440-600t-23.5-56.5Q393-680 360-680t-56.5 23.5Q280-633 280-600t23.5 56.5Q327-520 360-520t56.5-23.5ZM360-600Zm0 400Z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e">Berbagi lokasi</label>
                         </button>
@@ -450,7 +458,7 @@
                     <li class="AJqepd">
                         <button class="T2ozWe" onclick="handleSettingsNav('recent')" role="menuitem">
                             <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-.51-.07l-3.56 3.55c.05.16.07.34.07.52 0 1.1-.9 2-2 2s-2-.9-2-2c0-.18.02-.36.07-.52l-2.55-2.55c-.16.05-.34.07-.52.07s-.36-.02-.52-.07l-4.55 4.56c.05.16.07.33.07.51 0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.18 0 .35.02.51.07l4.56-4.55C8.02 9.36 8 9.18 8 9c0-1.1.9-2 2-2s2 .9 2 2c0 .18-.02.36-.07.52l2.55 2.55c.16-.05.34-.07.52-.07s.36.02.52.07l3.55-3.56C18.02 8.35 18 8.18 18 8c0-1.1.9-2 2-2s2 .9 2 2z"/></svg>
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M120-240q-33 0-56.5-23.5T40-320q0-33 23.5-56.5T120-400h10.5q4.5 0 9.5 2l182-182q-2-5-2-9.5V-600q0-33 23.5-56.5T400-680q33 0 56.5 23.5T480-600q0 2-2 20l102 102q5-2 9.5-2h21q4.5 0 9.5 2l142-142q-2-5-2-9.5V-640q0-33 23.5-56.5T840-720q33 0 56.5 23.5T920-640q0 33-23.5 56.5T840-560h-10.5q-4.5 0-9.5-2L678-420q2 5 2 9.5v10.5q0 33-23.5 56.5T600-320q-33 0-56.5-23.5T520-400v-10.5q0-4.5 2-9.5L420-522q-5 2-9.5 2H400q-2 0-20-2L198-340q2 5 2 9.5v10.5q0 33-23.5 56.5T120-240Z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e">Linimasa Anda</label>
                         </button>
@@ -458,17 +466,17 @@
                     <li class="AJqepd">
                         <button class="T2ozWe" onclick="handleSettingsNav('guide')" role="menuitem">
                             <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M380.5-480.5Q340-521 340-580t40.5-99.5Q421-720 480-720t99.5 40.5Q620-639 620-580t-40.5 99.5Q539-440 480-440t-99.5-40.5ZM523-537q17-17 17-43t-17-43q-17-17-43-17t-43 17q-17 17-17 43t17 43q17 17 43 17t43-17ZM480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-400Zm0-315-240 90v189q0 54 15 105t41 96q42-21 88-33t96-12q50 0 96 12t88 33q26-45 41-96t15-105v-189l-240-90Zm-70 523q-34 8-65 22 29 30 63 52t72 34q38-12 72-34t63-52q-31-14-65-22t-70-8q-36 0-70 8Z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e">Panduan Siaga Bencana</label>
                         </button>
                     </li>
                     <li class="AJqepd">
-                        <button class="T2ozWe" onclick="toggleThemeMode()" role="menuitem">
-                            <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0z"/></svg>
+                        <button class="T2ozWe" onclick="toggleThemeMode()" role="menuitem" id="settingsThemeBtn">
+                            <span class="tIuFw wch72" id="settingsThemeIcon">
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M380-160q133 0 226.5-93.5T700-480q0-133-93.5-226.5T380-800h-21q-10 0-19 2 57 66 88.5 147.5T460-480q0 89-31.5 170.5T340-162q9 2 19 2h21Zm0 80q-53 0-103.5-13.5T180-134q93-54 146.5-146T380-480q0-108-53.5-200T180-826q46-27 96.5-40.5T380-880q83 0 156 31.5T663-763q54 54 85.5 127T780-480q0 83-31.5 156T663-197q-54 54-127 85.5T380-80Zm80-400Z"/></svg>
                             </span>
-                            <label class="fontBodyMedium gFio1e">Mode Gelap / Terang</label>
+                            <label class="fontBodyMedium gFio1e" id="settingsThemeLabel">Mode Gelap</label>
                         </button>
                     </li>
                 </div>
@@ -486,7 +494,7 @@
                     <li class="AJqepd">
                         <button class="T2ozWe" onclick="printMapPage()" role="menuitem">
                             <span class="tIuFw wch72">
-                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                                <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M640-640v-120H320v120h-80v-200h480v200h-80Zm-480 80h640-640Zm560 100q17 0 28.5-11.5T760-500q0-17-11.5-28.5T720-540q-17 0-28.5 11.5T680-500q0 17 11.5 28.5T720-460Zm-80 260v-160H320v160h320Zm80 80H240v-160H80v-240q0-51 35-85.5t85-34.5h560q51 0 85.5 34.5T880-520v240H720v160Zm80-240v-160q0-17-11.5-28.5T760-560H200q-17 0-28.5 11.5T160-520v160h80v-80h480v80h80Z"/></svg>
                             </span>
                             <label class="fontBodyMedium gFio1e" id="i18nPrint">Cetak</label>
                         </button>

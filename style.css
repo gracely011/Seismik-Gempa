@@ -415,6 +415,24 @@ body.theme-dark .map-dot.dot-3 {
         color: #c2e7ff !important;
     }
 
+    /* Icon Filled / Outline Auto-Swap on Active & NhBTye State */
+    .icon-filled {
+        display: none !important;
+    }
+    .icon-outline {
+        display: block !important;
+    }
+    .wR3cXd.active .icon-filled,
+    .mobile-nav-btn.active .icon-filled,
+    .NhBTye .icon-filled {
+        display: block !important;
+    }
+    .wR3cXd.active .icon-outline,
+    .mobile-nav-btn.active .icon-outline,
+    .NhBTye .icon-outline {
+        display: none !important;
+    }
+
     /* LABEL (.d0UoQ .cGRe9e) */
     .d0UoQ {
         width: 100%;
@@ -5412,6 +5430,11 @@ body.theme-dark .popup-btn-bookmark.active {
         transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
         z-index: 2;
         overflow: hidden;
+        font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
+        font-size: 0.875rem;
+        font-weight: 400;
+        letter-spacing: 0.00625rem;
+        line-height: 1.25rem;
     }
 
     .gmap-settings-wrapper.open .desktop-settings-drawer.dB19De {
@@ -5445,7 +5468,6 @@ body.theme-dark .popup-btn-bookmark.active {
         align-items: center;
         justify-content: space-between;
         padding: 0 16px 0 24px;
-        border-bottom: 1px solid var(--border-subtle);
     }
 
     .settings-brand-title {
@@ -5508,9 +5530,11 @@ body.theme-dark .popup-btn-bookmark.active {
         border: none;
         outline: none;
         color: var(--text-primary);
-        font-family: "Google Sans Text", Roboto, Arial, sans-serif;
-        font-size: 13.5px;
+        font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
+        font-size: 0.875rem;
         font-weight: 400;
+        letter-spacing: 0.00625rem;
+        line-height: 1.25rem;
         text-align: left;
         cursor: pointer;
         text-decoration: none;
@@ -5524,7 +5548,11 @@ body.theme-dark .popup-btn-bookmark.active {
 
     .T2ozWe.text-only-item {
         padding-left: 24px;
-        font-size: 13.5px;
+        font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
+        font-size: 0.875rem;
+        font-weight: 400;
+        letter-spacing: 0.00625rem;
+        line-height: 1.25rem;
         color: var(--text-primary);
     }
 
@@ -5551,6 +5579,14 @@ body.theme-dark .popup-btn-bookmark.active {
         color: #5e5e5e !important;
     }
 
+    .fontBodyMedium {
+        font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
+        font-size: 0.875rem;
+        font-weight: 400;
+        letter-spacing: 0.00625rem;
+        line-height: 1.25rem;
+    }
+
     .fontBodyMedium.gFio1e {
         margin-left: 20px;
         flex: 1;
@@ -5559,6 +5595,11 @@ body.theme-dark .popup-btn-bookmark.active {
         text-overflow: ellipsis;
         cursor: pointer;
         user-select: none;
+        font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
+        font-size: 0.875rem;
+        font-weight: 400;
+        letter-spacing: 0.00625rem;
+        line-height: 1.25rem;
     }
 
     /* M3 TOGGLE SWITCH (TAMPILKAN SIDEBAR) */
