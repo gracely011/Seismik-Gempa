@@ -276,9 +276,22 @@ body.theme-dark .map-dot.dot-3 {
     pointer-events: none;
 }
 
-.leaflet-tile-container {
-    will-change: transform;
-    backface-visibility: hidden;
+/* ==================== GOOGLE MAPS ICON FILLED / OUTLINE AUTO-SWAP (DESKTOP & MOBILE) ==================== */
+.icon-filled {
+    display: none !important;
+}
+.icon-outline {
+    display: block !important;
+}
+.wR3cXd.active .icon-filled,
+.mobile-nav-btn.active .icon-filled,
+.NhBTye .icon-filled {
+    display: block !important;
+}
+.wR3cXd.active .icon-outline,
+.mobile-nav-btn.active .icon-outline,
+.NhBTye .icon-outline {
+    display: none !important;
 }
 
 /* ==================== DESKTOP NAVIGATION RAIL (GOOGLE MAPS DESKTOP 72PX) ==================== */
@@ -413,24 +426,6 @@ body.theme-dark .map-dot.dot-3 {
     body.theme-dark .wR3cXd.active .NP7r5c {
         background: #004a77 !important;
         color: #c2e7ff !important;
-    }
-
-    /* Icon Filled / Outline Auto-Swap on Active & NhBTye State */
-    .icon-filled {
-        display: none !important;
-    }
-    .icon-outline {
-        display: block !important;
-    }
-    .wR3cXd.active .icon-filled,
-    .mobile-nav-btn.active .icon-filled,
-    .NhBTye .icon-filled {
-        display: block !important;
-    }
-    .wR3cXd.active .icon-outline,
-    .mobile-nav-btn.active .icon-outline,
-    .NhBTye .icon-outline {
-        display: none !important;
     }
 
     /* LABEL (.d0UoQ .cGRe9e) */
