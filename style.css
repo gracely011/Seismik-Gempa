@@ -3103,6 +3103,18 @@ body.dark-mode .saved-chips-dropdown-item.active {
 }
 
 
+/* ==================== GLOBE 3D MARKER OCCLUSION CULLING ==================== */
+/* Sembunyikan total seluruh marker & popup yang berada di belahan bumi belakang agar tidak tembus/membayang */
+.maplibregl-marker-covered,
+.maplibregl-marker-occluded,
+.maplibregl-popup.maplibregl-popup-covered,
+.maplibregl-popup.maplibregl-popup-occluded {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 /* ==================== PULSING GPS USER MARKER ==================== */
 .gps-pulse-marker {
     position: relative;

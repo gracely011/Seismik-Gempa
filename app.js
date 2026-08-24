@@ -578,13 +578,20 @@ map.on('load', () => {
     updateLayerDetailUI();
     updateGlobeUI();
     updateGlobeZoomState();
+    cullOccludedGlobeMarkers();
+});
+
+map.on('move', () => {
+    cullOccludedGlobeMarkers();
 });
 
 map.on('zoom', () => {
     updateGlobeZoomState();
+    cullOccludedGlobeMarkers();
 });
 
 map.on('rotate', () => {
+    cullOccludedGlobeMarkers();
     const bearing = map.getBearing();
     currentMapBearing = bearing;
     const needle = document.getElementById("gmapCompassNeedle");
@@ -1147,6 +1154,7 @@ function applyGlobeProjection() {
     }
     updateGlobeZoomState();
     updateGlobeUI();
+    cullOccludedGlobeMarkers();
 }
 
 function toggleGlobeProjection(enabled) {
@@ -1171,6 +1179,86 @@ function updateGlobeUI() {
     const mobChk = document.getElementById('mobGlobe3DCheckbox');
     if (deskChk) deskChk.checked = isGlobeModeActive;
     if (mobChk) mobChk.checked = isGlobeModeActive;
+}
+
+// ==================== GLOBE 3D HORIZON OCCLUSION CULLING ====================
+// Menghilangkan total seluruh marker yang berada di sisi belakang bola bumi agar tidak tembus pandang / berbayang
+function cullOccludedGlobeMarkers() {
+    if (!map) return;
+    const isGlobe = isGlobeModeActive;
+    const zoom = map.getZoom();
+
+    // Pada mode 2D datar atau saat zoom in mendekati permukaan bumi (zoom > 6.0), tampilkan seluruh marker
+    if (!isGlobe || zoom > 6.0) {
+        if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
+            for (let i = 0; i < activeQuakeMarkers.length; i++) {
+                const m = activeQuakeMarkers[i];
+                if (m && m.getElement && m.getElement()) {
+                    m.getElement().style.display = '';
+                }
+            }
+        }
+        if (gpsMarker && gpsMarker.getElement && gpsMarker.getElement()) {
+            gpsMarker.getElement().style.display = '';
+        }
+        if (searchPlaceMarker && searchPlaceMarker.getElement && searchPlaceMarker.getElement()) {
+            searchPlaceMarker.getElement().style.display = '';
+        }
+        return;
+    }
+
+    const center = map.getCenter();
+    const cLatRad = (center.lat * Math.PI) / 180;
+    const cLonRad = (center.lng * Math.PI) / 180;
+    const sinCLat = Math.sin(cLatRad);
+    const cosCLat = Math.cos(cLatRad);
+    // Sudut angular > 78° dari titik pusat kamera bumi berada di balik cakrawala horizon
+    const HORIZON_COS_THRESHOLD = 0.20;
+
+    function checkAndCull(marker, qLat, qLon) {
+        if (!marker || !marker.getElement) return;
+        const el = marker.getElement();
+        if (!el) return;
+        const mLatRad = (qLat * Math.PI) / 180;
+        const mLonRad = (qLon * Math.PI) / 180;
+        const cosDist = (sinCLat * Math.sin(mLatRad)) + (cosCLat * Math.cos(mLatRad) * Math.cos(mLonRad - cLonRad));
+
+        if (cosDist < HORIZON_COS_THRESHOLD) {
+            el.style.display = 'none';
+        } else {
+            el.style.display = '';
+        }
+    }
+
+    if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
+        for (let i = 0; i < activeQuakeMarkers.length; i++) {
+            const m = activeQuakeMarkers[i];
+            if (m && typeof m.getLngLat === 'function') {
+                const pos = m.getLngLat();
+                if (pos) checkAndCull(m, pos.lat, pos.lng);
+            } else if (m && m._coords) {
+                checkAndCull(m, m._coords[0], m._coords[1]);
+            }
+        }
+    }
+
+    if (gpsMarker) {
+        if (typeof gpsMarker.getLngLat === 'function') {
+            const pos = gpsMarker.getLngLat();
+            if (pos) checkAndCull(gpsMarker, pos.lat, pos.lng);
+        } else if (userCoords) {
+            checkAndCull(gpsMarker, userCoords[0], userCoords[1]);
+        }
+    }
+
+    if (searchPlaceMarker) {
+        if (typeof searchPlaceMarker.getLngLat === 'function') {
+            const pos = searchPlaceMarker.getLngLat();
+            if (pos) checkAndCull(searchPlaceMarker, pos.lat, pos.lng);
+        } else if (viewedCoords) {
+            checkAndCull(searchPlaceMarker, viewedCoords[0], viewedCoords[1]);
+        }
+    }
 }
 
 function toggleSatelliteLabels(enabled) {
@@ -1715,6 +1803,8 @@ function showPlacePinMarker(lat, lon, name) {
         searchPlaceMarker.setPopup(popup);
     }
 
+    searchPlaceMarker._coords = [lat, lon];
+    cullOccludedGlobeMarkers();
     searchPlaceMarker.togglePopup();
 }
 
@@ -1755,6 +1845,9 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
         gpsMarker.setLngLat([lon, lat]);
         gpsMarker.setPopup(popup);
     }
+
+    gpsMarker._coords = [lat, lon];
+    cullOccludedGlobeMarkers();
 
     if (pan) {
         map.flyTo({ center: [lon, lat], zoom: 9, duration: 1200, essential: true });
@@ -2800,8 +2893,10 @@ function addEarthquakeMarker(q, isLatest = false) {
     .setPopup(popup)
     .addTo(map);
 
+    marker._coords = [lat, lon];
     q._marker = marker;
     activeQuakeMarkers.push(marker);
+    cullOccludedGlobeMarkers();
 }
 
 // ==================== MULTI-PLATFORM SHARE QUAKE INFO ====================
