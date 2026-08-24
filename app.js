@@ -330,6 +330,29 @@ let isStreetViewActive = (localStorage.getItem('seismo_sv_active') === '1');
 let isWildfireActive = (localStorage.getItem('seismo_wildfire_active') === '1');
 let isAirQualityActive = (localStorage.getItem('seismo_aq_active') === '1');
 
+// GeoJSON Garis Khatulistiwa Global (The Equator, Lintang 0.0°) ala Google Maps
+function getGeographicReferenceLinesGeoJSON() {
+    // Garis Khatulistiwa (Equator, Lintang 0.0) disampel setiap 5 derajat mengelilingi bola dunia
+    const equatorCoords = [];
+    for (let lon = -180; lon <= 180; lon += 5) {
+        equatorCoords.push([lon, 0.0]);
+    }
+
+    return {
+        type: 'FeatureCollection',
+        features: [
+            {
+                type: 'Feature',
+                properties: { name: 'Equator', type: 'equator' },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: equatorCoords
+                }
+            }
+        ]
+    };
+}
+
 function buildMapLibreStyle() {
     const isGmap = isGoogleMapsEngineActive;
 
@@ -469,6 +492,10 @@ function buildMapLibreStyle() {
             tiles: ['https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=demo'],
             tileSize: 256,
             maxzoom: 18
+        },
+        'geo-ref-lines-src': {
+            type: 'geojson',
+            data: getGeographicReferenceLinesGeoJSON()
         }
     };
 
@@ -478,6 +505,32 @@ function buildMapLibreStyle() {
         { id: 'layer-terrain', type: 'raster', source: isGmap ? 'gmap-terrain-src' : 'terrain-src', layout: { visibility: currentMapLayer === 'terrain' ? 'visible' : 'none' } },
         { id: 'layer-sat', type: 'raster', source: isGmap ? (isSatelliteLabelsEnabled ? 'gmap-hybrid-src' : 'gmap-sat-src') : 'sat-src', layout: { visibility: currentMapLayer === 'sat' ? 'visible' : 'none' } },
         { id: 'layer-sat-labels', type: 'raster', source: 'sat-labels-src', layout: { visibility: (!isGmap && currentMapLayer === 'sat' && isSatelliteLabelsEnabled) ? 'visible' : 'none' } },
+        {
+            id: 'layer-geo-ref-lines',
+            type: 'line',
+            source: 'geo-ref-lines-src',
+            minzoom: 1.2,
+            maxzoom: 5.2,
+            layout: {
+                'line-cap': 'round',
+                'line-join': 'round',
+                'visibility': 'visible'
+            },
+            paint: {
+                'line-color': '#5f6368',
+                'line-width': 1.0,
+                'line-dasharray': [4, 4],
+                'line-opacity': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    1.2, 0.0,
+                    1.8, 0.55,
+                    4.5, 0.55,
+                    5.2, 0.0
+                ]
+            }
+        },
         { id: 'layer-traffic', type: 'raster', source: 'traffic-src', layout: { visibility: isTrafficLayerActive ? 'visible' : 'none' } },
         { id: 'layer-transit', type: 'raster', source: 'transit-src', layout: { visibility: isTransitLayerActive ? 'visible' : 'none' } },
         { id: 'layer-bike', type: 'raster', source: 'bike-src', layout: { visibility: isBikeLayerActive ? 'visible' : 'none' } },
