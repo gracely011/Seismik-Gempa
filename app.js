@@ -3389,15 +3389,64 @@ function escapeQuotes(str) {
 }
 
 function focusQuake(lat, lon) {
-    map.flyTo({ center: [lon, lat], zoom: 9, duration: 1200, essential: true });
-    activeQuakeMarkers.forEach(m => {
-        const lngLat = m.getLngLat();
-        if (Math.abs(lngLat.lat - lat) < 0.02 && Math.abs(lngLat.lng - lon) < 0.02) {
-            m.togglePopup();
-        }
+    if (!map) return;
+
+    // 1. Tutup seluruh modal pop-up jika sedang terbuka agar peta terlihat leluasa
+    const modalsToClose = ['modalLanguage', 'modalShare', 'modalAppInfo', 'modalDisasterGuide'];
+    modalsToClose.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
     });
+    if (typeof closeLanguageModal === 'function') closeLanguageModal();
+    if (typeof closeShareModal === 'function') closeShareModal();
+    if (typeof closeAppInfo === 'function') closeAppInfo();
+    if (typeof closeDisasterGuide === 'function') closeDisasterGuide();
+
+    // 2. Tutup drawer di layar mobile
     if (window.innerWidth <= 768) {
-        toggleMobileDrawer(false);
+        if (typeof toggleMobileDrawer === 'function') toggleMobileDrawer(false);
+        if (typeof setDrawerSnapState === 'function') setDrawerSnapState('10');
+    }
+
+    // 3. Tutup seluruh popup MapLibre lain yang sedang terbuka
+    if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
+        activeQuakeMarkers.forEach(m => {
+            if (m && m.getPopup && m.getPopup() && m.getPopup().isOpen()) {
+                m.getPopup().remove();
+            }
+        });
+    }
+    if (gpsMarker && gpsMarker.getPopup && gpsMarker.getPopup() && gpsMarker.getPopup().isOpen()) {
+        gpsMarker.getPopup().remove();
+    }
+    if (searchPlaceMarker && searchPlaceMarker.getPopup && searchPlaceMarker.getPopup() && searchPlaceMarker.getPopup().isOpen()) {
+        searchPlaceMarker.getPopup().remove();
+    }
+
+    // 4. Terbang ke koordinat gempa dengan zoom optimal
+    map.flyTo({ center: [lon, lat], zoom: 8.5, duration: 1200, essential: true });
+
+    // 5. Buka kartu popup marker gempa target secara instan
+    const openTargetPopup = () => {
+        if (!activeQuakeMarkers || activeQuakeMarkers.length === 0) return false;
+        for (let i = 0; i < activeQuakeMarkers.length; i++) {
+            const m = activeQuakeMarkers[i];
+            if (!m) continue;
+            const pos = (typeof m.getLngLat === 'function') ? m.getLngLat() : (m._coords ? { lat: m._coords[0], lng: m._coords[1] } : null);
+            if (pos && Math.abs(pos.lat - lat) < 0.05 && Math.abs(pos.lng - lon) < 0.05) {
+                if (m.getPopup && m.getPopup()) {
+                    if (!m.getPopup().isOpen()) {
+                        m.togglePopup();
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    if (!openTargetPopup()) {
+        setTimeout(openTargetPopup, 350);
     }
 }
 
@@ -5219,6 +5268,9 @@ function checkForNewEarthquakeEvent(uniqueQuakes) {
     if (currentSig !== lastKnownQuakeSignature) {
         lastKnownQuakeSignature = currentSig;
         try { localStorage.setItem('seismo_last_sig', currentSig); } catch (e) { }
+
+        // Otomatis terbang ke lokasi episenter gempa baru dan buka popup info lengkapnya
+        focusQuake(latest.lat, latest.lon);
 
         if (isAutoBroadcastOn && !isMuted) {
             broadcastQuakeEvent(latest, true);
