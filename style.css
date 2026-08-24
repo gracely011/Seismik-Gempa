@@ -5546,6 +5546,10 @@ body.theme-light .btn-share-threads {
 .popup-area-card {
     display: flex;
     flex-direction: column;
+    padding: 12px 14px;
+    min-width: 260px;
+    max-width: min(360px, calc(100vw - 48px));
+    box-sizing: border-box;
 }
 
 .popup-area-header {
@@ -5553,6 +5557,7 @@ body.theme-light .btn-share-threads {
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
+    padding-right: 26px; /* Safe-zone agar tidak tertabrak tombol close popup MapLibre */
 }
 
 .popup-area-title-group {
@@ -5605,7 +5610,7 @@ body.theme-light .btn-share-threads {
     align-items: flex-end;
     text-align: right;
     flex-shrink: 0;
-    margin-top: 14px;
+    margin-top: 2px;
 }
 
 .popup-btn-bookmark {
