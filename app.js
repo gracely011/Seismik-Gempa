@@ -252,7 +252,7 @@ function initMapUrlSync() {
         isSyncingFromHash = true;
 
         if (!isSameLat || !isSameLng || !isSameZoom) {
-            map.setView([parsed.lat, parsed.lng], parsed.zoom, { animate: true });
+            map.jumpTo({ center: [parsed.lng, parsed.lat], zoom: parsed.zoom });
         }
 
         if (parsed.layer && parsed.layer !== currentMapLayer && typeof applyMapLayer === 'function') {
@@ -272,7 +272,11 @@ function initMapUrlSync() {
     updateUrlHashFromMap();
 }
 
-// ==================== MAP & TILES ====================
+// ==================== MAP & TILES (MAPLIBRE GL JS WEBGL 2.0) ====================
+let isMap3DActive = false;
+let currentMapBearing = 0;
+let currentCompassNeedleAngle = -1080;
+
 const initialHashView = parseMapUrlHash();
 if (initialHashView) {
     if (initialHashView.layer && VALID_MAP_LAYERS.includes(initialHashView.layer)) {
@@ -282,49 +286,8 @@ if (initialHashView) {
         isFaultsLayerVisible = initialHashView.faults;
     }
 }
-const initialCenter = initialHashView ? [initialHashView.lat, initialHashView.lng] : userCoords;
+const initialCenter = initialHashView ? [initialHashView.lng, initialHashView.lat] : [userCoords[1], userCoords[0]];
 const initialZoom = initialHashView ? initialHashView.zoom : (hasUserGPS ? 14 : 13);
-
-const map = L.map("map", {
-    attributionControl: false,
-    zoomControl: false,
-    zoomAnimation: true,
-    zoomAnimationThreshold: 4,
-    fadeAnimation: true,
-    markerZoomAnimation: true,
-    zoomSnap: 0.25,
-    zoomDelta: 0.5,
-    wheelPxPerZoomLevel: 100,
-    wheelDebounceTime: 40,
-    inertia: true,
-    inertiaDeceleration: 3400,
-    inertiaMaxSpeed: 2000
-}).setView(initialCenter, initialZoom);
-
-// Sinkronisasi tombol close dan transform billboard 3D ke dalam popup wrapper
-map.on('popupopen', function (e) {
-    if (e && e.popup) {
-        const popupNode = e.popup.getElement();
-        if (popupNode) {
-            const closeBtn = popupNode.querySelector('.leaflet-popup-close-button');
-            const wrapper = popupNode.querySelector('.leaflet-popup-content-wrapper');
-            const tipContainer = popupNode.querySelector('.leaflet-popup-tip-container');
-            if (closeBtn && wrapper && closeBtn.parentElement !== wrapper) {
-                wrapper.appendChild(closeBtn);
-            }
-            if (isMap3DActive || currentMapBearing !== 0) {
-                const tiltX = isMap3DActive ? 42 : 0;
-                const scaleComp = isMap3DActive ? 0.87 : 1;
-                if (wrapper) {
-                    wrapper.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
-                }
-                if (tipContainer) {
-                    tipContainer.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
-                }
-            }
-        }
-    }
-});
 
 // ==================== APP SHELL & MAP PRELOADER OVERLAY ====================
 let isMapLoaderHidden = false;
@@ -345,257 +308,294 @@ function hideMapLoader() {
 }
 
 // Batas waktu aman (Safety fallback timeout) agar overlay tidak macet jika koneksi internet lambat
-setTimeout(hideMapLoader, 2200);
-
-// Konfigurasi Buffer dan Transisi Ubin Peta Ringan & Cepat (Super Smooth 60 FPS Continuous)
-const tileCommonOptions = {
-    maxZoom: 20,
-    tileSize: 256,
-    zoomOffset: 0,
-    keepBuffer: 4,
-    updateWhenIdle: false,
-    updateWhenZooming: true,
-    updateInterval: 50
-};
-
-const tileLayersCache = {};
-let activeTileLayerInstance = null;
+setTimeout(hideMapLoader, 2500);
 
 // ==================== SECRET GOOGLE MAPS ENGINE (MT-CLUSTER PROXYLESS) ====================
 let isGmapsFeatureUnlocked = (localStorage.getItem('_sg_vstate') === '1');
 let isGoogleMapsEngineActive = (localStorage.getItem('_sg_engine') === '1');
 
-// Tile Generator Resmi Google Maps MT-Cluster dengan parameter Web Client (hl=id, gl=ID)
-function getGoogleMapsTileLayer(lyrsCode, isDark = false) {
-    const cacheKey = `gmap_${lyrsCode}_${isDark ? 'dark' : 'normal'}`;
-    if (!tileLayersCache[cacheKey]) {
-        tileLayersCache[cacheKey] = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=${lyrsCode}&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
-            subdomains: ['0', '1', '2', '3'],
-            maxZoom: 20,
-            tileSize: 256,
-            keepBuffer: 4,
-            updateWhenIdle: false,
-            updateWhenZooming: true,
-            updateInterval: 50,
-            crossOrigin: true,
-            className: isDark ? 'gmap-dark-filter-tile' : ''
-        });
-    }
-    return tileLayersCache[cacheKey];
-}
-
 // ==================== GOOGLE OVERLAYS: LALU LINTAS, TRANSIT, BERSEPEDA ====================
 let isTrafficLayerActive = (localStorage.getItem('seismo_traffic_active') === '1');
-let trafficTileLayer = null;
-
 let isTransitLayerActive = (localStorage.getItem('seismo_transit_active') === '1');
-let transitTileLayer = null;
-
 let isBikeLayerActive = (localStorage.getItem('seismo_bike_active') === '1');
-let bikeTileLayer = null;
-
 let is3DBuildingsActive = (localStorage.getItem('seismo_3d_active') === '1');
-let buildingsTileLayer = null;
-
 let isStreetViewActive = (localStorage.getItem('seismo_sv_active') === '1');
-let streetViewCoverageLayer = null;
-
 let isWildfireActive = (localStorage.getItem('seismo_wildfire_active') === '1');
-let wildfireTileLayer = null;
-
 let isAirQualityActive = (localStorage.getItem('seismo_aq_active') === '1');
-let airQualityTileLayer = null;
+
+function buildMapLibreStyle() {
+    const isGmap = isGoogleMapsEngineActive;
+
+    const sources = {
+        'sat-src': {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256,
+            maxzoom: 19
+        },
+        'sat-labels-src': {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256,
+            maxzoom: 19
+        },
+        'light-src': {
+            type: 'raster',
+            tiles: [
+                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
+            ],
+            tileSize: 256,
+            maxzoom: 19
+        },
+        'dark-src': {
+            type: 'raster',
+            tiles: [
+                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+            ],
+            tileSize: 256,
+            maxzoom: 19
+        },
+        'terrain-src': {
+            type: 'raster',
+            tiles: [
+                'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'https://c.tile.opentopomap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            maxzoom: 17
+        },
+        'gmap-roadmap-src': {
+            type: 'raster',
+            tiles: [
+                'https://mt0.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt1.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'gmap-sat-src': {
+            type: 'raster',
+            tiles: [
+                'https://mt0.google.com/vt/lyrs=s&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt1.google.com/vt/lyrs=s&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=s&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=s&hl=id&gl=ID&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'gmap-hybrid-src': {
+            type: 'raster',
+            tiles: [
+                'https://mt0.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt1.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'gmap-terrain-src': {
+            type: 'raster',
+            tiles: [
+                'https://mt0.google.com/vt/lyrs=p&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt1.google.com/vt/lyrs=p&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=p&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=p&hl=id&gl=ID&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'traffic-src': {
+            type: 'raster',
+            tiles: ['https://mt0.google.com/vt/lyrs=h,traffic&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=h,traffic&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'transit-src': {
+            type: 'raster',
+            tiles: ['https://mt0.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'bike-src': {
+            type: 'raster',
+            tiles: ['https://mt0.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'buildings-src': {
+            type: 'raster',
+            tiles: ['https://mt0.google.com/vt/lyrs=r,app:ikb&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=r,app:ikb&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'streetview-src': {
+            type: 'raster',
+            tiles: ['https://mt0.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tileSize: 256,
+            maxzoom: 20
+        },
+        'wildfire-src': {
+            type: 'raster',
+            tiles: ['https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires/{z}/{x}/{y}'],
+            tileSize: 256,
+            maxzoom: 18
+        },
+        'airquality-src': {
+            type: 'raster',
+            tiles: ['https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=demo'],
+            tileSize: 256,
+            maxzoom: 18
+        }
+    };
+
+    const layers = [
+        { id: 'layer-light', type: 'raster', source: isGmap ? 'gmap-roadmap-src' : 'light-src', layout: { visibility: currentMapLayer === 'light' ? 'visible' : 'none' } },
+        { id: 'layer-dark', type: 'raster', source: isGmap ? 'gmap-roadmap-src' : 'dark-src', layout: { visibility: currentMapLayer === 'dark' ? 'visible' : 'none' } },
+        { id: 'layer-terrain', type: 'raster', source: isGmap ? 'gmap-terrain-src' : 'terrain-src', layout: { visibility: currentMapLayer === 'terrain' ? 'visible' : 'none' } },
+        { id: 'layer-sat', type: 'raster', source: isGmap ? (isSatelliteLabelsEnabled ? 'gmap-hybrid-src' : 'gmap-sat-src') : 'sat-src', layout: { visibility: currentMapLayer === 'sat' ? 'visible' : 'none' } },
+        { id: 'layer-sat-labels', type: 'raster', source: 'sat-labels-src', layout: { visibility: (!isGmap && currentMapLayer === 'sat' && isSatelliteLabelsEnabled) ? 'visible' : 'none' } },
+        { id: 'layer-traffic', type: 'raster', source: 'traffic-src', layout: { visibility: isTrafficLayerActive ? 'visible' : 'none' } },
+        { id: 'layer-transit', type: 'raster', source: 'transit-src', layout: { visibility: isTransitLayerActive ? 'visible' : 'none' } },
+        { id: 'layer-bike', type: 'raster', source: 'bike-src', layout: { visibility: isBikeLayerActive ? 'visible' : 'none' } },
+        { id: 'layer-buildings', type: 'raster', source: 'buildings-src', layout: { visibility: is3DBuildingsActive ? 'visible' : 'none' } },
+        { id: 'layer-streetview', type: 'raster', source: 'streetview-src', layout: { visibility: isStreetViewActive ? 'visible' : 'none' } },
+        { id: 'layer-wildfire', type: 'raster', source: 'wildfire-src', layout: { visibility: isWildfireActive ? 'visible' : 'none' } },
+        { id: 'layer-airquality', type: 'raster', source: 'airquality-src', layout: { visibility: isAirQualityActive ? 'visible' : 'none' } }
+    ];
+
+    return {
+        version: 8,
+        sources: sources,
+        layers: layers
+    };
+}
+
+const map = new maplibregl.Map({
+    container: 'map',
+    style: buildMapLibreStyle(),
+    center: initialCenter,
+    zoom: initialZoom,
+    pitch: isMap3DActive ? 52 : 0,
+    bearing: currentMapBearing,
+    attributionControl: false,
+    antialias: true
+});
+
+map.on('load', () => {
+    hideMapLoader();
+    initFaultLinesGeoJSON();
+    updateSatelliteLabelsLayer();
+    updateLayerDetailUI();
+});
+
+map.on('rotate', () => {
+    const bearing = map.getBearing();
+    currentMapBearing = bearing;
+    const needle = document.getElementById("gmapCompassNeedle");
+    if (needle) {
+        needle.style.transform = `rotate(${-bearing}deg)`;
+        const ariaVal = Math.round((360 - bearing) % 360);
+        needle.setAttribute("aria-valuenow", ariaVal.toString());
+        if (Math.abs(bearing) < 0.5) {
+            needle.setAttribute("disabled", "");
+        } else {
+            needle.removeAttribute("disabled");
+        }
+    }
+    if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
+});
+
+map.on('pitch', () => {
+    const pitch = map.getPitch();
+    isMap3DActive = pitch > 15;
+    const tiltBtn = document.getElementById("gmapTiltBtn");
+    const tiltLabel = document.getElementById("gmapTiltLabel");
+    if (tiltBtn) {
+        tiltBtn.setAttribute("aria-checked", isMap3DActive ? "true" : "false");
+        tiltBtn.title = isMap3DActive ? "Kembali ke tampilan 2D datar" : "Miringkan tampilan (3D)";
+    }
+    if (tiltLabel) {
+        tiltLabel.textContent = isMap3DActive ? "2D" : "3D";
+    }
+    if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
+});
 
 function toggleTrafficLayer() {
     isTrafficLayerActive = !isTrafficLayerActive;
     try { localStorage.setItem('seismo_traffic_active', isTrafficLayerActive ? '1' : '0'); } catch(e){}
-    
-    if (isTrafficLayerActive) {
-        if (!trafficTileLayer) {
-            trafficTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=h,traffic&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
-                subdomains: ['0', '1', '2', '3'],
-                maxZoom: 20,
-                keepBuffer: 3,
-                updateWhenIdle: true,
-                pane: 'overlayPane',
-                zIndex: 450
-            });
-        }
-        if (map && !map.hasLayer(trafficTileLayer)) {
-            map.addLayer(trafficTileLayer);
-        }
-        showToastNotification("🚦 Lapisan Lalu Lintas Google (Live Traffic) Aktif");
-    } else {
-        if (map && trafficTileLayer && map.hasLayer(trafficTileLayer)) {
-            map.removeLayer(trafficTileLayer);
-        }
-        showToastNotification("🚦 Lapisan Lalu Lintas Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-traffic')) {
+        map.setLayoutProperty('layer-traffic', 'visibility', isTrafficLayerActive ? 'visible' : 'none');
     }
+    showToastNotification(isTrafficLayerActive ? "🚦 Lapisan Lalu Lintas Google (Live Traffic) Aktif" : "🚦 Lapisan Lalu Lintas Dinonaktifkan");
     updateLayerDetailUI();
 }
 
 function toggleTransitLayer() {
     isTransitLayerActive = !isTransitLayerActive;
     try { localStorage.setItem('seismo_transit_active', isTransitLayerActive ? '1' : '0'); } catch(e){}
-    
-    if (isTransitLayerActive) {
-        if (!transitTileLayer) {
-            transitTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
-                subdomains: ['0', '1', '2', '3'],
-                maxZoom: 20,
-                keepBuffer: 3,
-                updateWhenIdle: true,
-                pane: 'overlayPane',
-                zIndex: 440
-            });
-        }
-        if (map && !map.hasLayer(transitTileLayer)) {
-            map.addLayer(transitTileLayer);
-        }
-        showToastNotification("🚇 Lapisan Transportasi Umum Google Aktif");
-    } else {
-        if (map && transitTileLayer && map.hasLayer(transitTileLayer)) {
-            map.removeLayer(transitTileLayer);
-        }
-        showToastNotification("🚇 Lapisan Transportasi Umum Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-transit')) {
+        map.setLayoutProperty('layer-transit', 'visibility', isTransitLayerActive ? 'visible' : 'none');
     }
+    showToastNotification(isTransitLayerActive ? "🚇 Lapisan Transportasi Umum Google Aktif" : "🚇 Lapisan Transportasi Umum Dinonaktifkan");
     updateLayerDetailUI();
 }
 
 function toggleBikeLayer() {
     isBikeLayerActive = !isBikeLayerActive;
     try { localStorage.setItem('seismo_bike_active', isBikeLayerActive ? '1' : '0'); } catch(e){}
-    
-    if (isBikeLayerActive) {
-        if (!bikeTileLayer) {
-            bikeTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
-                subdomains: ['0', '1', '2', '3'],
-                maxZoom: 20,
-                keepBuffer: 3,
-                updateWhenIdle: true,
-                pane: 'overlayPane',
-                zIndex: 445
-            });
-        }
-        if (map && !map.hasLayer(bikeTileLayer)) {
-            map.addLayer(bikeTileLayer);
-        }
-        showToastNotification("🚴 Lapisan Jalur Bersepeda Google Aktif");
-    } else {
-        if (map && bikeTileLayer && map.hasLayer(bikeTileLayer)) {
-            map.removeLayer(bikeTileLayer);
-        }
-        showToastNotification("🚴 Lapisan Jalur Bersepeda Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-bike')) {
+        map.setLayoutProperty('layer-bike', 'visibility', isBikeLayerActive ? 'visible' : 'none');
     }
+    showToastNotification(isBikeLayerActive ? "🚴 Lapisan Jalur Bersepeda Google Aktif" : "🚴 Lapisan Jalur Bersepeda Dinonaktifkan");
     updateLayerDetailUI();
 }
 
 function toggle3DBuildingsLayer() {
     is3DBuildingsActive = !is3DBuildingsActive;
     try { localStorage.setItem('seismo_3d_active', is3DBuildingsActive ? '1' : '0'); } catch(e){}
-    
-    if (is3DBuildingsActive) {
-        if (!buildingsTileLayer) {
-            buildingsTileLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=r,app:ikb&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
-                subdomains: ['0', '1', '2', '3'],
-                maxZoom: 20,
-                keepBuffer: 3,
-                updateWhenIdle: true,
-                pane: 'overlayPane',
-                zIndex: 435
-            });
-        }
-        if (map && !map.hasLayer(buildingsTileLayer)) {
-            map.addLayer(buildingsTileLayer);
-        }
-        showToastNotification("🏢 Lapisan Bangunan Vertikal 3D Aktif");
-    } else {
-        if (map && buildingsTileLayer && map.hasLayer(buildingsTileLayer)) {
-            map.removeLayer(buildingsTileLayer);
-        }
-        showToastNotification("🏢 Lapisan Bangunan Vertikal Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-buildings')) {
+        map.setLayoutProperty('layer-buildings', 'visibility', is3DBuildingsActive ? 'visible' : 'none');
     }
+    showToastNotification(is3DBuildingsActive ? "🏢 Lapisan Bangunan Vertikal 3D Aktif" : "🏢 Lapisan Bangunan Vertikal Dinonaktifkan");
     updateLayerDetailUI();
 }
 
 function toggleStreetViewLayer() {
     isStreetViewActive = !isStreetViewActive;
     try { localStorage.setItem('seismo_sv_active', isStreetViewActive ? '1' : '0'); } catch(e){}
-    
-    if (isStreetViewActive) {
-        if (!streetViewCoverageLayer) {
-            streetViewCoverageLayer = L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}`, {
-                subdomains: ['0', '1', '2', '3'],
-                maxZoom: 20,
-                keepBuffer: 3,
-                updateWhenIdle: true,
-                pane: 'overlayPane',
-                zIndex: 455
-            });
-        }
-        if (map && !map.hasLayer(streetViewCoverageLayer)) {
-            map.addLayer(streetViewCoverageLayer);
-        }
-        showToastNotification("🚶 Lapisan Cakupan Google Street View Aktif (Jalur Biru)");
-    } else {
-        if (map && streetViewCoverageLayer && map.hasLayer(streetViewCoverageLayer)) {
-            map.removeLayer(streetViewCoverageLayer);
-        }
-        showToastNotification("🚶 Lapisan Street View Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-streetview')) {
+        map.setLayoutProperty('layer-streetview', 'visibility', isStreetViewActive ? 'visible' : 'none');
     }
+    showToastNotification(isStreetViewActive ? "🚶 Lapisan Cakupan Google Street View Aktif (Jalur Biru)" : "🚶 Lapisan Street View Dinonaktifkan");
     updateLayerDetailUI();
 }
 
 function toggleWildfireLayer() {
     isWildfireActive = !isWildfireActive;
     try { localStorage.setItem('seismo_wildfire_active', isWildfireActive ? '1' : '0'); } catch(e){}
-    
-    if (isWildfireActive) {
-        if (!wildfireTileLayer) {
-            wildfireTileLayer = L.tileLayer('https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires/{z}/{x}/{y}', {
-                subdomains: ['a', 'b', 'c'],
-                maxZoom: 18,
-                pane: 'overlayPane',
-                zIndex: 460,
-                opacity: 0.85
-            });
-        }
-        if (map && !map.hasLayer(wildfireTileLayer)) {
-            map.addLayer(wildfireTileLayer);
-        }
-        showToastNotification("🔥 Lapisan Titik Panas Kebakaran Hutan (NASA FIRMS) Aktif");
-    } else {
-        if (map && wildfireTileLayer && map.hasLayer(wildfireTileLayer)) {
-            map.removeLayer(wildfireTileLayer);
-        }
-        showToastNotification("🔥 Lapisan Kebakaran Hutan Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-wildfire')) {
+        map.setLayoutProperty('layer-wildfire', 'visibility', isWildfireActive ? 'visible' : 'none');
     }
+    showToastNotification(isWildfireActive ? "🔥 Lapisan Titik Panas Kebakaran Hutan (NASA FIRMS) Aktif" : "🔥 Lapisan Kebakaran Hutan Dinonaktifkan");
     updateLayerDetailUI();
 }
 
 function toggleAirQualityLayer() {
     isAirQualityActive = !isAirQualityActive;
     try { localStorage.setItem('seismo_aq_active', isAirQualityActive ? '1' : '0'); } catch(e){}
-    
-    if (isAirQualityActive) {
-        if (!airQualityTileLayer) {
-            airQualityTileLayer = L.tileLayer('https://tiles.aqicn.org/tiles/usepa-aqi/{z}/{x}/{y}.png?token=demo', {
-                maxZoom: 18,
-                pane: 'overlayPane',
-                zIndex: 465,
-                opacity: 0.85
-            });
-        }
-        if (map && !map.hasLayer(airQualityTileLayer)) {
-            map.addLayer(airQualityTileLayer);
-        }
-        showToastNotification("🍃 Lapisan Indeks Kualitas Udara (Air Quality) Aktif");
-    } else {
-        if (map && airQualityTileLayer && map.hasLayer(airQualityTileLayer)) {
-            map.removeLayer(airQualityTileLayer);
-        }
-        showToastNotification("🍃 Lapisan Kualitas Udara Dinonaktifkan");
+    if (map && map.isStyleLoaded() && map.getLayer('layer-airquality')) {
+        map.setLayoutProperty('layer-airquality', 'visibility', isAirQualityActive ? 'visible' : 'none');
     }
+    showToastNotification(isAirQualityActive ? "🍃 Lapisan Indeks Kualitas Udara (Air Quality) Aktif" : "🍃 Lapisan Kualitas Udara Dinonaktifkan");
     updateLayerDetailUI();
 }
 
@@ -1023,54 +1023,6 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-function getTileLayer(layerName) {
-    if (isGoogleMapsEngineActive) {
-        if (layerName === 'sat') {
-            return getGoogleMapsTileLayer(isSatelliteLabelsEnabled ? 'y' : 's');
-        } else if (layerName === 'terrain') {
-            return getGoogleMapsTileLayer('p');
-        } else if (layerName === 'dark') {
-            return getGoogleMapsTileLayer('m', true);
-        } else {
-            return getGoogleMapsTileLayer('m');
-        }
-    }
-
-    if (!tileLayersCache[layerName]) {
-        if (layerName === 'sat') {
-            tileLayersCache.sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                ...tileCommonOptions,
-                maxZoom: 18
-            });
-        } else if (layerName === 'terrain') {
-            tileLayersCache.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                ...tileCommonOptions,
-                maxZoom: 17
-            });
-        } else if (layerName === 'dark') {
-            tileLayersCache.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                ...tileCommonOptions,
-                maxZoom: 19,
-                subdomains: 'abcd'
-            });
-        } else {
-            tileLayersCache.light = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                ...tileCommonOptions,
-                maxZoom: 19,
-                subdomains: 'abcd'
-            });
-        }
-    }
-    return tileLayersCache[layerName];
-}
-
-// Lapisan Label Transparan Resmi Esri (Nama Kota, Jalan, Batas Wilayah)
-const satelliteLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-    ...tileCommonOptions,
-    maxZoom: 18,
-    pane: 'overlayPane'
-});
-
 function toggleSatelliteLabels(enabled) {
     if (typeof enabled === 'boolean') {
         isSatelliteLabelsEnabled = enabled;
@@ -1099,16 +1051,11 @@ function updateSatelliteLabelsUI() {
 }
 
 function updateSatelliteLabelsLayer() {
-    if (typeof map === 'undefined' || !map) return;
+    if (typeof map === 'undefined' || !map || !map.isStyleLoaded()) return;
 
-    if (currentMapLayer === 'sat' && isSatelliteLabelsEnabled) {
-        if (!map.hasLayer(satelliteLabelsLayer)) {
-            satelliteLabelsLayer.addTo(map);
-        }
-    } else {
-        if (map.hasLayer(satelliteLabelsLayer)) {
-            map.removeLayer(satelliteLabelsLayer);
-        }
+    if (map.getLayer('layer-sat-labels')) {
+        const vis = (currentMapLayer === 'sat' && isSatelliteLabelsEnabled) ? 'visible' : 'none';
+        map.setLayoutProperty('layer-sat-labels', 'visibility', vis);
     }
 }
 
@@ -1201,17 +1148,20 @@ const LAYER_TRIGGER_SVGS = {
 };
 
 function applyMapLayer(layerName) {
-    const targetLayer = getTileLayer(layerName);
-    if (activeTileLayerInstance && activeTileLayerInstance !== targetLayer && map.hasLayer(activeTileLayerInstance)) {
-        map.removeLayer(activeTileLayerInstance);
+    currentMapLayer = layerName;
+    localStorage.setItem('seismo_layer', layerName);
+    document.body.classList.toggle('layer-sat-active', layerName === 'sat');
+
+    if (map && map.isStyleLoaded()) {
+        const baseLayers = ['layer-light', 'layer-sat', 'layer-terrain', 'layer-dark'];
+        baseLayers.forEach(id => {
+            const target = 'layer-' + layerName;
+            if (map.getLayer(id)) {
+                map.setLayoutProperty(id, 'visibility', (id === target) ? 'visible' : 'none');
+            }
+        });
+        updateSatelliteLabelsLayer();
     }
-    if (!map.hasLayer(targetLayer)) {
-        targetLayer.addTo(map);
-        if (!isMapLoaderHidden) {
-            targetLayer.once('load', hideMapLoader);
-        }
-    }
-    activeTileLayerInstance = targetLayer;
 
     const card = document.getElementById("layerCard");
     const cardSvgBg = document.getElementById("layerCardSvgBg");
@@ -1231,29 +1181,24 @@ function applyMapLayer(layerName) {
     });
 
     if (layerName === 'sat') {
-        // Thumbnail menampilkan preview lapisan berikutnya (Medan)
         if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.terrain;
         const opt = document.getElementById("layerOptSat");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptSat");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'terrain') {
-        // Thumbnail menampilkan preview lapisan berikutnya (Gelap)
         if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.dark;
         const opt = document.getElementById("layerOptTerrain");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptTerrain");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'dark') {
-        // Thumbnail menampilkan preview lapisan berikutnya (Standar)
         if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.light;
         const opt = document.getElementById("layerOptDark");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptDark");
         if (mobOpt) mobOpt.classList.add('active');
     } else {
-        // default: light / standar
-        // Thumbnail menampilkan preview lapisan berikutnya (Satelit) persis seperti Google Maps
         if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.sat;
         const opt = document.getElementById("layerOptLight");
         if (opt) opt.classList.add('active');
@@ -1261,197 +1206,39 @@ function applyMapLayer(layerName) {
         if (mobOpt) mobOpt.classList.add('active');
     }
 
-    currentMapLayer = layerName;
-    localStorage.setItem('seismo_layer', layerName);
-    document.body.classList.toggle('layer-sat-active', layerName === 'sat');
     if (layerName !== 'sat' && (isMap3DActive || currentMapBearing !== 0)) {
         resetMapOrientation();
     }
     updateSatelliteLabelsLayer();
     updateSatelliteLabelsUI();
     if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
-    setTimeout(() => { map.invalidateSize(); }, 50);
     if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
     if (typeof updateMeasureTheme === 'function') updateMeasureTheme();
 }
 
-// ==================== GOOGLE MAPS 3D TILT & COMPASS CONTROLS ====================
-let isMap3DActive = false;
-let currentMapBearing = 0;
-let currentCompassNeedleAngle = -1080;
-
-// Expand tile loading bounds in all directions to prevent missing tiles on 3D tilt and rotation
-if (typeof L !== 'undefined' && L.GridLayer) {
-    L.GridLayer.include({
-        _getTiledPixelBounds: function (center) {
-            const map = this._map;
-            const mapZoom = map._animatingZoom ? Math.max(map._animateToZoom, map.getZoom()) : map.getZoom();
-            const scale = map.getZoomScale(mapZoom, this._tileZoom);
-            const pixelCenter = map.project(center, this._tileZoom).floor();
-            const halfSize = map.getSize().divideBy(scale * 2);
-            const padMultiplier = 1.25;
-            return new L.Bounds(
-                pixelCenter.subtract(halfSize.multiplyBy(padMultiplier)),
-                pixelCenter.add(halfSize.multiplyBy(padMultiplier))
-            );
-        }
-    });
-}
-
-// Rotate drag delta vector by -currentMapBearing to maintain natural 1:1 mouse movement direction
-if (typeof L !== 'undefined' && L.Draggable) {
-    const origOnMove = L.Draggable.prototype._onMove;
-    L.Draggable.prototype._onMove = function (e) {
-        if (currentMapBearing !== 0 && this._startPoint) {
-            const first = (e.touches && e.touches.length) ? e.touches[0] : e;
-            const rawPoint = new L.Point(first.clientX, first.clientY);
-            const dx = rawPoint.x - this._startPoint.x;
-            const dy = rawPoint.y - this._startPoint.y;
-            const rad = (-currentMapBearing * Math.PI) / 180;
-            const cos = Math.cos(rad);
-            const sin = Math.sin(rad);
-            const rotDx = dx * cos - dy * sin;
-            const rotDy = dx * sin + dy * cos;
-            
-            this._newPos = this._startPos.add(new L.Point(rotDx, rotDy));
-            this.fire('predrag');
-            L.DomUtil.setPosition(this._element, this._newPos);
-            this.fire('drag');
-            return;
-        }
-        origOnMove.call(this, e);
-    };
-}
-
-// Intercept wheel zoom when 3D or rotation is active to zoom straight into map center smoothly
-document.addEventListener('wheel', function (e) {
-    if (typeof map === 'undefined' || !map) return;
-    if (!isMap3DActive && currentMapBearing === 0) return;
-    
-    const stage = document.getElementById("map3DStage");
-    if (!stage || !stage.contains(e.target)) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const delta = e.deltaY;
-    if (Math.abs(delta) < 10) return;
-    
-    const now = Date.now();
-    if (map._lastCustomWheel && now - map._lastCustomWheel < 80) return;
-    map._lastCustomWheel = now;
-    
-    const currentZoom = map.getZoom();
-    const step = 0.5;
-    if (delta < 0) {
-        map.setZoomAround(map.getCenter(), Math.min(map.getMaxZoom(), currentZoom + step));
-    } else {
-        map.setZoomAround(map.getCenter(), Math.max(map.getMinZoom(), currentZoom - step));
-    }
-}, { passive: false, capture: true });
-
+// ==================== GOOGLE MAPS 3D TILT & COMPASS CONTROLS (NATIVE WEBGL) ====================
 function toggleMap3DMode() {
+    if (!map) return;
     isMap3DActive = !isMap3DActive;
-    const tiltBtn = document.getElementById("gmapTiltBtn");
-    const tiltLabel = document.getElementById("gmapTiltLabel");
-    
-    if (tiltBtn) {
-        tiltBtn.setAttribute("aria-checked", isMap3DActive ? "true" : "false");
-        tiltBtn.title = isMap3DActive ? "Kembali ke tampilan 2D datar" : "Miringkan tampilan (3D)";
-    }
-    if (tiltLabel) {
-        tiltLabel.textContent = isMap3DActive ? "2D" : "3D";
-    }
-    
-    updateMapTransform();
+    const targetPitch = isMap3DActive ? 52 : 0;
+    map.easeTo({ pitch: targetPitch, duration: 600 });
 }
 
 function rotateMap(deltaAngle) {
-    // deltaAngle is -90 for left, +90 for right
+    if (!map) return;
     currentCompassNeedleAngle += deltaAngle;
-    
-    currentMapBearing = (currentMapBearing - deltaAngle) % 360;
-    if (currentMapBearing < 0) currentMapBearing += 360;
-    
-    updateMapTransform();
+    const newBearing = (map.getBearing() + deltaAngle) % 360;
+    map.easeTo({ bearing: newBearing, duration: 450 });
 }
 
 function resetMapOrientation() {
-    currentMapBearing = 0;
-    // Align needle smoothly back to 0° baseline (-1080deg or nearest 360 multiple)
+    if (!map) return;
     const remainder = currentCompassNeedleAngle % 360;
     if (remainder !== 0) {
         currentCompassNeedleAngle = currentCompassNeedleAngle - remainder;
     }
     isMap3DActive = false;
-    
-    const tiltBtn = document.getElementById("gmapTiltBtn");
-    const tiltLabel = document.getElementById("gmapTiltLabel");
-    
-    if (tiltBtn) {
-        tiltBtn.setAttribute("aria-checked", "false");
-        tiltBtn.title = "Miringkan tampilan (3D)";
-    }
-    if (tiltLabel) {
-        tiltLabel.textContent = "3D";
-    }
-    
-    updateMapTransform();
-}
-
-function updateMapTransform() {
-    const needle = document.getElementById("gmapCompassNeedle");
-    if (needle) {
-        needle.style.transform = `rotate(${currentCompassNeedleAngle}deg)`;
-        const ariaVal = (360 - currentMapBearing) % 360;
-        needle.setAttribute("aria-valuenow", ariaVal.toString());
-        if (currentMapBearing === 0) {
-            needle.setAttribute("disabled", "");
-        } else {
-            needle.removeAttribute("disabled");
-        }
-    }
-    
-    const stage = document.getElementById("map3DStage");
-    const mapEl = document.getElementById("map");
-    if (!stage || !mapEl) return;
-    
-    const isTransformed = isMap3DActive || currentMapBearing !== 0;
-    stage.classList.toggle("map-3d-active", isTransformed);
-    mapEl.classList.toggle("map-3d-active", isTransformed);
-    
-    if (isTransformed) {
-        const tiltX = isMap3DActive ? 42 : 0;
-        const translateY = isMap3DActive ? -35 : 0;
-        const scale = isMap3DActive ? 1.15 : 1;
-        const scaleComp = isMap3DActive ? 0.87 : 1;
-        mapEl.style.transform = `translateY(${translateY}px) scale(${scale}) rotateX(${tiltX}deg) rotateZ(${currentMapBearing}deg)`;
-        mapEl.style.setProperty('--map-counter-tilt', `${-tiltX}deg`);
-        mapEl.style.setProperty('--map-counter-bearing', `${-currentMapBearing}deg`);
-        mapEl.style.setProperty('--map-counter-scale', isMap3DActive ? '0.87' : '1');
-        
-        document.querySelectorAll('.leaflet-popup-content-wrapper').forEach(el => {
-            el.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
-        });
-        document.querySelectorAll('.leaflet-popup-tip-container').forEach(el => {
-            el.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
-        });
-    } else {
-        mapEl.style.transform = '';
-        mapEl.style.removeProperty('--map-counter-tilt');
-        mapEl.style.removeProperty('--map-counter-bearing');
-        mapEl.style.removeProperty('--map-counter-scale');
-        
-        document.querySelectorAll('.leaflet-popup-content-wrapper, .leaflet-popup-tip-container').forEach(el => {
-            el.style.transform = '';
-        });
-    }
-    
-    setTimeout(() => {
-        if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
-            map.invalidateSize();
-        }
-    }, 60);
+    map.easeTo({ bearing: 0, pitch: 0, duration: 600 });
 }
 
 function openLayerBottomSheet() {
@@ -1485,7 +1272,6 @@ function selectMapLayer(layerName) {
     applyMapLayer(layerName);
     const popup = document.getElementById("layerPopupMenu");
     if (popup) popup.classList.remove('show');
-    // NOTE: Tidak menutup bottom sheet otomatis di mobile agar pengguna leluasa melihat peta & memilih detail lain
 }
 
 function cycleNextMapLayer(e) {
@@ -1511,26 +1297,93 @@ function toggleMapLayer(e) {
     });
 });
 
-// ==================== FAULT LINES & MEGATHRUST LAYER ====================
-let faultLinesLayerGroup = L.layerGroup();
+// ==================== FAULT LINES & MEGATHRUST LAYER (GEOJSON WEBGL) ====================
+function getFaultLinesGeoJSON() {
+    if (typeof FAULT_LINES_DATA === 'undefined' || !Array.isArray(FAULT_LINES_DATA)) {
+        return { type: 'FeatureCollection', features: [] };
+    }
+    const features = FAULT_LINES_DATA.map((f, idx) => ({
+        type: 'Feature',
+        id: idx,
+        properties: {
+            name: f.name,
+            region: f.region,
+            type: f.type,
+            desc: f.desc,
+            isMegathrust: !!f.isMegathrust
+        },
+        geometry: {
+            type: 'LineString',
+            coordinates: f.coords.map(pt => [pt[1], pt[0]])
+        }
+    }));
+    return { type: 'FeatureCollection', features };
+}
 
-function initFaultLinesLayer() {
-    if (typeof FAULT_LINES_DATA === 'undefined') return;
+function initFaultLinesGeoJSON() {
+    if (!map || map.getSource('faults-src')) return;
 
-    FAULT_LINES_DATA.forEach(f => {
-        const color = f.isMegathrust ? '#ef4444' : '#f97316';
-        const weight = f.isMegathrust ? 3.5 : 2.5;
-        const dashArray = f.isMegathrust ? '6, 6' : null;
+    map.addSource('faults-src', {
+        type: 'geojson',
+        data: getFaultLinesGeoJSON()
+    });
 
-        const polyline = L.polyline(f.coords, {
-            color: color,
-            weight: weight,
-            opacity: 0.85,
-            dashArray: dashArray,
-            lineCap: 'round',
-            lineJoin: 'round'
-        });
+    // Outer glow layer
+    map.addLayer({
+        id: 'faults-layer-glow',
+        type: 'line',
+        source: 'faults-src',
+        layout: {
+            'line-cap': 'round',
+            'line-join': 'round',
+            'visibility': isFaultsLayerVisible ? 'visible' : 'none'
+        },
+        paint: {
+            'line-color': [
+                'case',
+                ['get', 'isMegathrust'],
+                'rgba(239, 68, 68, 0.4)',
+                'rgba(249, 115, 22, 0.4)'
+            ],
+            'line-width': [
+                'case',
+                ['get', 'isMegathrust'],
+                7,
+                5
+            ]
+        }
+    });
 
+    // Core sharp line
+    map.addLayer({
+        id: 'faults-layer',
+        type: 'line',
+        source: 'faults-src',
+        layout: {
+            'line-cap': 'round',
+            'line-join': 'round',
+            'visibility': isFaultsLayerVisible ? 'visible' : 'none'
+        },
+        paint: {
+            'line-color': [
+                'case',
+                ['get', 'isMegathrust'],
+                '#ef4444',
+                '#f97316'
+            ],
+            'line-width': [
+                'case',
+                ['get', 'isMegathrust'],
+                3.5,
+                2.5
+            ]
+        }
+    });
+
+    // Click popup pada sesar aktif
+    map.on('click', 'faults-layer', (e) => {
+        if (!e.features || !e.features.length) return;
+        const f = e.features[0].properties;
         const popupContent = `
             <div class="fault-popup-content">
                 <div class="fault-popup-title">${f.isMegathrust ? '🌊 ' : '⚡ '}${f.name}</div>
@@ -1538,20 +1391,18 @@ function initFaultLinesLayer() {
                 <div class="fault-popup-desc">${f.desc}</div>
             </div>
         `;
-        polyline.bindPopup(popupContent);
-        faultLinesLayerGroup.addLayer(polyline);
+        new maplibregl.Popup({ offset: 10, maxWidth: '340px', className: 'gmap-custom-popup' })
+            .setLngLat(e.lngLat)
+            .setHTML(popupContent)
+            .addTo(map);
     });
 
-    const btn = document.getElementById("layerOptFaults");
-    const mobBtn = document.getElementById("mobLayerOptFaults");
-    if (isFaultsLayerVisible) {
-        faultLinesLayerGroup.addTo(map);
-        if (btn) btn.classList.add("active");
-        if (mobBtn) mobBtn.classList.add("active");
-    } else {
-        if (btn) btn.classList.remove("active");
-        if (mobBtn) mobBtn.classList.remove("active");
-    }
+    map.on('mouseenter', 'faults-layer', () => {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'faults-layer', () => {
+        map.getCanvas().style.cursor = '';
+    });
 }
 
 function toggleFaultsLayer() {
@@ -1562,47 +1413,40 @@ function toggleFaultsLayer() {
 
     const btn = document.getElementById("layerOptFaults");
     const mobBtn = document.getElementById("mobLayerOptFaults");
-    if (isFaultsLayerVisible) {
-        map.addLayer(faultLinesLayerGroup);
-        if (btn) btn.classList.add("active");
-        if (mobBtn) mobBtn.classList.add("active");
-    } else {
-        map.removeLayer(faultLinesLayerGroup);
-        if (btn) btn.classList.remove("active");
-        if (mobBtn) mobBtn.classList.remove("active");
+    if (btn) btn.classList.toggle("active", isFaultsLayerVisible);
+    if (mobBtn) mobBtn.classList.toggle("active", isFaultsLayerVisible);
+
+    if (map && map.isStyleLoaded()) {
+        const vis = isFaultsLayerVisible ? 'visible' : 'none';
+        if (map.getLayer('faults-layer')) map.setLayoutProperty('faults-layer', 'visibility', vis);
+        if (map.getLayer('faults-layer-glow')) map.setLayoutProperty('faults-layer-glow', 'visibility', vis);
     }
     if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
 }
 
-// Inisialisasi garis sesar aktif saat boot
-initFaultLinesLayer();
-
-// ==================== GPS PULSE MARKER ====================
+// ==================== GPS & SEARCH PIN MARKERS ====================
 let gpsMarker = null;
-let gpsCircle = null;
-
-const gpsPulseIcon = L.divIcon({
-    className: 'custom-gps-icon',
-    html: '<div class="gps-pulse-marker"><div class="gps-pulse-wave"></div><div class="gps-pulse-core"></div></div>',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
-});
-
-// Marker Pin Merah Khusus Wilayah Pencarian / Pantauan (Bukan GPS Pengguna)
 let searchPlaceMarker = null;
 
-const searchPlaceIcon = L.divIcon({
-    className: 'custom-search-pin-icon',
-    html: `
+function createGpsElement() {
+    const el = document.createElement('div');
+    el.className = 'custom-gps-icon';
+    el.innerHTML = '<div class="gps-pulse-marker"><div class="gps-pulse-wave"></div><div class="gps-pulse-core"></div></div>';
+    return el;
+}
+
+function createSearchPinElement() {
+    const el = document.createElement('div');
+    el.className = 'custom-search-pin-icon';
+    el.innerHTML = `
         <div style="display:flex; flex-direction:column; align-items:center; transform:translateY(-100%);">
             <svg style="width:30px; height:30px; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.45));" viewBox="0 0 24 24" fill="#ea4335">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
             </svg>
         </div>
-    `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 30]
-});
+    `;
+    return el;
+}
 
 function createAreaPopupHTML(obj, lat, lon, accuracyText = '') {
     const rawMain = obj?.main || "Wilayah";
@@ -1683,12 +1527,6 @@ function toggleSavePlaceFromPopup(name, admin, prov, lat, lon, e) {
 }
 
 function showPlacePinMarker(lat, lon, name) {
-    if (!searchPlaceMarker) {
-        searchPlaceMarker = L.marker([lat, lon], { icon: searchPlaceIcon, zIndexOffset: 950 }).addTo(map);
-    } else {
-        searchPlaceMarker.setLatLng([lat, lon]);
-    }
-
     let placeObj = viewedPlaceObj;
     if (!placeObj || placeObj.main !== name) {
         const match = INDONESIA_CITIES_DB.find(c => Math.abs(c.lat - lat) < 0.05 && Math.abs(c.lon - lon) < 0.05);
@@ -1699,10 +1537,26 @@ function showPlacePinMarker(lat, lon, name) {
         }
     }
 
-    searchPlaceMarker.bindPopup(createAreaPopupHTML(placeObj, lat, lon), {
-        maxWidth: 360,
+    const popup = new maplibregl.Popup({
+        offset: [0, -32],
+        maxWidth: '360px',
         className: 'custom-area-popup'
-    }).openPopup();
+    }).setHTML(createAreaPopupHTML(placeObj, lat, lon));
+
+    if (!searchPlaceMarker) {
+        searchPlaceMarker = new maplibregl.Marker({
+            element: createSearchPinElement(),
+            anchor: 'bottom'
+        })
+        .setLngLat([lon, lat])
+        .setPopup(popup)
+        .addTo(map);
+    } else {
+        searchPlaceMarker.setLngLat([lon, lat]);
+        searchPlaceMarker.setPopup(popup);
+    }
+
+    searchPlaceMarker.togglePopup();
 }
 
 function formatAccuracyText(acc) {
@@ -1724,29 +1578,27 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
     const accText = formatAccuracyText(accuracy);
     const popupHtml = createAreaPopupHTML(placeObj, lat, lon, accText);
 
-    if (!gpsMarker) {
-        gpsMarker = L.marker([lat, lon], { icon: gpsPulseIcon, zIndexOffset: 1000 }).addTo(map);
-        gpsMarker.bindPopup(popupHtml, { maxWidth: 360, className: 'custom-area-popup' });
-    } else {
-        gpsMarker.setLatLng([lat, lon]);
-        gpsMarker.getPopup() && gpsMarker.setPopupContent(popupHtml);
-    }
+    const popup = new maplibregl.Popup({
+        offset: 14,
+        maxWidth: '360px',
+        className: 'custom-area-popup'
+    }).setHTML(popupHtml);
 
-    if (!gpsCircle) {
-        gpsCircle = L.circle([lat, lon], {
-            radius: accuracy || 100,
-            color: '#1a73e8',
-            fillColor: '#1a73e8',
-            fillOpacity: 0.1,
-            weight: 1
-        }).addTo(map);
+    if (!gpsMarker) {
+        gpsMarker = new maplibregl.Marker({
+            element: createGpsElement(),
+            anchor: 'center'
+        })
+        .setLngLat([lon, lat])
+        .setPopup(popup)
+        .addTo(map);
     } else {
-        gpsCircle.setLatLng([lat, lon]);
-        gpsCircle.setRadius(accuracy || 100);
+        gpsMarker.setLngLat([lon, lat]);
+        gpsMarker.setPopup(popup);
     }
 
     if (pan) {
-        map.flyTo([lat, lon], 9, { duration: 1.2 });
+        map.flyTo({ center: [lon, lat], zoom: 9, duration: 1200, essential: true });
     }
 
     updateRecentQuakesUI();
@@ -1755,8 +1607,8 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
 
 function centerToUserLocation() {
     if (hasUserGPS) {
-        map.flyTo(userCoords, 10, { duration: 1.2 });
-        if (gpsMarker) gpsMarker.openPopup();
+        map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 10, duration: 1200, essential: true });
+        if (gpsMarker) gpsMarker.togglePopup();
         viewedCoords = [...userCoords];
         if (userPlaceObj) {
             renderLocationUI(userPlaceObj, userCoords[0], userCoords[1]);
@@ -1940,13 +1792,12 @@ function updatePrePrintStateFromCurrent() {
 function panPrintMap(direction) {
     if (!map) return;
     const offset = 140;
-    if (direction === 'up') map.panBy([0, -offset], { animate: true });
-    else if (direction === 'down') map.panBy([0, offset], { animate: true });
-    else if (direction === 'left') map.panBy([-offset, 0], { animate: true });
-    else if (direction === 'right') map.panBy([offset, 0], { animate: true });
+    if (direction === 'up') map.panBy([0, -offset], { duration: 300 });
+    else if (direction === 'down') map.panBy([0, offset], { duration: 300 });
+    else if (direction === 'left') map.panBy([-offset, 0], { duration: 300 });
+    else if (direction === 'right') map.panBy([offset, 0], { duration: 300 });
     else if (direction === 'reset') {
-        const center = (userMarker && userMarker.getLatLng()) ? userMarker.getLatLng() : [ -0.7893, 113.9213 ];
-        map.setView(center, 7, { animate: true });
+        map.jumpTo({ center: [113.9213, -0.7893], zoom: 5 });
     }
     setTimeout(updatePrePrintStateFromCurrent, 300);
 }
@@ -1961,6 +1812,28 @@ function zoomOutPrintMap() {
     if (!map) return;
     map.zoomOut();
     setTimeout(updatePrePrintStateFromCurrent, 300);
+}
+
+function disableMapInteractions() {
+    if (!map) return;
+    map.dragPan.disable();
+    map.scrollZoom.disable();
+    map.boxZoom.disable();
+    map.dragRotate.disable();
+    map.keyboard.disable();
+    map.doubleClickZoom.disable();
+    map.touchZoomRotate.disable();
+}
+
+function enableMapInteractions() {
+    if (!map) return;
+    map.dragPan.enable();
+    map.scrollZoom.enable();
+    map.boxZoom.enable();
+    map.dragRotate.enable();
+    map.keyboard.enable();
+    map.doubleClickZoom.enable();
+    map.touchZoomRotate.enable();
 }
 
 function printMapPage() {
@@ -2031,20 +1904,13 @@ function printMapPage() {
     document.body.classList.add('print-preview-mode');
 
     // 3. Kunci seluruh interaksi mouse manual (agar pergeseran peta hanya dikontrol via tombol navigasi cetak)
-    if (map) {
-        if (map.dragging) map.dragging.disable();
-        if (map.touchZoom) map.touchZoom.disable();
-        if (map.doubleClickZoom) map.doubleClickZoom.disable();
-        if (map.scrollWheelZoom) map.scrollWheelZoom.disable();
-        if (map.boxZoom) map.boxZoom.disable();
-        if (map.keyboard) map.keyboard.disable();
-    }
+    disableMapInteractions();
 
     // 4. Sesuaikan ukuran kanvas & pertahankan titik pusat & zoom persis seperti yang dilihat pengguna
     setTimeout(() => {
         if (map && prePrintMapState) {
-            map.invalidateSize({ animate: false });
-            map.setView(prePrintMapState.center, prePrintMapState.zoom, { animate: false });
+            map.resize();
+            map.jumpTo({ center: prePrintMapState.center, zoom: prePrintMapState.zoom });
         }
         if (notesInput) notesInput.focus();
     }, 80);
@@ -2052,21 +1918,12 @@ function printMapPage() {
 
 function closePrintPreview() {
     document.body.classList.remove('print-preview-mode');
-
-    // Aktifkan kembali seluruh interaksi peta normal
-    if (map) {
-        if (map.dragging) map.dragging.enable();
-        if (map.touchZoom) map.touchZoom.enable();
-        if (map.doubleClickZoom) map.doubleClickZoom.enable();
-        if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
-        if (map.boxZoom) map.boxZoom.enable();
-        if (map.keyboard) map.keyboard.enable();
-    }
+    enableMapInteractions();
 
     setTimeout(() => {
         if (map && prePrintMapState) {
-            map.invalidateSize({ animate: false });
-            map.setView(prePrintMapState.center, prePrintMapState.zoom, { animate: false });
+            map.resize();
+            map.jumpTo({ center: prePrintMapState.center, zoom: prePrintMapState.zoom });
             prePrintMapState = null;
         }
     }, 80);
@@ -2162,7 +2019,7 @@ function toggleSidebar(forceOpen = null) {
     updateDesktopNavRailActiveState();
 
     setTimeout(() => {
-        if (map) map.invalidateSize();
+        if (map) map.resize();
         if (typeof resizeCanvas === 'function') resizeCanvas();
     }, 360);
 }
@@ -2412,9 +2269,14 @@ map.on('movestart', () => {
 });
 
 // ==================== MULTI-SOURCE EARTHQUAKE LOADER (BMKG + USGS) ====================
-// GPU Canvas Renderer untuk performa 60 FPS saat pan & zoom
-const canvasMarkerRenderer = L.canvas({ padding: 0.5, tolerance: 5 });
-const markerGroup = L.layerGroup().addTo(map);
+let activeQuakeMarkers = [];
+
+function clearQuakeMarkers() {
+    activeQuakeMarkers.forEach(m => {
+        try { m.remove(); } catch (e) {}
+    });
+    activeQuakeMarkers = [];
+}
 
 async function loadMapData(silent = false) {
     const loadingEl = document.getElementById("loading");
@@ -2642,10 +2504,8 @@ async function loadMapData(silent = false) {
         return tB - tA;
     });
 
-    // Bersihkan marker lama dan render ulang marker di Leaflet
-    if (typeof markerGroup !== 'undefined' && markerGroup) {
-        markerGroup.clearLayers();
-    }
+    // Bersihkan marker lama dan render ulang marker di MapLibre
+    clearQuakeMarkers();
 
     quakesArray = uniqueQuakes;
     checkForNewEarthquakeEvent(uniqueQuakes);
@@ -2687,39 +2547,30 @@ function cleanPotensiText(rawPotensi, isSpeech = false) {
 
 function addEarthquakeMarker(q, isLatest = false) {
     let { lat, lon, mag, time, place, src, depth, potensi, dirasakan } = q;
-    let size = Math.max(3.5, mag * 2.2);
+    let size = Math.max(8, Math.round(mag * 3.5));
     let color = mag >= 5 ? '#ea4335' : (mag >= 3 ? '#fbbc04' : '#80868b');
     let dist = hasUserGPS ? calcDistance(userCoords[0], userCoords[1], lat, lon) : null;
 
-    let marker;
+    const el = document.createElement('div');
     if (isLatest) {
-        // Animasi Radar Gelombang Seismik untuk 1 Lokasi Gempa Paling Mutakhir
-        const quakePulseIcon = L.divIcon({
-            className: 'custom-quake-pulse-icon',
-            html: `
-                <div class="quake-pulse-marker" title="Gempa Paling Mutakhir">
-                    <div class="quake-pulse-wave-1" style="background:${color}55; border-color:${color};"></div>
-                    <div class="quake-pulse-wave-2" style="background:${color}25; border-color:${color}aa;"></div>
-                    <div class="quake-pulse-core" style="background:${color}; box-shadow:0 0 12px ${color};"></div>
-                </div>
-            `,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
-        });
-
-        marker = L.marker([lat, lon], {
-            icon: quakePulseIcon,
-            zIndexOffset: 800
-        }).addTo(markerGroup);
+        el.className = 'custom-quake-pulse-icon';
+        el.innerHTML = `
+            <div class="quake-pulse-marker" title="Gempa Paling Mutakhir">
+                <div class="quake-pulse-wave-1" style="background:${color}55; border-color:${color};"></div>
+                <div class="quake-pulse-wave-2" style="background:${color}25; border-color:${color}aa;"></div>
+                <div class="quake-pulse-core" style="background:${color}; box-shadow:0 0 12px ${color};"></div>
+            </div>
+        `;
     } else {
-        marker = L.circleMarker([lat, lon], {
-            renderer: canvasMarkerRenderer,
-            radius: size,
-            color: color,
-            weight: 1.5,
-            fillColor: color,
-            fillOpacity: 0.65
-        }).addTo(markerGroup);
+        el.className = 'custom-quake-dot';
+        el.style.width = `${size * 2}px`;
+        el.style.height = `${size * 2}px`;
+        el.style.borderRadius = '50%';
+        el.style.backgroundColor = color;
+        el.style.border = '1.5px solid #ffffff';
+        el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.35)';
+        el.style.opacity = '0.85';
+        el.style.cursor = 'pointer';
     }
 
     const safePlace = escapeQuotes(place);
@@ -2776,7 +2627,22 @@ function addEarthquakeMarker(q, isLatest = false) {
         </div>
     `;
 
-    marker.bindPopup(popupContent);
+    const popup = new maplibregl.Popup({
+        offset: 12,
+        maxWidth: '380px',
+        className: 'gmap-custom-popup'
+    }).setHTML(popupContent);
+
+    const marker = new maplibregl.Marker({
+        element: el,
+        anchor: 'center'
+    })
+    .setLngLat([lon, lat])
+    .setPopup(popup)
+    .addTo(map);
+
+    q._marker = marker;
+    activeQuakeMarkers.push(marker);
 }
 
 // ==================== MULTI-PLATFORM SHARE QUAKE INFO ====================
@@ -3067,7 +2933,7 @@ function selectSearchCity(name, admin, prov, lat, lon) {
     if (clearBtn) clearBtn.style.display = "flex";
 
     // Pindah fokus peta ke kota yang dicari
-    map.flyTo([lat, lon], 10, { duration: 1.2 });
+    map.flyTo({ center: [lon, lat], zoom: 10, duration: 1200, essential: true });
     viewedCoords = [lat, lon];
 
     // Perbarui objek lokasi dan kartu area (tanpa menimpa GPS asli pengguna)
@@ -3269,11 +3135,11 @@ function escapeQuotes(str) {
 }
 
 function focusQuake(lat, lon) {
-    map.flyTo([lat, lon], 9, { duration: 1.2 });
-    markerGroup.eachLayer(layer => {
-        let pos = layer.getLatLng();
-        if (Math.abs(pos.lat - lat) < 0.02 && Math.abs(pos.lng - lon) < 0.02) {
-            layer.openPopup();
+    map.flyTo({ center: [lon, lat], zoom: 9, duration: 1200, essential: true });
+    activeQuakeMarkers.forEach(m => {
+        const lngLat = m.getLngLat();
+        if (Math.abs(lngLat.lat - lat) < 0.02 && Math.abs(lngLat.lng - lon) < 0.02) {
+            m.togglePopup();
         }
     });
     if (window.innerWidth <= 768) {
@@ -3400,7 +3266,7 @@ function removeRecentSearch(name, e) {
 }
 
 function flyToSavedPlace(lat, lon, name) {
-    map.flyTo([lat, lon], 10, { duration: 1.2 });
+    map.flyTo({ center: [lon, lat], zoom: 10, duration: 1200, essential: true });
     viewedCoords = [lat, lon];
 
     // Temukan detail kota dari database lokal atau format nama
@@ -4754,7 +4620,7 @@ function requestFreshGPS(panToLocation = true) {
                     : `GPS: Izin belum aktif`;
             }
             if (panToLocation && hasUserGPS) {
-                map.flyTo(userCoords, 9, { duration: 1.2 });
+                map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 9, duration: 1200, essential: true });
             }
         },
         { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
@@ -4812,9 +4678,9 @@ function bootApp() {
         }
     }
 
-    // 2. Invalidate Map & Resize Canvas
+    // 2. Resize Map & Canvas
     setTimeout(() => {
-        if (typeof map !== 'undefined' && map) map.invalidateSize();
+        if (typeof map !== 'undefined' && map) map.resize();
         resizeCanvas();
     }, 40);
 
@@ -4862,7 +4728,7 @@ function bootApp() {
             const settingsDrawer = document.getElementById("gmapSettingsWrapper");
             const isInsidePanel = panel && panel.contains(e.target);
             const isInsideSettings = settingsDrawer && settingsDrawer.contains(e.target);
-            const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.leaflet-popup') || e.target.closest('.toast');
+            const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.maplibregl-popup') || e.target.closest('.toast');
 
             if (!isInsidePanel && !isInsideSettings && !isInsideModal) {
                 toggleSidebar(false);
@@ -5352,15 +5218,13 @@ function initGmapContextMenu() {
     }
 
     function getRulerIntervalStep() {
-        // Hitung jarak nyata yang setara dengan target ~110px pada layar monitor di level zoom aktif
         let metersPerScreenStep = 1000;
         try {
             if (typeof map !== 'undefined' && map) {
                 const center = map.getCenter();
-                const pt1 = map.latLngToContainerPoint(center);
-                const pt2 = L.point(pt1.x + 110, pt1.y);
-                const latLng2 = map.containerPointToLatLng(pt2);
-                metersPerScreenStep = map.distance(center, latLng2);
+                const pt1 = map.project(center);
+                const pt2 = map.unproject([pt1.x + 110, pt1.y]);
+                metersPerScreenStep = calcDistance(center.lat, center.lng, pt2.lat, pt2.lng) * 1000;
             }
         } catch (e) {
             metersPerScreenStep = 1000;
@@ -5386,8 +5250,8 @@ function initGmapContextMenu() {
 
     function getSegmentAngle(p1, p2) {
         try {
-            const pt1 = map.latLngToContainerPoint(p1);
-            const pt2 = map.latLngToContainerPoint(p2);
+            const pt1 = map.project([p1.lng, p1.lat]);
+            const pt2 = map.project([p2.lng, p2.lat]);
             const dx = pt2.x - pt1.x;
             const dy = pt2.y - pt1.y;
             let deg = Math.atan2(dy, dx) * (180 / Math.PI);
@@ -5402,7 +5266,7 @@ function initGmapContextMenu() {
     function calculateTotalDistance() {
         let total = 0;
         for (let i = 0; i < measurePoints.length - 1; i++) {
-            total += map.distance(measurePoints[i], measurePoints[i + 1]);
+            total += calcDistance(measurePoints[i].lat, measurePoints[i].lng, measurePoints[i + 1].lat, measurePoints[i + 1].lng) * 1000;
         }
         return total;
     }
@@ -5412,44 +5276,70 @@ function initGmapContextMenu() {
 
         const theme = getMeasureTheme();
 
-        // 1. Bersihkan layer garis lama, marker titik, dan penanda interval
-        if (measurePolyline) {
-            try { map.removeLayer(measurePolyline); } catch (e) {}
-            measurePolyline = null;
-        }
-
+        // 1. Bersihkan marker titik & ticks lama
         measureMarkers.forEach((m) => {
-            try { map.removeLayer(m); } catch (e) {}
+            try { m.remove(); } catch (e) {}
         });
         measureMarkers = [];
 
         measureTickMarkers.forEach((t) => {
-            try { map.removeLayer(t); } catch (e) {}
+            try { t.remove(); } catch (e) {}
         });
         measureTickMarkers = [];
 
-        if (measurePoints.length === 0) return;
+        if (measurePoints.length === 0) {
+            if (map.getSource('measure-line-src')) {
+                map.getSource('measure-line-src').setData({ type: 'FeatureCollection', features: [] });
+            }
+            return;
+        }
 
-        // 2. Gambar garis polyline solid jika ada >= 2 titik
+        // 2. Render garis polyline GeoJSON jika ada >= 2 titik
         if (measurePoints.length >= 2) {
-            measurePolyline = L.polyline(measurePoints, {
-                color: theme.lineColor,
-                weight: 3.5,
-                opacity: 0.95
-            }).addTo(map);
+            const lineGeoJSON = {
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: measurePoints.map(p => [p.lng, p.lat])
+                }
+            };
 
-            // Hitung total jarak keseluruhan dan interval adaptif murni berdasarkan level zoom
+            if (!map.getSource('measure-line-src')) {
+                map.addSource('measure-line-src', {
+                    type: 'geojson',
+                    data: lineGeoJSON
+                });
+                map.addLayer({
+                    id: 'measure-line-layer',
+                    type: 'line',
+                    source: 'measure-line-src',
+                    layout: {
+                        'line-cap': 'round',
+                        'line-join': 'round'
+                    },
+                    paint: {
+                        'line-color': theme.lineColor,
+                        'line-width': 3.5,
+                        'line-opacity': 0.95
+                    }
+                });
+            } else {
+                map.getSource('measure-line-src').setData(lineGeoJSON);
+                if (map.getLayer('measure-line-layer')) {
+                    map.setPaintProperty('measure-line-layer', 'line-color', theme.lineColor);
+                }
+            }
+
             const step = getRulerIntervalStep();
-            const viewBounds = map.getBounds().pad(0.3); // Area pandang layar + buffer 30%
+            const bounds = map.getBounds();
 
-            // Hitung dan tempatkan penanda interval graduasi (ticks & labels) sepanjang segmen
             let accumulatedDist = 0;
             let nextMilestone = step;
 
             for (let i = 0; i < measurePoints.length - 1; i++) {
                 const p1 = measurePoints[i];
                 const p2 = measurePoints[i + 1];
-                const segDist = map.distance(p1, p2);
+                const segDist = calcDistance(p1.lat, p1.lng, p2.lat, p2.lng) * 1000;
                 const segStart = accumulatedDist;
                 const segEnd = accumulatedDist + segDist;
 
@@ -5460,25 +5350,26 @@ function initGmapContextMenu() {
                         const fraction = (nextMilestone - segStart) / segDist;
                         const tickLat = p1.lat + fraction * (p2.lat - p1.lat);
                         const tickLng = p1.lng + fraction * (p2.lng - p1.lng);
-                        const tickPos = L.latLng(tickLat, tickLng);
 
-                        // Optimasi: Hanya buat elemen DOM jika penanda berada di dalam/dekat layar
-                        if (viewBounds.contains(tickPos)) {
+                        if (bounds.contains([tickLng, tickLat])) {
                             const labelText = formatRulerTickLabel(nextMilestone);
 
-                            const tickIcon = L.divIcon({
-                                className: 'gmap-ruler-tick-wrapper-icon',
-                                html: `
-                                    <div class="gmap-ruler-tick-wrapper" style="transform: rotate(${angle}deg);">
-                                        <div class="gmap-ruler-tick-mark ${theme.themeClass}"></div>
-                                        <div class="gmap-ruler-tick-label ${theme.themeClass}">${labelText}</div>
-                                    </div>
-                                `,
-                                iconSize: [80, 30],
-                                iconAnchor: [40, 15]
-                            });
+                            const tickEl = document.createElement('div');
+                            tickEl.className = 'gmap-ruler-tick-wrapper-icon';
+                            tickEl.innerHTML = `
+                                <div class="gmap-ruler-tick-wrapper" style="transform: rotate(${angle}deg);">
+                                    <div class="gmap-ruler-tick-mark ${theme.themeClass}"></div>
+                                    <div class="gmap-ruler-tick-label ${theme.themeClass}">${labelText}</div>
+                                </div>
+                            `;
 
-                            const tickMarker = L.marker(tickPos, { icon: tickIcon, interactive: false }).addTo(map);
+                            const tickMarker = new maplibregl.Marker({
+                                element: tickEl,
+                                anchor: 'center'
+                            })
+                            .setLngLat([tickLng, tickLat])
+                            .addTo(map);
+
                             measureTickMarkers.push(tickMarker);
                         }
                     }
@@ -5487,17 +5378,31 @@ function initGmapContextMenu() {
 
                 accumulatedDist = segEnd;
             }
+        } else {
+            if (map.getSource('measure-line-src')) {
+                map.getSource('measure-line-src').setData({ type: 'FeatureCollection', features: [] });
+            }
         }
 
-        // 3. Gambar marker lingkaran titik simpul (vertices)
+        // 3. Render vertex marker
         measurePoints.forEach((pt) => {
-            const marker = L.circleMarker(pt, {
-                radius: 5.5,
-                color: theme.markerBorder,
-                fillColor: theme.markerFill,
-                fillOpacity: 1,
-                weight: 2.5
-            }).addTo(map);
+            const dot = document.createElement('div');
+            dot.className = 'gmap-ruler-dot-marker';
+            dot.style.width = '11px';
+            dot.style.height = '11px';
+            dot.style.borderRadius = '50%';
+            dot.style.backgroundColor = theme.markerFill;
+            dot.style.border = `2.5px solid ${theme.markerBorder}`;
+            dot.style.boxShadow = '0 1px 4px rgba(0,0,0,0.4)';
+            dot.style.cursor = 'pointer';
+
+            const marker = new maplibregl.Marker({
+                element: dot,
+                anchor: 'center'
+            })
+            .setLngLat([pt.lng, pt.lat])
+            .addTo(map);
+
             measureMarkers.push(marker);
         });
 
@@ -5521,18 +5426,17 @@ function initGmapContextMenu() {
         isMeasuring = false;
         if (measureCard) measureCard.style.display = 'none';
 
-        if (measurePolyline) {
-            try { map.removeLayer(measurePolyline); } catch (e) {}
-            measurePolyline = null;
+        if (map && map.getSource('measure-line-src')) {
+            map.getSource('measure-line-src').setData({ type: 'FeatureCollection', features: [] });
         }
 
         measureMarkers.forEach((marker) => {
-            try { map.removeLayer(marker); } catch (e) {}
+            try { marker.remove(); } catch (e) {}
         });
         measureMarkers = [];
 
         measureTickMarkers.forEach((tick) => {
-            try { map.removeLayer(tick); } catch (e) {}
+            try { tick.remove(); } catch (e) {}
         });
         measureTickMarkers = [];
 
@@ -5550,8 +5454,7 @@ function initGmapContextMenu() {
 
         isMeasuring = true;
         if (typeof startLat === 'number' && typeof startLng === 'number') {
-            const startPoint = L.latLng(startLat, startLng);
-            measurePoints.push(startPoint);
+            measurePoints.push({ lat: startLat, lng: startLng });
         }
 
         // Tampilkan kartu panel info jarak permanen di bawah
@@ -5598,7 +5501,7 @@ function initGmapContextMenu() {
         });
     }
 
-    // 1. Event Listener Klik Kanan Peta Leaflet (Khusus Layar Desktop)
+    // 1. Event Listener Klik Kanan Peta MapLibre (Khusus Layar Desktop)
     map.on('contextmenu', (e) => {
         // Abaikan jika layar berada dalam mode mobile
         if (window.innerWidth <= 768) {
@@ -5610,8 +5513,8 @@ function initGmapContextMenu() {
             e.originalEvent.stopPropagation();
         }
 
-        activeContextLat = e.latlng.lat;
-        activeContextLng = e.latlng.lng;
+        activeContextLat = e.lngLat.lat;
+        activeContextLng = e.lngLat.lng;
 
         const coordsItem = contextMenu.querySelector('.item-coords');
         if (coordsItem) {
@@ -5640,17 +5543,19 @@ function initGmapContextMenu() {
         closeContextMenu();
 
         if (isMeasuring) {
-            const newPoint = e.latlng;
-            measurePoints.push(newPoint);
+            measurePoints.push({ lat: e.lngLat.lat, lng: e.lngLat.lng });
             renderMeasureRuler();
         }
     });
 
     // Render ulang saat zoom atau pan agar sudut, kerapatan interval, dan posisi label selalu presisi
-    map.on('zoomend', () => {
+    map.on('zoom', () => {
         if (isMeasuring) renderMeasureRuler();
     });
-    map.on('moveend', () => {
+    map.on('rotate', () => {
+        if (isMeasuring) renderMeasureRuler();
+    });
+    map.on('move', () => {
         if (isMeasuring) renderMeasureRuler();
     });
 
@@ -5721,10 +5626,10 @@ function initGmapContextMenu() {
                             }
                         }
 
-                        if (typeof L !== 'undefined' && map) {
-                            L.popup({ autoClose: true, closeOnClick: true, className: 'gmap-context-popup' })
-                                .setLatLng([activeContextLat, activeContextLng])
-                                .setContent(`
+                        if (map) {
+                            new maplibregl.Popup({ closeOnClick: true, className: 'gmap-context-popup' })
+                                .setLngLat([activeContextLng, activeContextLat])
+                                .setHTML(`
                                     <div class="gmap-info-popup">
                                         <div class="gmap-info-popup-title">
                                             <span class="google-symbols" style="font-size: 16px; color: #ea4335;">&#xe0c8;</span>
@@ -5734,7 +5639,7 @@ function initGmapContextMenu() {
                                         <div class="gmap-info-popup-coords">${latStr}, ${lngStr}</div>
                                     </div>
                                 `)
-                                .openOn(map);
+                                .addTo(map);
                         }
                     })
                     .catch(() => {
@@ -5744,22 +5649,10 @@ function initGmapContextMenu() {
 
             case 'search-quakes':
                 showToastNotification('🔍 Memindai gempa dalam radius 250 km...');
-                if (typeof L !== 'undefined' && map) {
-                    if (window.activeRadiusCircle) {
-                        try { map.removeLayer(window.activeRadiusCircle); } catch (e) {}
-                    }
-                    window.activeRadiusCircle = L.circle([activeContextLat, activeContextLng], {
-                        radius: 250000,
-                        color: '#1a73e8',
-                        fillColor: '#1a73e8',
-                        fillOpacity: 0.08,
-                        weight: 1.5,
-                        dashArray: '6, 6'
-                    }).addTo(map);
-
-                    L.popup({ autoClose: true, closeOnClick: true, className: 'gmap-context-popup' })
-                        .setLatLng([activeContextLat, activeContextLng])
-                        .setContent(`
+                if (map) {
+                    new maplibregl.Popup({ closeOnClick: true, className: 'gmap-context-popup' })
+                        .setLngLat([activeContextLng, activeContextLat])
+                        .setHTML(`
                             <div class="gmap-info-popup">
                                 <div class="gmap-info-popup-title">
                                     <span class="google-symbols" style="font-size: 16px; color: #1a73e8;">&#xe1ff;</span>
@@ -5769,7 +5662,7 @@ function initGmapContextMenu() {
                                 <div class="gmap-info-popup-coords">${latStr}, ${lngStr}</div>
                             </div>
                         `)
-                        .openOn(map);
+                        .addTo(map);
                 }
                 break;
 

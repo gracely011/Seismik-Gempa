@@ -87,7 +87,7 @@ body {
     border: 0;
 }
 
-/* ==================== FULLSCREEN LEAFLET MAP & 3D STAGE ==================== */
+/* ==================== FULLSCREEN MAPLIBRE WEBGL MAP ==================== */
 .map-3d-stage {
     position: absolute;
     top: 0;
@@ -95,51 +95,22 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    perspective: 1400px;
     z-index: 1;
     background-color: #000000;
 }
 
-#map,
-#map.leaflet-container {
+#map {
     position: absolute;
-    top: calc(50vh - 75vmax);
-    left: calc(50vw - 75vmax);
-    width: 150vmax;
-    height: 150vmax;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 1;
     background-color: #171717;
-    transform-origin: center center;
-    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
-    transform-style: preserve-3d !important;
-    overflow: visible !important;
-}
-
-/* ==================== 3D CONTEXT FOR LEAFLET PANES & POPUPS ==================== */
-.leaflet-pane,
-.leaflet-map-pane,
-.leaflet-popup-pane,
-.leaflet-popup {
-    transform-style: preserve-3d !important;
-    overflow: visible !important;
 }
 
 body.theme-light #map {
     background-color: #f1f3f4;
-}
-
-/* ==================== GPU HARDWARE ACCELERATION FOR LEAFLET TILES ==================== */
-.leaflet-tile-container {
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-}
-
-.leaflet-tile {
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
 }
 
 /* ==================== GOOGLE MAPS STYLE MAP PRELOADER OVERLAY ==================== */
@@ -2148,9 +2119,11 @@ body.theme-dark .layer-option-item.active .layer-opt-label {
     will-change: transform, opacity;
 }
 
-/* Sembunyikan Kontrol Atribusi Leaflet & Jejak Provider Peta */
+/* Sembunyikan Kontrol Atribusi Leaflet & MapLibre */
 .leaflet-control-attribution,
-.leaflet-control-attribution * {
+.leaflet-control-attribution *,
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-attrib * {
     display: none !important;
     opacity: 0 !important;
     pointer-events: none !important;
@@ -5211,11 +5184,14 @@ body.theme-dark .app-info-logo-wrap {
     line-height: 17px;
 }
 
-/* ==================== GOOGLE MAPS STYLE LEAFLET POPUP ==================== */
+/* ==================== GOOGLE MAPS STYLE MAPLIBRE & LEAFLET POPUP ==================== */
+.maplibregl-popup,
 .leaflet-popup {
     margin-bottom: 18px;
+    z-index: 1000;
 }
 
+.maplibregl-popup-content,
 .leaflet-popup-content-wrapper {
     background: var(--bg-card) !important;
     border: 1px solid var(--border-color) !important;
@@ -5227,14 +5203,12 @@ body.theme-dark .app-info-logo-wrap {
     overflow: hidden;
     max-width: calc(100vw - 32px) !important;
     position: relative !important;
-    transform-origin: 50% 100%;
-    transform: rotateZ(var(--map-counter-bearing, 0deg)) rotateX(var(--map-counter-tilt, 0deg)) scale(var(--map-counter-scale, 1));
-    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 }
 
+.maplibregl-popup-content .quake-popup-box,
 .leaflet-popup-content {
     margin: 12px 14px !important;
     line-height: normal !important;
@@ -5243,11 +5217,13 @@ body.theme-dark .app-info-logo-wrap {
     box-sizing: border-box;
 }
 
+.maplibregl-popup-tip {
+    border-top-color: var(--bg-card) !important;
+    border-bottom-color: var(--bg-card) !important;
+}
+
 .leaflet-popup-tip-container {
     overflow: visible;
-    transform-origin: 50% 0;
-    transform: rotateZ(var(--map-counter-bearing, 0deg)) rotateX(var(--map-counter-tilt, 0deg)) scale(var(--map-counter-scale, 1));
-    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .leaflet-popup-tip {
@@ -5256,25 +5232,29 @@ body.theme-dark .app-info-logo-wrap {
     box-shadow: none !important;
 }
 
+.maplibregl-popup-close-button,
 .leaflet-popup-close-button {
     top: 6px !important;
     right: 6px !important;
-    width: 22px !important;
-    height: 22px !important;
+    width: 24px !important;
+    height: 24px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     border-radius: 50% !important;
     color: var(--text-muted) !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: bold !important;
     transition: all 0.2s ease !important;
     background: transparent !important;
     padding: 0 !important;
     line-height: 1 !important;
     z-index: 10 !important;
+    border: none !important;
+    cursor: pointer !important;
 }
 
+.maplibregl-popup-close-button:hover,
 .leaflet-popup-close-button:hover {
     background: var(--bg-card-hover) !important;
     color: var(--text-primary) !important;

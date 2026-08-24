@@ -2,7 +2,7 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v22.0';
+const CACHE_NAME = 'seismo-cache-v23.0';
 
 const PRECACHE_ASSETS = [
     './',
@@ -14,8 +14,8 @@ const PRECACHE_ASSETS = [
     'style.css?v=22.0',
     'app.js?v=22.0',
     'modals.js?v=22.0',
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
+    'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css',
+    'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js',
     'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap',
     'google-symbols.woff2'
 ];
