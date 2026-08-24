@@ -1732,9 +1732,14 @@ function createAreaPopupHTML(obj, lat, lon, accuracyText = '') {
                     <div class="popup-area-gps-coord">GPS: ${lat.toFixed(3)}, ${lon.toFixed(3)}</div>
                 </div>
                 <div class="popup-area-right">
-                    <div class="popup-weather-box">
-                        <div class="popup-weather-cond-temp">${tempText}</div>
-                        <div class="popup-weather-time mono">${timeStr}</div>
+                    <div style="display: flex; align-items: flex-start; gap: 6px;">
+                        <div class="popup-weather-box">
+                            <div class="popup-weather-cond-temp">${tempText}</div>
+                            <div class="popup-weather-time mono">${timeStr}</div>
+                        </div>
+                        <button class="custom-popup-close-btn" type="button" onclick="closeActiveQuakePopup(event)" title="Tutup" aria-label="Tutup">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1787,6 +1792,8 @@ function showPlacePinMarker(lat, lon, name) {
     const popup = new maplibregl.Popup({
         offset: [0, -32],
         maxWidth: '360px',
+        closeButton: false,
+        closeOnClick: true,
         className: 'custom-area-popup'
     }).setHTML(createAreaPopupHTML(placeObj, lat, lon));
 
@@ -1830,6 +1837,8 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
     const popup = new maplibregl.Popup({
         offset: 14,
         maxWidth: '360px',
+        closeButton: false,
+        closeOnClick: true,
         className: 'custom-area-popup'
     }).setHTML(popupHtml);
 
@@ -2797,6 +2806,42 @@ function cleanPotensiText(rawPotensi, isSpeech = false) {
     return p;
 }
 
+// ==================== CLOSE POPUP CONTROLLER ====================
+function closeActiveQuakePopup(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    }
+    // Hapus seluruh popup yang aktif di DOM
+    const popups = document.querySelectorAll('.maplibregl-popup');
+    popups.forEach(p => p.remove());
+
+    if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
+        activeQuakeMarkers.forEach(m => {
+            if (m && m.getPopup && m.getPopup() && m.getPopup().isOpen()) {
+                m.getPopup().remove();
+            }
+        });
+    }
+    if (searchPlaceMarker && searchPlaceMarker.getPopup && searchPlaceMarker.getPopup() && searchPlaceMarker.getPopup().isOpen()) {
+        searchPlaceMarker.getPopup().remove();
+    }
+    if (gpsMarker && gpsMarker.getPopup && gpsMarker.getPopup() && gpsMarker.getPopup().isOpen()) {
+        gpsMarker.getPopup().remove();
+    }
+}
+
+// Global capturing listener untuk memastikan tombol close popup selalu merespons seketika di semua event pointer/touch
+['click', 'pointerdown', 'touchstart'].forEach(eventType => {
+    document.addEventListener(eventType, (e) => {
+        const closeBtn = e.target.closest && e.target.closest('.maplibregl-popup-close-button, .custom-popup-close-btn');
+        if (closeBtn) {
+            closeActiveQuakePopup(e);
+        }
+    }, true);
+});
+
 function addEarthquakeMarker(q, isLatest = false) {
     let { lat, lon, mag, time, place, src, depth, potensi, dirasakan } = q;
     let size = Math.max(8, Math.round(mag * 3.5));
@@ -2838,7 +2883,12 @@ function addEarthquakeMarker(q, isLatest = false) {
                     <span>${src}</span>
                     ${isLatest ? '<span style="font-size:10px; background:rgba(234,67,53,0.15); color:#ea4335; padding:1px 5px; border-radius:4px; font-weight:800;">⚡ MUTAKHIR</span>' : ''}
                 </div>
-                <div class="quake-popup-mag-badge" style="background:${color};">M ${mag.toFixed(1)}</div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div class="quake-popup-mag-badge" style="background:${color};">M ${mag.toFixed(1)}</div>
+                    <button class="custom-popup-close-btn" type="button" onclick="closeActiveQuakePopup(event)" title="Tutup Popup" aria-label="Tutup Popup">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="quake-popup-time">
                 <span class="google-symbols" style="font-size: 13px;">&#xe8b5;</span>
@@ -2882,6 +2932,8 @@ function addEarthquakeMarker(q, isLatest = false) {
     const popup = new maplibregl.Popup({
         offset: 12,
         maxWidth: '380px',
+        closeButton: false,
+        closeOnClick: true,
         className: 'gmap-custom-popup'
     }).setHTML(popupContent);
 
@@ -4265,9 +4317,13 @@ function initSystem() {
         }
     }, 1200);
 
-    // Refresh data tanpa force prompt
-    // Refresh data pertama kali saat sensor dimulai
-    loadMapData(false);
+    // Refresh data pertama kali saat sensor dimulai dan otomatis fokus ke gempa mutakhir
+    loadMapData(false).then(() => {
+        if (quakesArray && quakesArray.length > 0) {
+            const latest = quakesArray[0];
+            focusQuake(latest.lat, latest.lon);
+        }
+    });
 
     // Auto-Sync Berkala Halus di Latar Belakang (Setiap 60 Detik tanpa kedip / tanpa popup)
     if (!window.seismoAutoSyncTimer) {

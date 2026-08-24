@@ -5346,6 +5346,40 @@ body.theme-dark .app-info-logo-wrap {
     color: var(--text-primary) !important;
 }
 
+.custom-popup-close-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    margin-left: 6px;
+    user-select: none;
+}
+
+.custom-popup-close-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    transform: scale(1.08);
+}
+
+.custom-popup-close-btn:active {
+    transform: scale(0.95);
+}
+
+.custom-popup-close-btn svg {
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+}
+
 /* ==================== LEAFLET EARTHQUAKE POPUP CARD ==================== */
 .quake-popup-box {
     font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif;
@@ -5362,7 +5396,6 @@ body.theme-dark .app-info-logo-wrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-right: 32px; /* Safe-zone tombol close popup MapLibre */
     margin-bottom: 2px;
 }
 
@@ -5581,7 +5614,6 @@ body.theme-light .btn-share-threads {
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
-    padding-right: 32px; /* Safe-zone agar tidak tertabrak tombol close popup MapLibre */
 }
 
 .popup-area-title-group {
