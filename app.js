@@ -276,6 +276,13 @@ function initMapUrlSync() {
 let isMap3DActive = false;
 let currentMapBearing = 0;
 let currentCompassNeedleAngle = -1080;
+let isGlobeModeActive = true;
+try {
+    const savedGlobe = localStorage.getItem('seismo_globe_mode');
+    if (savedGlobe !== null) {
+        isGlobeModeActive = (savedGlobe === '1');
+    }
+} catch (e) {}
 
 const initialHashView = parseMapUrlHash();
 if (initialHashView) {
@@ -490,11 +497,22 @@ const map = new maplibregl.Map({
     antialias: true
 });
 
+map.on('style.load', () => {
+    applyGlobeProjection();
+});
+
 map.on('load', () => {
+    applyGlobeProjection();
     hideMapLoader();
     initFaultLinesGeoJSON();
     updateSatelliteLabelsLayer();
     updateLayerDetailUI();
+    updateGlobeUI();
+    updateGlobeZoomState();
+});
+
+map.on('zoom', () => {
+    updateGlobeZoomState();
 });
 
 map.on('rotate', () => {
@@ -1023,6 +1041,52 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+// ==================== PROYEKSI GLOBE 3D (BOLA DUNIA) ====================
+function updateGlobeZoomState() {
+    if (!map) return;
+    const zoom = map.getZoom();
+    const isZoomedOut = isGlobeModeActive && (zoom <= 5.8);
+    document.body.classList.toggle('globe-active', isGlobeModeActive);
+    document.body.classList.toggle('globe-zoomed-out', isZoomedOut);
+}
+
+function applyGlobeProjection() {
+    if (!map) return;
+    try {
+        if (typeof map.setProjection === 'function') {
+            map.setProjection({ type: isGlobeModeActive ? 'globe' : 'mercator' });
+        }
+    } catch (e) {
+        console.warn('[MapLibre] Set projection warning:', e);
+    }
+    updateGlobeZoomState();
+    updateGlobeUI();
+}
+
+function toggleGlobeProjection(enabled) {
+    if (typeof enabled === 'boolean') {
+        isGlobeModeActive = enabled;
+    } else {
+        isGlobeModeActive = !isGlobeModeActive;
+    }
+
+    try {
+        localStorage.setItem('seismo_globe_mode', isGlobeModeActive ? '1' : '0');
+    } catch (e) {}
+
+    applyGlobeProjection();
+    if (typeof showToastNotification === 'function') {
+        showToastNotification(isGlobeModeActive ? 'Mode Bola Dunia 3D (Globe) aktif' : 'Mode Peta Datar (Mercator) aktif');
+    }
+}
+
+function updateGlobeUI() {
+    const deskChk = document.getElementById('desktopGlobe3DCheckbox');
+    const mobChk = document.getElementById('mobGlobe3DCheckbox');
+    if (deskChk) deskChk.checked = isGlobeModeActive;
+    if (mobChk) mobChk.checked = isGlobeModeActive;
+}
+
 function toggleSatelliteLabels(enabled) {
     if (typeof enabled === 'boolean') {
         isSatelliteLabelsEnabled = enabled;
@@ -1044,10 +1108,12 @@ function updateSatelliteLabelsUI() {
     if (deskChk) deskChk.checked = isSatelliteLabelsEnabled;
     if (mobChk) mobChk.checked = isSatelliteLabelsEnabled;
 
-    const deskRow = document.getElementById('layerPopupSuboptions');
-    const mobRow = document.getElementById('mobSatLabelRow')?.closest('.mobile-sheet-checkboxes');
-    if (deskRow) deskRow.style.display = (currentMapLayer === 'sat') ? 'flex' : 'none';
-    if (mobRow) mobRow.style.display = (currentMapLayer === 'sat') ? 'flex' : 'none';
+    const deskSatRow = document.getElementById('desktopSatLabelRow');
+    const mobSatRow = document.getElementById('mobSatLabelRow');
+    if (deskSatRow) deskSatRow.style.display = (currentMapLayer === 'sat') ? 'inline-flex' : 'none';
+    if (mobSatRow) mobSatRow.style.display = (currentMapLayer === 'sat') ? 'inline-flex' : 'none';
+
+    updateGlobeUI();
 }
 
 function updateSatelliteLabelsLayer() {
@@ -1150,7 +1216,14 @@ const LAYER_TRIGGER_SVGS = {
 function applyMapLayer(layerName) {
     currentMapLayer = layerName;
     localStorage.setItem('seismo_layer', layerName);
+    
+    // Sinkronisasi kelas body untuk styling atmosfer layer aktif
+    ['layer-sat-active', 'layer-light-active', 'layer-dark-active', 'layer-terrain-active'].forEach(cls => {
+        document.body.classList.remove(cls);
+    });
+    document.body.classList.add(`layer-${layerName}-active`);
     document.body.classList.toggle('layer-sat-active', layerName === 'sat');
+    updateGlobeZoomState();
 
     if (map && map.isStyleLoaded()) {
         const baseLayers = ['layer-light', 'layer-sat', 'layer-terrain', 'layer-dark'];
@@ -5702,14 +5775,21 @@ initGmapContextMenu();
 if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
 if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
 
-// Expose fungsi 3D Tilt dan Kompas ke window
+// Expose fungsi 3D Tilt, Kompas, dan Globe Projection ke window
 window.toggleMap3DMode = toggleMap3DMode;
 window.rotateMap = rotateMap;
 window.resetMapOrientation = resetMapOrientation;
+window.toggleGlobeProjection = toggleGlobeProjection;
+window.applyGlobeProjection = applyGlobeProjection;
 
-// Sinkronisasi status layer-sat-active awal
+// Sinkronisasi status layer dan globe awal
 if (typeof currentMapLayer !== 'undefined') {
+    ['layer-sat-active', 'layer-light-active', 'layer-dark-active', 'layer-terrain-active'].forEach(cls => {
+        document.body.classList.remove(cls);
+    });
+    document.body.classList.add(`layer-${currentMapLayer}-active`);
     document.body.classList.toggle('layer-sat-active', currentMapLayer === 'sat');
+    if (typeof updateGlobeZoomState === 'function') updateGlobeZoomState();
 }
 
 

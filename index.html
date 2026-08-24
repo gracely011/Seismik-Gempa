@@ -88,8 +88,8 @@
     <link rel="dns-prefetch" href="https://api.open-meteo.com">
     <link rel="dns-prefetch" href="https://api.bigdatacloud.net">
 
-    <!-- MAPLIBRE GL JS WEBGL 2.0 STYLESHEET -->
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+    <!-- MAPLIBRE GL JS WEBGL 2.0 STYLESHEET (GLOBE 3D READY) -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.css">
 
     <!-- GOOGLE SYMBOLS MICRO-SUBSET & FONT PRELOAD -->
     <link rel="preload" as="font" type="font/woff2" href="google-symbols.woff2" crossorigin>
@@ -1107,8 +1107,13 @@
             <!-- KONTAINER DINAMIS UNTUK DETAIL EKSTRA GOOGLE MAPS (LALU LINTAS, TRANSPORTASI, BERSEPEDA) -->
             <div id="desktopExtraDetailsHook" style="display: contents;"></div>
 
-            <!-- SUB-OPSI SATELIT (CHECKBOX LABEL DESKTOP) -->
+            <!-- SUB-OPSI LAYER (GLOBE 3D & LABEL SATELIT DESKTOP) -->
             <div class="layer-popup-suboptions" id="layerPopupSuboptions">
+                <label class="layer-checkbox-item" id="desktopGlobe3DRow" title="Tampilkan peta dalam bentuk Bola Dunia 3D interaktif">
+                    <input type="checkbox" id="desktopGlobe3DCheckbox" checked onchange="toggleGlobeProjection(this.checked)">
+                    <span class="custom-chk-box"></span>
+                    <span class="layer-chk-label">Tampilan Globe 3D</span>
+                </label>
                 <label class="layer-checkbox-item" id="desktopSatLabelRow" title="Tampilkan nama kota, jalan, dan batas wilayah pada peta satelit">
                     <input type="checkbox" id="desktopSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
                     <span class="custom-chk-box"></span>
@@ -1219,8 +1224,13 @@
                     </div>
                 </div>
 
-                <!-- CHECKBOX LABEL SATELIT (MOBILE) -->
-                <div class="mobile-sheet-checkboxes" id="mobSatLabelWrapper" style="display: none;">
+                <!-- CHECKBOX SUB-OPSI (MOBILE: GLOBE 3D & LABEL SATELIT) -->
+                <div class="mobile-sheet-checkboxes" id="mobSuboptionsWrapper">
+                    <label class="layer-checkbox-item" id="mobGlobe3DRow" title="Tampilkan peta dalam bentuk Bola Dunia 3D interaktif">
+                        <input type="checkbox" id="mobGlobe3DCheckbox" checked onchange="toggleGlobeProjection(this.checked)">
+                        <span class="custom-chk-box"></span>
+                        <span class="layer-chk-label">Tampilan Globe 3D</span>
+                    </label>
                     <label class="layer-checkbox-item" id="mobSatLabelRow" title="Tampilkan nama kota, jalan, dan batas wilayah pada peta satelit">
                         <input type="checkbox" id="mobSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
                         <span class="custom-chk-box"></span>
@@ -1296,8 +1306,8 @@
     </script>
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 
-    <!-- MAPLIBRE GL JS WEBGL 2.0 ENGINE -->
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <!-- MAPLIBRE GL JS WEBGL 2.0 ENGINE (GLOBE 3D READY) -->
+    <script src="https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.js"></script>
 
     <!-- FAULTS & ACTIVE MEGATHRUST DATASET -->
     <script src="faults.js?v=22.0"></script>

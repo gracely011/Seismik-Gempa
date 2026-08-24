@@ -87,7 +87,7 @@ body {
     border: 0;
 }
 
-/* ==================== FULLSCREEN MAPLIBRE WEBGL MAP ==================== */
+/* ==================== FULLSCREEN MAPLIBRE WEBGL MAP & SPACE STAGE ==================== */
 .map-3d-stage {
     position: absolute;
     top: 0;
@@ -97,6 +97,7 @@ body {
     overflow: hidden;
     z-index: 1;
     background-color: #000000;
+    transition: background 0.45s cubic-bezier(0.2, 0, 0, 1);
 }
 
 #map {
@@ -107,10 +108,66 @@ body {
     height: 100vh;
     z-index: 1;
     background-color: #171717;
+    transition: background 0.45s cubic-bezier(0.2, 0, 0, 1);
 }
 
 body.theme-light #map {
     background-color: #f1f3f4;
+}
+
+/* ==================== GOOGLE MAPS GLOBE 3D ATMOSPHERIC & SPACE BACKGROUND ==================== */
+/* 1. Lapisan Satelit (Esri / Google Satellite): Deep Space Luar Angkasa + Atmospheric Blue Halo */
+body.globe-active.globe-zoomed-out.layer-sat-active #map,
+body.globe-active.globe-zoomed-out.layer-sat-active .map-3d-stage {
+    background: radial-gradient(circle at 50% 50%, #030712 0%, #010206 100%) !important;
+}
+
+/* Pendaran Cahaya Atmosfer Biru (Halo Glow) di Belakang Bola Bumi Satelit */
+body.globe-active.globe-zoomed-out.layer-sat-active .map-3d-stage::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(85vmin, 640px);
+    height: min(85vmin, 640px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100, 160, 255, 0.32) 0%, rgba(65, 130, 245, 0.14) 48%, rgba(30, 80, 200, 0.04) 68%, transparent 75%);
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(10px);
+    opacity: 1;
+    transition: opacity 0.45s ease;
+}
+
+/* 2. Lapisan Default (Light) & Lapisan Medan (Terrain): Gradasi Biru Atmosfer Google Maps Asli */
+body.globe-active.globe-zoomed-out:not(.layer-sat-active):not(.layer-dark-active) #map,
+body.globe-active.globe-zoomed-out:not(.layer-sat-active):not(.layer-dark-active) .map-3d-stage {
+    background: radial-gradient(circle at 50% 50%, #8db5e2 0%, #527cb2 35%, #25446e 72%, #162c48 100%) !important;
+}
+
+/* Pendaran Cahaya Atmosfer Lembut untuk Mode Default / Medan */
+body.globe-active.globe-zoomed-out:not(.layer-sat-active):not(.layer-dark-active) .map-3d-stage::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(88vmin, 660px);
+    height: min(88vmin, 660px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(220, 240, 255, 0.18) 50%, transparent 72%);
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(14px);
+    opacity: 1;
+    transition: opacity 0.45s ease;
+}
+
+/* 3. Lapisan Mode Gelap (Dark Matter): Deep Space Nebula */
+body.globe-active.globe-zoomed-out.layer-dark-active #map,
+body.globe-active.globe-zoomed-out.layer-dark-active .map-3d-stage {
+    background: radial-gradient(circle at 50% 50%, #0a0e1c 0%, #020409 100%) !important;
 }
 
 /* ==================== GOOGLE MAPS STYLE MAP PRELOADER OVERLAY ==================== */
@@ -2130,13 +2187,15 @@ body.theme-dark .layer-option-item.active .layer-opt-label {
     visibility: hidden !important;
 }
 
-/* ==================== SATELIT CHECKBOX LABEL (GOOGLE MAPS STYLE) ==================== */
+/* ==================== SUB-OPSI LAYER: GLOBE 3D & LABEL SATELIT ==================== */
 .layer-popup-suboptions {
     border-left: 1px solid var(--border-color);
     padding-left: 14px;
     margin-left: 4px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
 }
 
 .layer-checkbox-item {
@@ -2195,11 +2254,14 @@ body.theme-dark .layer-option-item.active .layer-opt-label {
 .mobile-sheet-checkboxes {
     padding: 10px 14px;
     background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     margin-top: 12px;
     margin-bottom: 4px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
 }
 
 /* AREA INI STATUS CARD (GOOGLE MAPS STYLE) */
