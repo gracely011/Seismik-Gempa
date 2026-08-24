@@ -100,7 +100,8 @@ body {
     background-color: #000000;
 }
 
-#map {
+#map,
+#map.leaflet-container {
     position: absolute;
     top: calc(50vh - 75vmax);
     left: calc(50vw - 75vmax);
@@ -110,6 +111,17 @@ body {
     background-color: #171717;
     transform-origin: center center;
     transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
+    transform-style: preserve-3d !important;
+    overflow: visible !important;
+}
+
+/* ==================== 3D CONTEXT FOR LEAFLET PANES & POPUPS ==================== */
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-popup-pane,
+.leaflet-popup {
+    transform-style: preserve-3d !important;
+    overflow: visible !important;
 }
 
 body.theme-light #map {
@@ -5214,6 +5226,13 @@ body.theme-dark .app-info-logo-wrap {
     font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif !important;
     overflow: hidden;
     max-width: calc(100vw - 32px) !important;
+    position: relative !important;
+    transform-origin: 50% 100%;
+    transform: rotateZ(var(--map-counter-bearing, 0deg)) rotateX(var(--map-counter-tilt, 0deg)) scale(var(--map-counter-scale, 1));
+    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 .leaflet-popup-content {
@@ -5226,6 +5245,9 @@ body.theme-dark .app-info-logo-wrap {
 
 .leaflet-popup-tip-container {
     overflow: visible;
+    transform-origin: 50% 0;
+    transform: rotateZ(var(--map-counter-bearing, 0deg)) rotateX(var(--map-counter-tilt, 0deg)) scale(var(--map-counter-scale, 1));
+    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .leaflet-popup-tip {
@@ -5250,6 +5272,7 @@ body.theme-dark .app-info-logo-wrap {
     background: transparent !important;
     padding: 0 !important;
     line-height: 1 !important;
+    z-index: 10 !important;
 }
 
 .leaflet-popup-close-button:hover {

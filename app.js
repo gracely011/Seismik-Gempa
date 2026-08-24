@@ -301,6 +301,31 @@ const map = L.map("map", {
     inertiaMaxSpeed: 2000
 }).setView(initialCenter, initialZoom);
 
+// Sinkronisasi tombol close dan transform billboard 3D ke dalam popup wrapper
+map.on('popupopen', function (e) {
+    if (e && e.popup) {
+        const popupNode = e.popup.getElement();
+        if (popupNode) {
+            const closeBtn = popupNode.querySelector('.leaflet-popup-close-button');
+            const wrapper = popupNode.querySelector('.leaflet-popup-content-wrapper');
+            const tipContainer = popupNode.querySelector('.leaflet-popup-tip-container');
+            if (closeBtn && wrapper && closeBtn.parentElement !== wrapper) {
+                wrapper.appendChild(closeBtn);
+            }
+            if (isMap3DActive || currentMapBearing !== 0) {
+                const tiltX = isMap3DActive ? 42 : 0;
+                const scaleComp = isMap3DActive ? 0.87 : 1;
+                if (wrapper) {
+                    wrapper.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
+                }
+                if (tipContainer) {
+                    tipContainer.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
+                }
+            }
+        }
+    }
+});
+
 // ==================== APP SHELL & MAP PRELOADER OVERLAY ====================
 let isMapLoaderHidden = false;
 
@@ -1393,14 +1418,33 @@ function updateMapTransform() {
     
     const isTransformed = isMap3DActive || currentMapBearing !== 0;
     stage.classList.toggle("map-3d-active", isTransformed);
+    mapEl.classList.toggle("map-3d-active", isTransformed);
     
     if (isTransformed) {
         const tiltX = isMap3DActive ? 42 : 0;
         const translateY = isMap3DActive ? -35 : 0;
         const scale = isMap3DActive ? 1.15 : 1;
+        const scaleComp = isMap3DActive ? 0.87 : 1;
         mapEl.style.transform = `translateY(${translateY}px) scale(${scale}) rotateX(${tiltX}deg) rotateZ(${currentMapBearing}deg)`;
+        mapEl.style.setProperty('--map-counter-tilt', `${-tiltX}deg`);
+        mapEl.style.setProperty('--map-counter-bearing', `${-currentMapBearing}deg`);
+        mapEl.style.setProperty('--map-counter-scale', isMap3DActive ? '0.87' : '1');
+        
+        document.querySelectorAll('.leaflet-popup-content-wrapper').forEach(el => {
+            el.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
+        });
+        document.querySelectorAll('.leaflet-popup-tip-container').forEach(el => {
+            el.style.transform = `rotateZ(${-currentMapBearing}deg) rotateX(${-tiltX}deg) scale(${scaleComp})`;
+        });
     } else {
         mapEl.style.transform = '';
+        mapEl.style.removeProperty('--map-counter-tilt');
+        mapEl.style.removeProperty('--map-counter-bearing');
+        mapEl.style.removeProperty('--map-counter-scale');
+        
+        document.querySelectorAll('.leaflet-popup-content-wrapper, .leaflet-popup-tip-container').forEach(el => {
+            el.style.transform = '';
+        });
     }
     
     setTimeout(() => {
