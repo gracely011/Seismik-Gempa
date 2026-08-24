@@ -2,7 +2,7 @@
 // SEISMOGRAPH - SERVICE WORKER CACHING LAYER (PWA)
 // ==========================================================================
 
-const CACHE_NAME = 'seismo-cache-v24.0';
+const CACHE_NAME = 'seismo-cache-v25.0';
 
 const PRECACHE_ASSETS = [
     './',
@@ -10,10 +10,10 @@ const PRECACHE_ASSETS = [
     'manifest.json',
     'icon.svg',
     'icon-sprite-1x.png',
-    'faults.js?v=23.0',
-    'style.css?v=23.0',
-    'app.js?v=23.0',
-    'modals.js?v=23.0',
+    'faults.js?v=24.0',
+    'style.css?v=24.0',
+    'app.js?v=24.0',
+    'modals.js?v=24.0',
     'https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.css',
     'https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.js',
     'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap',
@@ -49,7 +49,7 @@ self.addEventListener('fetch', event => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
 
-    // Biarkan browser memuat tile peta, API live, dan tracker analitik langsung via HTTP cache native (menghindari isu CORS/tracking)
+    // Biarkan browser memuat tile peta, API live, dan tracker analitik langsung via HTTP cache native (tanpa overhead SW)
     if (
         url.hostname.includes('bmkg.go.id') ||
         url.hostname.includes('usgs.gov') ||
@@ -57,10 +57,18 @@ self.addEventListener('fetch', event => {
         url.hostname.includes('bigdatacloud.net') ||
         url.hostname.includes('cartocdn.com') ||
         url.hostname.includes('arcgisonline.com') ||
+        url.hostname.includes('opentopomap.org') ||
         url.hostname.includes('openstreetmap.org') ||
+        url.hostname.includes('google.com') ||
+        url.hostname.includes('googleapis.com') ||
+        url.hostname.includes('nasa.gov') ||
+        url.hostname.includes('aqicn.org') ||
         url.hostname.includes('googletagmanager.com') ||
         url.hostname.includes('google-analytics.com') ||
-        url.hostname.includes('histats.com')
+        url.hostname.includes('histats.com') ||
+        url.pathname.includes('/tile/') ||
+        url.pathname.includes('/vt/') ||
+        url.pathname.includes('/rastertiles/')
     ) {
         return; // Native browser handling
     }

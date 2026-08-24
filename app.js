@@ -336,13 +336,19 @@ function buildMapLibreStyle() {
     const sources = {
         'sat-src': {
             type: 'raster',
-            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
             tileSize: 256,
             maxzoom: 19
         },
         'sat-labels-src': {
             type: 'raster',
-            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+                'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+            ],
             tileSize: 256,
             maxzoom: 19
         },
@@ -351,7 +357,8 @@ function buildMapLibreStyle() {
             tiles: [
                 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
                 'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
+                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
             ],
             tileSize: 256,
             maxzoom: 19
@@ -361,7 +368,8 @@ function buildMapLibreStyle() {
             tiles: [
                 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
                 'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
             ],
             tileSize: 256,
             maxzoom: 19
@@ -486,6 +494,11 @@ function buildMapLibreStyle() {
     };
 }
 
+// Konfigurasi paralel koneksi tinggi untuk tile rendering instan
+if (typeof maplibregl !== 'undefined') {
+    maplibregl.maxParallelImageRequests = 36;
+}
+
 const map = new maplibregl.Map({
     container: 'map',
     style: buildMapLibreStyle(),
@@ -494,6 +507,9 @@ const map = new maplibregl.Map({
     pitch: isMap3DActive ? 52 : 0,
     bearing: currentMapBearing,
     attributionControl: false,
+    maxTileCacheSize: 300,
+    refreshExpiredTiles: false,
+    fadeDuration: 80,
     antialias: true
 });
 
@@ -941,9 +957,25 @@ function updateGmapsVersionUI() {
     }
 }
 
+function injectGoogleMapsPreconnect() {
+    if (document.getElementById('gmapsPreconnectTags')) return;
+    const container = document.createElement('div');
+    container.id = 'gmapsPreconnectTags';
+    container.style.display = 'none';
+    ['mt0', 'mt1', 'mt2', 'mt3'].forEach(sub => {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = `https://${sub}.google.com`;
+        link.crossOrigin = 'anonymous';
+        container.appendChild(link);
+    });
+    document.head.appendChild(container);
+}
+
 function unlockGoogleMapsVersionFeature(silent = false) {
     isGmapsFeatureUnlocked = true;
     try { localStorage.setItem('_sg_vstate', '1'); } catch(e){}
+    injectGoogleMapsPreconnect();
     updateGmapsVersionUI();
     if (!silent && typeof showToastNotification === 'function') {
         showToastNotification("🔓 Menu 'Google Maps Version' Terbuka di Setelan!");
@@ -976,6 +1008,7 @@ function lockGoogleMapsVersionFeature(silent = false) {
 function toggleGoogleMapsEngineMode() {
     isGoogleMapsEngineActive = !isGoogleMapsEngineActive;
     try { localStorage.setItem('_sg_engine', isGoogleMapsEngineActive ? '1' : '0'); } catch(e){}
+    if (isGoogleMapsEngineActive) injectGoogleMapsPreconnect();
     updateGmapsVersionUI();
 
     // Terapkan ulang layer aktif dengan engine baru
@@ -5772,6 +5805,7 @@ function initGmapContextMenu() {
 
 // Inisialisasi Google Maps Context Menu & Secret Engine UI saat aplikasi siap
 initGmapContextMenu();
+if (isGoogleMapsEngineActive || isGmapsFeatureUnlocked) injectGoogleMapsPreconnect();
 if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
 if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
 
