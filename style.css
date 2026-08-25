@@ -6449,6 +6449,22 @@ body.theme-dark .popup-btn-bookmark.active {
         box-shadow: 0 2px 6px rgba(26, 115, 232, 0.4) !important;
     }
 
+    body.print-preview-mode .map-3d-stage {
+        display: block !important;
+        position: relative !important;
+        width: 100vw !important;
+        height: calc(100vh - 56px) !important;
+        max-height: calc(100vh - 56px) !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        overflow: hidden !important;
+        z-index: 10 !important;
+    }
+
+    body.print-preview-mode .map-3d-stage::before {
+        display: none !important;
+    }
+
     body.print-preview-mode #map {
         display: block !important;
         position: relative !important;
@@ -6742,6 +6758,24 @@ body.theme-dark .popup-btn-bookmark.active {
         font-weight: 600 !important;
     }
 
+    .map-3d-stage {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        overflow: visible !important;
+        z-index: 10 !important;
+    }
+
+    .map-3d-stage::before {
+        display: none !important;
+    }
+
     #map {
         display: block !important;
         position: relative !important;
@@ -6801,10 +6835,16 @@ body.theme-dark .popup-btn-bookmark.active {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding-top: 4px !important;
+        width: 100% !important;
+        padding-top: 6px !important;
+        margin-top: 2px !important;
         font-size: 9.5px !important;
         color: #5f6368 !important;
-        font-family: Roboto, Arial, sans-serif !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        font-family: "Google Sans Text", Roboto, Arial, sans-serif !important;
+        position: relative !important;
+        z-index: 20 !important;
     }
 
     .print-footer-left {

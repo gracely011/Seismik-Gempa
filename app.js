@@ -2283,6 +2283,37 @@ document.addEventListener('keydown', (e) => {
 
 // Lifecycle Listener browser print
 window.addEventListener('beforeprint', () => {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    const hours = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const printTimeStr = `${day}/${month}/${year}, ${hours}.${mins}`;
+
+    const timeEl = document.getElementById("printBrowserTime");
+    if (timeEl) timeEl.textContent = printTimeStr;
+
+    const totalQuakes = Array.isArray(quakesArray) ? quakesArray.length : 0;
+    const latestQuake = Array.isArray(quakesArray) && quakesArray.length > 0 ? quakesArray[0] : null;
+
+    const syncEl = document.getElementById("printSyncSummary");
+    if (syncEl) {
+        syncEl.textContent = `${totalQuakes} Gempa Tersinkronisasi (BMKG & USGS)`;
+    }
+
+    const footerLeftEl = document.getElementById("printFooterLeft");
+    if (footerLeftEl) {
+        if (latestQuake) {
+            const magVal = (latestQuake.mag || 0).toFixed(1);
+            const locVal = latestQuake.place || 'Wilayah Indonesia';
+            footerLeftEl.textContent = `⚡ Mutakhir: M ${magVal} · ${locVal} (${latestQuake.time || '-'})`;
+        } else if (map && typeof map.getCenter === 'function') {
+            const center = map.getCenter();
+            footerLeftEl.textContent = `📍 Area: Indonesia (${center.lat.toFixed(3)}, ${center.lng.toFixed(3)})`;
+        }
+    }
+
     const notesInput = document.getElementById("printUserNotesInput");
     const notesPrintedText = document.getElementById("printNotesPrintedText");
     if (notesInput && notesPrintedText && !notesPrintedText.textContent) {
