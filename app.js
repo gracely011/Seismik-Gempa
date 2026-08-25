@@ -62,6 +62,11 @@ let currentTheme = localStorage.getItem('seismo_theme') || 'light';
 let currentMapLayer = localStorage.getItem('seismo_layer') || 'light';
 let isFaultsLayerVisible = localStorage.getItem('seismo_faults_visible') === 'true';
 let isSatelliteLabelsEnabled = localStorage.getItem('seismo_sat_labels') !== '0'; // Default: Aktif (true)
+let isAutoBroadcastOn = localStorage.getItem('seismo_auto_broadcast') === 'true';
+let lastKnownQuakeSignature = localStorage.getItem('seismo_last_sig') || '';
+let isBroadcastingAlert = false;
+let isSimulating = false;
+let simShakeTimer = null;
 
 // Google Symbols Inline SVG untuk Mode Terang / Gelap (Standar Google Maps)
 const SVG_THEME_MOON = `<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M380-160q133 0 226.5-93.5T700-480q0-133-93.5-226.5T380-800h-21q-10 0-19 2 57 66 88.5 147.5T460-480q0 89-31.5 170.5T340-162q9 2 19 2h21Zm0 80q-53 0-103.5-13.5T180-134q93-54 146.5-146T380-480q0-108-53.5-200T180-826q46-27 96.5-40.5T380-880q83 0 156 31.5T663-763q54 54 85.5 127T780-480q0 83-31.5 156T663-197q-54 54-127 85.5T380-80Zm80-400Z"/></svg>`;
@@ -142,9 +147,30 @@ const VALID_MAP_LAYERS = ['light', 'sat', 'terrain', 'dark'];
 function parseMapUrlHash() {
     try {
         const hash = window.location.hash || '';
-        // Mendukung format: #/@lat,lng,zoomz, #/@lat,lng,zoomz/sat, #/@lat,lng,zoomz/sat+faults, #/@lat,lng,zoomz?layer=sat, dsb.
-        const match = hash.match(/^#\/?@?(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(\d+(?:\.\d+)?)z?(?:[\/?](.+))?$/);
-        if (!match) return null;
+        if (!hash) return null;
+
+        // Mendukung:
+        // 1. #/place/Padang/@-0.9471,100.4172,10z/sat+faults
+        // 2. #/@-0.9471,100.4172,10z/sat+faults
+        // 3. #/?q=Padang
+        let placeName = null;
+        let coordsPart = hash;
+
+        const placeMatch = hash.match(/^#\/?place\/([^\/@]+)\/?(.*)$/i);
+        if (placeMatch) {
+            try {
+                placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim();
+            } catch (e) {
+                placeName = placeMatch[1].replace(/\+/g, ' ').trim();
+            }
+            coordsPart = placeMatch[2] || '';
+        }
+
+        const match = coordsPart.match(/@?(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(\d+(?:\.\d+)?)z?(?:[\/?](.+))?$/);
+        if (!match) {
+            if (placeName) return { place: placeName, lat: null, lng: null, zoom: null, layer: null, faults: null };
+            return null;
+        }
 
         const lat = parseFloat(match[1]);
         const lng = parseFloat(match[2]);
@@ -170,7 +196,7 @@ function parseMapUrlHash() {
             }
         }
 
-        return { lat, lng, zoom, layer, faults };
+        return { place: placeName, lat, lng, zoom, layer, faults };
     } catch (e) {
         return null;
     }
@@ -202,17 +228,28 @@ function updateUrlHashFromMap() {
                 }
             }
 
-            const newHash = `#/@${latStr},${lngStr},${zoom}z${suffix}`;
+            let placePrefix = '';
+            let savedSearch = null;
+            try {
+                const raw = localStorage.getItem('seismo_last_searched_city');
+                if (raw) savedSearch = JSON.parse(raw);
+            } catch (e) { }
+
+            if (savedSearch && savedSearch.name && viewedPlaceObj && viewedPlaceObj.main === savedSearch.name) {
+                placePrefix = `/place/${encodeURIComponent(savedSearch.name)}`;
+            }
+
+            const newHash = `#${placePrefix}/@${latStr},${lngStr},${zoom}z${suffix}`;
 
             if (window.location.hash !== newHash) {
-                if (window.history && window.history.replaceState) {
+                if (window.history && window.history.replaceState && window.location.protocol !== 'file:') {
                     try {
                         window.history.replaceState(null, '', newHash);
                     } catch (err) {
-                        window.location.replace(newHash);
+                        window.location.hash = newHash;
                     }
                 } else {
-                    window.location.replace(newHash);
+                    window.location.hash = newHash;
                 }
             }
         } catch (e) {
@@ -245,17 +282,19 @@ function initMapUrlSync() {
         const parsed = parseMapUrlHash();
         if (!parsed) return;
 
-        const currentCenter = map.getCenter();
-        const currentZoom = Math.round(map.getZoom());
+        if (parsed.lat !== null && parsed.lng !== null && parsed.zoom !== null) {
+            const currentCenter = map.getCenter();
+            const currentZoom = Math.round(map.getZoom());
 
-        const isSameLat = Math.abs(currentCenter.lat - parsed.lat) < 0.00001;
-        const isSameLng = Math.abs(currentCenter.lng - parsed.lng) < 0.00001;
-        const isSameZoom = currentZoom === parsed.zoom;
+            const isSameLat = Math.abs(currentCenter.lat - parsed.lat) < 0.00001;
+            const isSameLng = Math.abs(currentCenter.lng - parsed.lng) < 0.00001;
+            const isSameZoom = currentZoom === parsed.zoom;
 
-        isSyncingFromHash = true;
+            isSyncingFromHash = true;
 
-        if (!isSameLat || !isSameLng || !isSameZoom) {
-            map.jumpTo({ center: [parsed.lng, parsed.lat], zoom: parsed.zoom });
+            if (!isSameLat || !isSameLng || !isSameZoom) {
+                map.jumpTo({ center: [parsed.lng, parsed.lat], zoom: parsed.zoom });
+            }
         }
 
         if (parsed.layer && parsed.layer !== currentMapLayer && typeof applyMapLayer === 'function') {
@@ -296,8 +335,22 @@ if (initialHashView) {
         isFaultsLayerVisible = initialHashView.faults;
     }
 }
-const initialCenter = initialHashView ? [initialHashView.lng, initialHashView.lat] : [userCoords[1], userCoords[0]];
-const initialZoom = initialHashView ? initialHashView.zoom : (hasUserGPS ? 14 : 13);
+
+let savedSearchOnBoot = null;
+try {
+    const rawBoot = localStorage.getItem('seismo_last_searched_city');
+    if (rawBoot) savedSearchOnBoot = JSON.parse(rawBoot);
+} catch (e) { }
+
+const initialCenter = (initialHashView && initialHashView.lng !== null && initialHashView.lat !== null)
+    ? [initialHashView.lng, initialHashView.lat]
+    : (savedSearchOnBoot && savedSearchOnBoot.lon && savedSearchOnBoot.lat)
+        ? [savedSearchOnBoot.lon, savedSearchOnBoot.lat]
+        : [userCoords[1], userCoords[0]];
+
+const initialZoom = (initialHashView && initialHashView.zoom)
+    ? initialHashView.zoom
+    : (savedSearchOnBoot ? 10 : (hasUserGPS ? 14 : 13));
 
 // ==================== APP SHELL & MAP PRELOADER OVERLAY ====================
 let isMapLoaderHidden = false;
@@ -1138,14 +1191,12 @@ function purgeGoogleMapsVersionUI() {
     if (mobDetailsGrid) mobDetailsGrid.classList.remove('gmaps-active');
 
     // 3. Remove active Google Overlay Layers from Map
-    if (map) {
-        if (trafficTileLayer && map.hasLayer(trafficTileLayer)) map.removeLayer(trafficTileLayer);
-        if (transitTileLayer && map.hasLayer(transitTileLayer)) map.removeLayer(transitTileLayer);
-        if (bikeTileLayer && map.hasLayer(bikeTileLayer)) map.removeLayer(bikeTileLayer);
-        if (buildingsTileLayer && map.hasLayer(buildingsTileLayer)) map.removeLayer(buildingsTileLayer);
-        if (streetViewCoverageLayer && map.hasLayer(streetViewCoverageLayer)) map.removeLayer(streetViewCoverageLayer);
-        if (wildfireTileLayer && map.hasLayer(wildfireTileLayer)) map.removeLayer(wildfireTileLayer);
-        if (airQualityTileLayer && map.hasLayer(airQualityTileLayer)) map.removeLayer(airQualityTileLayer);
+    if (map && map.getLayer) {
+        ['layer-traffic', 'layer-transit', 'layer-bike', 'layer-buildings-3d', 'layer-streetview', 'layer-wildfire', 'layer-airquality'].forEach(lyrId => {
+            try {
+                if (map.getLayer(lyrId)) map.removeLayer(lyrId);
+            } catch (e) { }
+        });
     }
     isTrafficLayerActive = false;
     isTransitLayerActive = false;
@@ -1673,6 +1724,7 @@ function applyMapLayer(layerName) {
         'terrain': 'Medan',
         'dark': 'Gelap'
     };
+    const activeLabel = document.getElementById("layerActiveLabel");
     if (activeLabel) {
         activeLabel.innerText = layerDisplayNames[layerName] || 'Standar';
     }
@@ -1945,6 +1997,11 @@ function toggleFaultsLayer() {
 let gpsMarker = null;
 let searchPlaceMarker = null;
 
+function escapeQuotes(str) {
+    if (!str) return '';
+    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
 function createGpsElement() {
     const el = document.createElement('div');
     el.className = 'custom-gps-icon';
@@ -2137,14 +2194,30 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
 }
 
 function centerToUserLocation() {
+    try {
+        localStorage.removeItem('seismo_last_searched_city');
+    } catch (e) { }
+
+    const input = document.getElementById("searchInput");
+    if (input) input.value = "";
+    const clearBtn = document.getElementById("searchClearBtn");
+    if (clearBtn) clearBtn.style.display = "none";
+
+    if (searchPlaceMarker) {
+        searchPlaceMarker.remove();
+        searchPlaceMarker = null;
+    }
+
     if (hasUserGPS) {
         map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 10, duration: 1200, essential: true });
         if (gpsMarker) gpsMarker.togglePopup();
         viewedCoords = [...userCoords];
         if (userPlaceObj) {
+            viewedPlaceObj = userPlaceObj;
             renderLocationUI(userPlaceObj, userCoords[0], userCoords[1]);
             fetchWeather(userCoords[0], userCoords[1]);
         }
+        if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
     } else {
         requestFreshGPS(true);
     }
@@ -2652,12 +2725,12 @@ const INDONESIA_REGION_MAP = {
 // Thumbnail Foto Tempat & Bundel Google Maps
 const REGION_PHOTOS = {
     'Sumatra': [
-        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
-        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no'
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Padang_Kota_yang_Dikelilingi_Bukit_dan_Lautan.jpg/330px-Padang_Kota_yang_Dikelilingi_Bukit_dan_Lautan.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Great_mosque_in_Medan_cropped.jpg/330px-Great_mosque_in_Medan_cropped.jpg'
     ],
     'Jawa': [
-        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
-        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no'
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Gajayana_Stadium_4.jpg/330px-Gajayana_Stadium_4.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Tari_Reog_by_Anom_Harya.jpg/330px-Tari_Reog_by_Anom_Harya.jpg'
     ],
     'Kalimantan': [
         'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
@@ -2682,39 +2755,195 @@ const REGION_PHOTOS = {
 };
 
 const PLACE_SPECIFIC_PHOTOS = {
-    'batam': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
-    'sangatta': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkwRRI962b8cL5EyXzfkobgjwuusXbPm38kLRCEAUdxDn6l7bjGvn3rjLWimFNwjE7X7IgzqlLMA8ikjcm_DrhuMKv0fXieLD7K5SS1LJzUBCQZ4bNF7zQCl0g99o139VZL_Z3OMxnMWp0A=w32-h32-p-k-no',
-    'kos widya 2a': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100',
-    'depok': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100',
-    'denpasar': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
-    'yogyakarta': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
-    'jakarta': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no',
-    'jakarta selatan': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no',
-    'bekasi': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100',
-    'padang': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
-    'pekanbaru': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlrutLAkZE-7_nWkH7Imti2rDnDms5iuxCUTXTyKSQyo4KRerBPKxNMvc0U7hxyB7yPTlveVBZKE4aRmoG8LoUXj-TaKrFVJp2HLwG9hPfkMG9s-GJ1xK44NVsncPzcOoob-6dBaUPa695-=w32-h32-p-k-no',
-    'sibolga': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
-    'air hitam': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlrutLAkZE-7_nWkH7Imti2rDnDms5iuxCUTXTyKSQyo4KRerBPKxNMvc0U7hxyB7yPTlveVBZKE4aRmoG8LoUXj-TaKrFVJp2HLwG9hPfkMG9s-GJ1xK44NVsncPzcOoob-6dBaUPa695-=w32-h32-p-k-no',
-    'jayapura': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
-    'sorong': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkwRRI962b8cL5EyXzfkobgjwuusXbPm38kLRCEAUdxDn6l7bjGvn3rjLWimFNwjE7X7IgzqlLMA8ikjcm_DrhuMKv0fXieLD7K5SS1LJzUBCQZ4bNF7zQCl0g99o139VZL_Z3OMxnMWp0A=w32-h32-p-k-no',
-    'merauke': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
-    'manokwari': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
-    'raja ampat': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
-    'papua': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no'
+    'batam': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Jembatan_Tengku_Fisabilillah_%28jembatan_I%29.jpg/330px-Jembatan_Tengku_Fisabilillah_%28jembatan_I%29.jpg',
+    'padang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Padang_Kota_yang_Dikelilingi_Bukit_dan_Lautan.jpg/330px-Padang_Kota_yang_Dikelilingi_Bukit_dan_Lautan.jpg',
+    'malang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Gajayana_Stadium_4.jpg/330px-Gajayana_Stadium_4.jpg',
+    'ponorogo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Tari_Reog_by_Anom_Harya.jpg/330px-Tari_Reog_by_Anom_Harya.jpg',
+    'dumai': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Dumai_Mosque.jpg/330px-Dumai_Mosque.jpg',
+    'medan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Great_mosque_in_Medan_cropped.jpg/330px-Great_mosque_in_Medan_cropped.jpg',
+    'jakarta': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/National_Monument_%28Monas%29_Jakarta.jpg/330px-National_Monument_%28Monas%29_Jakarta.jpg',
+    'jakarta selatan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/National_Monument_%28Monas%29_Jakarta.jpg/330px-National_Monument_%28Monas%29_Jakarta.jpg',
+    'surabaya': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Surabaya_JMP.jpg/330px-Surabaya_JMP.jpg',
+    'bandung': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Gedung_Sate_Bandung_Jawa_Barat.jpg/330px-Gedung_Sate_Bandung_Jawa_Barat.jpg',
+    'semarang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Lawang_Sewu_2015.jpg/330px-Lawang_Sewu_2015.jpg',
+    'yogyakarta': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Tugu_Yogyakarta_2018.jpg/330px-Tugu_Yogyakarta_2018.jpg',
+    'denpasar': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Bajra_Sandhi_Monument_Denpasar_Bali.jpg/330px-Bajra_Sandhi_Monument_Denpasar_Bali.jpg',
+    'makassar': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Pantai_Losari_Makassar.jpg/330px-Pantai_Losari_Makassar.jpg',
+    'palembang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Ampera_Bridge_at_Night.jpg/330px-Ampera_Bridge_at_Night.jpg',
+    'pekanbaru': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Masjid_Agung_An_Nur_Pekanbaru.jpg/330px-Masjid_Agung_An_Nur_Pekanbaru.jpg',
+    'jayapura': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Jembatan_Youtefa_Jayapura.jpg/330px-Jembatan_Youtefa_Jayapura.jpg',
+    'balikpapan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Balikpapan_Islamic_Center.jpg/330px-Balikpapan_Islamic_Center.jpg',
+    'samarinda': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Masjid_Islamic_Center_Samarinda.jpg/330px-Masjid_Islamic_Center_Samarinda.jpg',
+    'banjarmasin': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Pasar_Terapung_Lok_Baintan_Banjarmasin.jpg/330px-Pasar_Terapung_Lok_Baintan_Banjarmasin.jpg',
+    'manado': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Jembatan_Soekarno_Manado.jpg/330px-Jembatan_Soekarno_Manado.jpg',
+    'ambon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Jembatan_Merah_Putih_Ambon.jpg/330px-Jembatan_Merah_Putih_Ambon.jpg',
+    'mataram': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Islamic_Center_Mataram_Lombok.jpg/330px-Islamic_Center_Mataram_Lombok.jpg',
+    'kupang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Pantai_Lasiana_Kupang.jpg/330px-Pantai_Lasiana_Kupang.jpg',
+    'bengkulu': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Benteng_Marlborough_Bengkulu.jpg/330px-Benteng_Marlborough_Bengkulu.jpg',
+    'bandar lampung': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Menara_Siger_Lampung.jpg/330px-Menara_Siger_Lampung.jpg',
+    'jambi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Jembatan_Gentala_Arasy_Jambi.jpg/330px-Jembatan_Gentala_Arasy_Jambi.jpg',
+    'pontianak': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Tugu_Khatulistiwa_Pontianak.jpg/330px-Tugu_Khatulistiwa_Pontianak.jpg',
+    'palu': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Jembatan_Palu_IV.jpg/330px-Jembatan_Palu_IV.jpg',
+    'kendari': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Jembatan_Teluk_Kendari.jpg/330px-Jembatan_Teluk_Kendari.jpg',
+    'gorontalo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Benteng_Otanaha_Gorontalo.jpg/330px-Benteng_Otanaha_Gorontalo.jpg',
+    'pangkalpinang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Jembatan_Emas_Bangka.jpg/330px-Jembatan_Emas_Bangka.jpg',
+    'tanjungpinang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Gedung_Gonggong_Tanjungpinang.jpg/330px-Gedung_Gonggong_Tanjungpinang.jpg',
+    'serang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Masjid_Agung_Banten_Serang.jpg/330px-Masjid_Agung_Banten_Serang.jpg',
+    'cirebon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Keraton_Kasepuhan_Cirebon.jpg/330px-Keraton_Kasepuhan_Cirebon.jpg',
+    'sukabumi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Jembatan_Gantung_Situ_Gunung_Sukabumi.jpg/330px-Jembatan_Gantung_Situ_Gunung_Sukabumi.jpg',
+    'tasikmalaya': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Masjid_Agung_Tasikmalaya.jpg/330px-Masjid_Agung_Tasikmalaya.jpg',
+    'tegal': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Alun-alun_Kota_Tegal.jpg/330px-Alun-alun_Kota_Tegal.jpg',
+    'pekalongan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Museum_Batik_Pekalongan.jpg/330px-Museum_Batik_Pekalongan.jpg',
+    'magelang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Borobudur-Nothwest-view.jpg/330px-Borobudur-Nothwest-view.jpg',
+    'surakarta': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Keraton_Surakarta_Hadiningrat.jpg/330px-Keraton_Surakarta_Hadiningrat.jpg',
+    'solo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Keraton_Surakarta_Hadiningrat.jpg/330px-Keraton_Surakarta_Hadiningrat.jpg',
+    'madiun': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Pahlawan_Street_Center_Madiun.jpg/330px-Pahlawan_Street_Center_Madiun.jpg',
+    'kediri': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Monumen_Simpang_Lima_Gumul_Kediri.jpg/330px-Monumen_Simpang_Lima_Gumul_Kediri.jpg',
+    'blitar': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Makam_Bung_Karno_Blitar.jpg/330px-Makam_Bung_Karno_Blitar.jpg',
+    'probolinggo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Mount_Bromo_at_sunrise.jpg/330px-Mount_Bromo_at_sunrise.jpg',
+    'pasuruan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Alun-alun_Kota_Pasuruan.jpg/330px-Alun-alun_Kota_Pasuruan.jpg',
+    'banyuwangi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Kawah_Ijen_Blue_Fire.jpg/330px-Kawah_Ijen_Blue_Fire.jpg',
+    'singaraja': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Pura_Ulun_Danu_Bratan_Bali.jpg/330px-Pura_Ulun_Danu_Bratan_Bali.jpg',
+    'labuan bajo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Padar_Island_Komodo_National_Park.jpg/330px-Padar_Island_Komodo_National_Park.jpg',
+    'tarakan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Masjid_Islamic_Center_Tarakan.jpg/330px-Masjid_Islamic_Center_Tarakan.jpg',
+    'palangkaraya': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Bundaran_Besar_Palangka_Raya.jpg/330px-Bundaran_Besar_Palangka_Raya.jpg',
+    'singkawang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Vihara_Tri_Dharma_Bumi_Raya_Singkawang.jpg/330px-Vihara_Tri_Dharma_Bumi_Raya_Singkawang.jpg',
+    'lubuklinggau': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Air_Terjun_Temam_Lubuklinggau.jpg/330px-Air_Terjun_Temam_Lubuklinggau.jpg',
+    'prabumulih': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Tugu_Nanas_Prabumulih.jpg/330px-Tugu_Nanas_Prabumulih.jpg',
+    'pagar alam': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Gunung_Dempo_Pagar_Alam.jpg/330px-Gunung_Dempo_Pagar_Alam.jpg',
+    'bukittinggi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Jam_Gadang_Bukittinggi_2019.jpg/330px-Jam_Gadang_Bukittinggi_2019.jpg',
+    'payakumbuh': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Jembatan_Kelok_9_Sumatera_Barat.jpg/330px-Jembatan_Kelok_9_Sumatera_Barat.jpg',
+    'pariaman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Pantai_Gandoriah_Pariaman.jpg/330px-Pantai_Gandoriah_Pariaman.jpg',
+    'solok': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Masjid_Agung_Al-Muhsinin_Solok.jpg/330px-Masjid_Agung_Al-Muhsinin_Solok.jpg',
+    'sawahlunto': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Museum_Kereta_Api_Sawahlunto.jpg/330px-Museum_Kereta_Api_Sawahlunto.jpg',
+    'sibolga': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Tangga_Seratus_Sibolga.jpg/330px-Tangga_Seratus_Sibolga.jpg',
+    'padangsidimpuan': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Tugu_Salak_Padangsidimpuan.jpg/330px-Tugu_Salak_Padangsidimpuan.jpg',
+    'gunungsitoli': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Rumah_Adat_Nias_Gunungsitoli.jpg/330px-Rumah_Adat_Nias_Gunungsitoli.jpg',
+    'tanjungbalai': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Jembatan_Tabayang_Tanjungbalai.jpg/330px-Jembatan_Tabayang_Tanjungbalai.jpg',
+    'tebing tinggi': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Tugu_Perjuangan_Tebing_Tinggi.jpg/330px-Tugu_Perjuangan_Tebing_Tinggi.jpg',
+    'pematangsiantar': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Patung_Dewi_Kwan_Im_Pematangsiantar.jpg/330px-Patung_Dewi_Kwan_Im_Pematangsiantar.jpg',
+    'binjai': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Tugu_Pahlawan_Binjai.jpg/330px-Tugu_Pahlawan_Binjai.jpg',
+    'banda aceh': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Masjid_Raya_Baiturrahman_Banda_Aceh.jpg/330px-Masjid_Raya_Baiturrahman_Banda_Aceh.jpg',
+    'sabang': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Tugu_Kilometer_Nol_Sabang.jpg/330px-Tugu_Kilometer_Nol_Sabang.jpg',
+    'lhokseumawe': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Masjid_Islamic_Center_Lhokseumawe.jpg/330px-Masjid_Islamic_Center_Lhokseumawe.jpg',
+    'langsa': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Hutan_Mangrove_Langsa_Aceh.jpg/330px-Hutan_Mangrove_Langsa_Aceh.jpg',
+    'subulussalam': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Air_Terjun_Kedabuhan_Subulussalam.jpg/330px-Air_Terjun_Kedabuhan_Subulussalam.jpg',
+    'raja ampat': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Piaynemo_Raja_Ampat.jpg/330px-Piaynemo_Raja_Ampat.jpg'
 };
 
-function getPlaceThumbnail(name) {
+// In-Memory Thumbnail Cache
+const MEM_PLACE_THUMBS = {};
+
+function getSatelliteTileThumbnail(lat, lon, zoom = 13) {
+    if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
+        return 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Padang_Kota_yang_Dikelilingi_Bukit_dan_Lautan.jpg/330px-Padang_Kota_yang_Dikelilingi_Bukit_dan_Lautan.jpg';
+    }
+    const z = Math.max(10, Math.min(16, zoom));
+    const n = Math.pow(2, z);
+    const x = Math.floor((lon + 180) / 360 * n);
+    const latRad = lat * Math.PI / 180;
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+    return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+}
+
+function getPlaceThumbnail(name, lat = null, lon = null) {
     const key = String(name || '').toLowerCase().trim();
-    if (PLACE_SPECIFIC_PHOTOS[key]) return PLACE_SPECIFIC_PHOTOS[key];
-    
-    // Cari kecocokan substring
+    if (!key) return getSatelliteTileThumbnail(lat, lon);
+
+    // 1. Cek memory cache
+    if (MEM_PLACE_THUMBS[key]) return MEM_PLACE_THUMBS[key];
+
+    // 2. Cek localStorage cache
+    try {
+        const stored = localStorage.getItem('seismo_place_thumbs');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed[key]) {
+                MEM_PLACE_THUMBS[key] = parsed[key];
+                return parsed[key];
+            }
+        }
+    } catch (e) { }
+
+    // 3. Cek database foto spesifik
+    if (PLACE_SPECIFIC_PHOTOS[key]) {
+        MEM_PLACE_THUMBS[key] = PLACE_SPECIFIC_PHOTOS[key];
+        return PLACE_SPECIFIC_PHOTOS[key];
+    }
     for (const k in PLACE_SPECIFIC_PHOTOS) {
         if (key.includes(k) || k.includes(key)) {
+            MEM_PLACE_THUMBS[key] = PLACE_SPECIFIC_PHOTOS[k];
             return PLACE_SPECIFIC_PHOTOS[k];
         }
     }
-    // Fallback thumbnail streetview / landmark pin
-    return 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100';
+
+    // 4. Picu pengambilan gambar Wikipedia secara asinkron
+    fetchPlacePhotoFromWiki(name, lat, lon);
+
+    // 5. Kembalikan fallback potongan citra satelit koordinat asli
+    return getSatelliteTileThumbnail(lat, lon);
+}
+
+// Mengambil foto kota/daerah secara asinkron dari Wikipedia Commons REST API
+async function fetchPlacePhotoFromWiki(name, lat = null, lon = null) {
+    const cleanKey = String(name || '').toLowerCase().trim();
+    if (!cleanKey) return;
+
+    try {
+        const cleanQuery = name.replace(/^(kota|kabupaten|kecamatan|desa|kelurahan)\s+/i, '').trim();
+        
+        // Panggil Indonesian Wikipedia REST API (bebas CORS & resmi)
+        const wikiUrl = `https://id.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`;
+        const res = await fetch(wikiUrl);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.thumbnail && data.thumbnail.source) {
+                const imgUrl = data.thumbnail.source;
+                savePlaceThumbnailToCache(cleanKey, imgUrl);
+                updateLivePlaceThumbnails(cleanKey, imgUrl);
+                return imgUrl;
+            }
+        }
+
+        // Fallback coba English Wikipedia jika tidak ditemukan di id.wikipedia
+        const enUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`;
+        const enRes = await fetch(enUrl);
+        if (enRes.ok) {
+            const enData = await enRes.json();
+            if (enData.thumbnail && enData.thumbnail.source) {
+                const imgUrl = enData.thumbnail.source;
+                savePlaceThumbnailToCache(cleanKey, imgUrl);
+                updateLivePlaceThumbnails(cleanKey, imgUrl);
+                return imgUrl;
+            }
+        }
+    } catch (e) {
+        // Fallback jika offline/error
+    }
+
+    // Jika Wikipedia tidak ada, gunakan citra satelit koordinat tempat tersebut
+    const tileUrl = getSatelliteTileThumbnail(lat, lon);
+    savePlaceThumbnailToCache(cleanKey, tileUrl);
+    return tileUrl;
+}
+
+function savePlaceThumbnailToCache(key, url) {
+    if (!key || !url) return;
+    MEM_PLACE_THUMBS[key] = url;
+    try {
+        const raw = localStorage.getItem('seismo_place_thumbs') || '{}';
+        const parsed = JSON.parse(raw);
+        parsed[key] = url;
+        localStorage.setItem('seismo_place_thumbs', JSON.stringify(parsed));
+    } catch (e) { }
+}
+
+function updateLivePlaceThumbnails(key, imgUrl) {
+    if (!key || !imgUrl) return;
+    const imgs = document.querySelectorAll(`img[data-place-thumb-key="${key}"]`);
+    imgs.forEach(img => {
+        img.src = imgUrl;
+    });
 }
 
 function renderDesktopNavRailRecentPlaces() {
@@ -2768,11 +2997,11 @@ function renderDesktopNavRailRecentPlaces() {
         if (placesInRegion.length >= 2) {
             const count = placesInRegion.length;
             const photos = REGION_PHOTOS[region] || [
-                getPlaceThumbnail(placesInRegion[0].name),
-                getPlaceThumbnail(placesInRegion[1].name)
+                getPlaceThumbnail(placesInRegion[0].name, placesInRegion[0].lat, placesInRegion[0].lon),
+                getPlaceThumbnail(placesInRegion[1].name, placesInRegion[1].lat, placesInRegion[1].lon)
             ];
-            const img1 = photos[0] || getPlaceThumbnail(placesInRegion[0].name);
-            const img2 = photos[1] || getPlaceThumbnail(placesInRegion[1].name);
+            const img1 = photos[0] || getPlaceThumbnail(placesInRegion[0].name, placesInRegion[0].lat, placesInRegion[0].lon);
+            const img2 = photos[1] || getPlaceThumbnail(placesInRegion[1].name, placesInRegion[1].lat, placesInRegion[1].lon);
             const isActive = activeRailBundleId === region;
 
             html += `
@@ -2813,7 +3042,8 @@ function renderDesktopNavRailRecentPlaces() {
         if (renderedCount >= maxPlaces) return;
         renderedCount++;
         const safeName = escapeQuotes(p.name);
-        const img = getPlaceThumbnail(p.name);
+        const thumbKey = String(p.name || '').toLowerCase().trim();
+        const img = getPlaceThumbnail(p.name, p.lat, p.lon);
         const isActive = activeRailBundleId === p.name;
 
         html += `
@@ -2826,7 +3056,7 @@ function renderDesktopNavRailRecentPlaces() {
                     <div class="xSVTVc">
                         <div class="wiquBf"></div>
                         <div class="hZI5De"></div>
-                        <img class="kSOdnb Lyrzac" alt="${safeName}" src="${img}">
+                        <img class="kSOdnb Lyrzac" alt="${safeName}" src="${img}" data-place-thumb-key="${thumbKey}">
                     </div>
                 </div>
                 <div class="d0UoQ">
@@ -3103,7 +3333,7 @@ function openMobileDrawer() {
 function initMobileDrawerGestures() {
     const drawer = document.getElementById("cardsScrollWrap");
     const handleBar = document.querySelector(".bottom-sheet-handle-bar");
-    if (!drawer || !handleBar) return;
+    if (!drawer || !handleBar || typeof handleBar.addEventListener !== 'function' || typeof drawer.addEventListener !== 'function') return;
 
     let startY = 0;
     let startHeight = 0;
@@ -3963,8 +4193,11 @@ function renderSearchSuggestions(cities) {
         return;
     }
 
-    dropdown.innerHTML = cities.map(c => `
-        <div class="search-suggestion-item" onclick="selectSearchCity('${escapeQuotes(c.name)}', '${escapeQuotes(c.admin)}', '${escapeQuotes(c.province)}', ${c.lat}, ${c.lon})">
+    dropdown.innerHTML = '';
+    cities.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'search-suggestion-item';
+        item.innerHTML = `
             <div class="suggestion-icon">
                 <span class="google-symbols" style="font-size: 18px; color: var(--text-muted);">&#xe0c8;</span>
             </div>
@@ -3972,8 +4205,22 @@ function renderSearchSuggestions(cities) {
                 <div class="suggestion-main-name">${c.name}</div>
                 <div class="suggestion-sub-name">${c.admin}, ${c.province}</div>
             </div>
-        </div>
-    `).join('');
+        `;
+
+        // Cegah input kehilangan fokus (blur) sebelum event klik selesai diproses
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
+
+        // Tangani klik pilihan tempat secara instan
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selectSearchCity(c.name, c.admin, c.province, c.lat, c.lon);
+        });
+
+        dropdown.appendChild(item);
+    });
 
     dropdown.style.display = "flex";
 }
@@ -3987,7 +4234,10 @@ function selectSearchCity(name, admin, prov, lat, lon) {
     hideSearchSuggestions();
 
     const input = document.getElementById("searchInput");
-    if (input) input.value = name;
+    if (input) {
+        input.value = name;
+        input.blur();
+    }
     const clearBtn = document.getElementById("searchClearBtn");
     if (clearBtn) clearBtn.style.display = "flex";
 
@@ -3996,9 +4246,17 @@ function selectSearchCity(name, admin, prov, lat, lon) {
     viewedCoords = [lat, lon];
 
     // Perbarui objek lokasi dan kartu area (tanpa menimpa GPS asli pengguna)
-    const placeObj = { main: name, admin: admin, province: prov };
+    const placeObj = { main: name, admin: admin, province: prov, lat: lat, lon: lon };
     viewedPlaceObj = placeObj;
     renderLocationUI(placeObj, lat, lon);
+
+    // Simpan ke LocalStorage agar tidak hilang saat reload
+    try {
+        localStorage.setItem('seismo_last_searched_city', JSON.stringify(placeObj));
+    } catch (e) { }
+
+    // Picu penarikan foto Wikipedia di latar belakang
+    fetchPlacePhotoFromWiki(name, lat, lon);
 
     // Tampilkan Pin Merah lokasi pencarian
     showPlacePinMarker(lat, lon, name);
@@ -4012,25 +4270,50 @@ function selectSearchCity(name, admin, prov, lat, lon) {
     // Catat ke Riwayat Penelusuran (Tab Terbaru)
     addRecentSearch(name, lat, lon);
 
-    // Pastikan berada di Tab Monitor untuk melihat detail kota
-    if (currentNavTab !== 'monitor') {
-        switchNavTab('monitor');
-    }
+    // Perbarui hash URL peta
+    if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
+
+    // Pastikan panel terbuka dan berada di Tab Monitor untuk melihat detail kota
+    switchToMonitorAndExpand();
 }
 
 function clearSearch() {
     const input = document.getElementById("searchInput");
     if (input) input.value = "";
+    const clearBtn = document.getElementById("searchClearBtn");
+    if (clearBtn) clearBtn.style.display = "none";
     hideSearchSuggestions();
     handleSearch("");
+
+    try {
+        localStorage.removeItem('seismo_last_searched_city');
+    } catch (e) { }
+
+    if (searchPlaceMarker) {
+        searchPlaceMarker.remove();
+        searchPlaceMarker = null;
+    }
+
+    // Kembalikan viewed place ke lokasi GPS pengguna
+    if (hasUserGPS && userPlaceObj) {
+        viewedCoords = [...userCoords];
+        viewedPlaceObj = userPlaceObj;
+        renderLocationUI(userPlaceObj, userCoords[0], userCoords[1]);
+        fetchWeather(userCoords[0], userCoords[1]);
+        map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 10, duration: 1200, essential: true });
+    }
+
+    if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
 }
 
 // Tutup dropdown saran saat klik di luar kotak pencarian
-document.addEventListener('click', (e) => {
+document.addEventListener('pointerdown', (e) => {
     const wrap = document.getElementById("searchBoxCard");
     const dropdown = document.getElementById("searchSuggestionsDropdown");
-    if (dropdown && dropdown.style.display !== 'none' && wrap && !wrap.contains(e.target) && !dropdown.contains(e.target)) {
-        hideSearchSuggestions();
+    if (dropdown && dropdown.style.display !== 'none') {
+        if (wrap && !wrap.contains(e.target) && !dropdown.contains(e.target)) {
+            hideSearchSuggestions();
+        }
     }
 });
 
@@ -4269,7 +4552,7 @@ let savedFilterSearch = '';
 let savedFilterRegion = 'all';
 let savedFilterCategory = 'all';
 let savedFilterSort = 'default';
-let savedViewMode = 'saved'; // 'saved' atau 'history'
+let savedViewMode = 'all'; // 'all', 'saved', atau 'history'
 let activeSavedDropdownType = null;
 
 const INDONESIA_REGION_PROVINCES = {
@@ -4360,6 +4643,8 @@ function removeSavedPlace(id, e) {
     let places = getSavedPlaces().filter(p => p.id !== id);
     savePlacesList(places);
     renderSavedPlacesUI();
+    renderRecentSearchesUI();
+    renderDesktopNavRailRecentPlaces();
     updateBookmarkIconState();
 }
 
@@ -4371,6 +4656,7 @@ function removeRecentSearch(name, e) {
     } catch (err) { }
     renderSavedPlacesUI();
     renderRecentSearchesUI();
+    renderDesktopNavRailRecentPlaces();
 }
 
 function flyToSavedPlace(lat, lon, name) {
@@ -4491,6 +4777,7 @@ function toggleSavedFilterDropdown(type, btnEl) {
         `).join('');
     } else if (type === 'history') {
         const views = [
+            { id: 'all', label: '🌐 Semua (Tersimpan & Histori)' },
             { id: 'saved', label: '⭐ Tempat Tersimpan' },
             { id: 'history', label: '🕒 Histori Dikunjungi' }
         ];
@@ -4563,8 +4850,8 @@ function applySavedViewMode(viewMode, label) {
     savedViewMode = viewMode;
     const labelEl = document.getElementById("chipSavedHistoryLabel");
     const chip = document.getElementById("chipSavedHistory");
-    if (labelEl) labelEl.innerText = viewMode === 'history' ? 'Histori' : 'Tersimpan';
-    if (chip) chip.classList.toggle("active", viewMode === 'history');
+    if (labelEl) labelEl.innerText = viewMode === 'all' ? 'Semua' : (viewMode === 'history' ? 'Histori' : 'Disimpan');
+    if (chip) chip.classList.toggle("active", viewMode !== 'all');
     closeSavedChipsDropdown();
     renderSavedPlacesUI();
 }
@@ -4632,10 +4919,18 @@ function renderSavedPlacesUI() {
     const badge = document.getElementById("savedPlacesCountBadge");
     if (!container) return;
 
-    // Ambil data berdasarkan view mode (Saved vs History)
+    const savedPlaces = getSavedPlaces();
+    const recentSearches = getRecentSearches();
+
+    // Ambil data berdasarkan view mode (All vs Saved vs History)
     let rawItems = [];
-    if (savedViewMode === 'history') {
-        const recentSearches = getRecentSearches();
+    if (savedViewMode === 'saved') {
+        rawItems = savedPlaces.map(p => ({
+            ...p,
+            isSaved: true,
+            isHistory: false
+        }));
+    } else if (savedViewMode === 'history') {
         rawItems = recentSearches.map((item, idx) => ({
             id: 'hist_' + idx,
             name: item.name,
@@ -4643,15 +4938,51 @@ function renderSavedPlacesUI() {
             province: '',
             lat: item.lat,
             lon: item.lon,
-            temp: '28°C',
+            temp: item.temp || '28°C',
             time: item.time || 'Hari ini',
+            isSaved: false,
             isHistory: true
         }));
     } else {
-        rawItems = getSavedPlaces();
+        // Mode 'all' (Default: Gabungkan Riwayat Pantauan & Tempat Tersimpan)
+        const seen = new Set();
+
+        // 1. Masukkan riwayat penelusuran terbaru dahulu
+        recentSearches.forEach((item, idx) => {
+            const key = String(item.name || '').toLowerCase().trim();
+            if (!seen.has(key)) {
+                seen.add(key);
+                const matchingSaved = savedPlaces.find(sp => String(sp.name || '').toLowerCase().trim() === key);
+                rawItems.push({
+                    id: matchingSaved ? matchingSaved.id : ('hist_' + idx),
+                    name: item.name,
+                    admin: matchingSaved ? matchingSaved.admin : '',
+                    province: matchingSaved ? matchingSaved.province : '',
+                    lat: item.lat,
+                    lon: item.lon,
+                    temp: item.temp || (matchingSaved ? matchingSaved.temp : '28°C'),
+                    time: item.time || 'Hari ini',
+                    isSaved: !!matchingSaved,
+                    isHistory: true
+                });
+            }
+        });
+
+        // 2. Masukkan tempat tersimpan yang belum ada di riwayat
+        savedPlaces.forEach(p => {
+            const key = String(p.name || '').toLowerCase().trim();
+            if (!seen.has(key)) {
+                seen.add(key);
+                rawItems.push({
+                    ...p,
+                    isSaved: true,
+                    isHistory: false
+                });
+            }
+        });
     }
 
-    if (badge) badge.innerText = `${rawItems.length} ${savedViewMode === 'history' ? 'riwayat' : 'disimpan'}`;
+    if (badge) badge.innerText = `${rawItems.length} tempat`;
 
     // 1. Filter Pencarian Teks
     let filtered = rawItems.filter(p => {
@@ -4715,7 +5046,9 @@ function renderSavedPlacesUI() {
                     ? 'Tidak ada lokasi yang cocok dengan filter yang dipilih.'
                     : (savedViewMode === 'history'
                         ? 'Belum ada histori lokasi yang dikunjungi.'
-                        : 'Belum ada wilayah pantauan yang disimpan.<br>Klik tombol <b>＋ Simpan Wilayah Ini</b> untuk menambahkan.')}
+                        : (savedViewMode === 'saved'
+                            ? 'Belum ada wilayah pantauan yang disimpan.<br>Klik tombol <b>＋ Simpan Wilayah Ini</b> untuk menambahkan.'
+                            : 'Belum ada riwayat atau wilayah tersimpan.<br>Telusuri nama daerah untuk menambahkan pantauan.'))}
             </div>
         `;
         return;
@@ -4727,8 +5060,8 @@ function renderSavedPlacesUI() {
             ? `removeRecentSearch('${safeName}', event)`
             : `removeSavedPlace('${p.id}', event)`;
         let deleteTitle = p.isHistory ? 'Hapus dari Histori' : 'Hapus dari Disimpan';
-        let subText = p.isHistory
-            ? `<span class="saved-place-status-dot"></span><span>🕒 ${p.time} · ${p.statusLabel}</span>`
+        let subText = p.time
+            ? `<span class="saved-place-status-dot ${p.isWarning ? 'warning' : ''}"></span><span>🕒 ${p.time} · ${p.statusLabel}</span>`
             : `<span class="saved-place-status-dot ${p.isWarning ? 'warning' : ''}"></span><span>${p.statusLabel}</span>`;
 
         return `
@@ -4863,11 +5196,13 @@ function addRecentSearch(name, lat, lon) {
         lon: lon,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
-    if (list.length > 10) list.pop();
+    if (list.length > 15) list.pop();
     try {
         localStorage.setItem('seismo_recent_searches', JSON.stringify(list));
     } catch (e) { }
     renderRecentSearchesUI();
+    renderSavedPlacesUI();
+    renderDesktopNavRailRecentPlaces();
 }
 
 function clearRecentSearches() {
@@ -4875,6 +5210,8 @@ function clearRecentSearches() {
         localStorage.setItem('seismo_recent_searches', JSON.stringify([]));
     } catch (e) { }
     renderRecentSearchesUI();
+    renderSavedPlacesUI();
+    renderDesktopNavRailRecentPlaces();
 }
 
 function renderRecentSearchesUI() {
@@ -5658,24 +5995,46 @@ function updateBookmarkIconState() {
 function initLocation() {
     updateLiveClock();
 
+    let searchedPlace = null;
+    try {
+        const rawSearch = localStorage.getItem('seismo_last_searched_city');
+        if (rawSearch) searchedPlace = JSON.parse(rawSearch);
+    } catch (e) { }
+
+    // Jika URL memuat nama place spesifik
+    const parsedHash = parseMapUrlHash();
+    if (parsedHash && parsedHash.place) {
+        if (!searchedPlace || searchedPlace.name.toLowerCase() !== parsedHash.place.toLowerCase()) {
+            const match = INDONESIA_CITIES_DB.find(c => c.name.toLowerCase() === parsedHash.place.toLowerCase() || c.name.toLowerCase().includes(parsedHash.place.toLowerCase()));
+            if (match) {
+                searchedPlace = { name: match.name, admin: match.admin, province: match.province, lat: match.lat, lon: match.lon };
+            } else if (parsedHash.lat && parsedHash.lng) {
+                searchedPlace = { name: parsedHash.place, admin: `Kota ${parsedHash.place}`, province: "Indonesia", lat: parsedHash.lat, lon: parsedHash.lng };
+            }
+        }
+    }
+
+    // 1. Inisialisasi GPS Pengguna di latar belakang
     if (savedLat && savedLon) {
         const lat = parseFloat(savedLat);
         const lon = parseFloat(savedLon);
         const acc = parseFloat(savedAcc) || 50;
 
         userCoords = [lat, lon];
-        viewedCoords = [lat, lon];
         hasUserGPS = true;
 
-        if (userPlaceObj) {
-            viewedPlaceObj = userPlaceObj;
-            renderLocationUI(userPlaceObj, lat, lon);
-        } else {
-            fetchLocationName(lat, lon);
+        if (!searchedPlace) {
+            viewedCoords = [lat, lon];
+            if (userPlaceObj) {
+                viewedPlaceObj = userPlaceObj;
+                renderLocationUI(userPlaceObj, lat, lon);
+            } else {
+                fetchLocationName(lat, lon);
+            }
+            fetchWeather(lat, lon);
         }
 
         updateGPSMarker(lat, lon, acc, false);
-        fetchWeather(lat, lon);
 
         // Jika permission query sudah 'granted', update background tanpa pop-up
         if (navigator.permissions && navigator.permissions.query) {
@@ -5688,10 +6047,36 @@ function initLocation() {
     } else {
         const defaultObj = { main: "Lubuk Tukko", admin: "Kec. Pandan, Kab. Tapanuli Tengah", province: "Sumatera Utara" };
         userCoords = [1.688159, 98.823695];
-        viewedCoords = [1.688159, 98.823695];
-        viewedPlaceObj = defaultObj;
-        renderLocationUI(defaultObj, 1.688159, 98.823695);
-        fetchWeather(1.688159, 98.823695);
+        if (!searchedPlace) {
+            viewedCoords = [1.688159, 98.823695];
+            viewedPlaceObj = defaultObj;
+            renderLocationUI(defaultObj, 1.688159, 98.823695);
+            fetchWeather(1.688159, 98.823695);
+        }
+
+        // Otomatis minta GPS di latar belakang jika didukung browser
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+            requestFreshGPS(false);
+        }
+    }
+
+    // 2. Jika ada kota pencarian yang sedang aktif, pulihkan state pencarian
+    if (searchedPlace && searchedPlace.name && searchedPlace.lat && searchedPlace.lon) {
+        const input = document.getElementById("searchInput");
+        if (input) input.value = searchedPlace.name;
+        const clearBtn = document.getElementById("searchClearBtn");
+        if (clearBtn) clearBtn.style.display = "flex";
+
+        viewedCoords = [searchedPlace.lat, searchedPlace.lon];
+        viewedPlaceObj = { main: searchedPlace.name, admin: searchedPlace.admin || `Kota ${searchedPlace.name}`, province: searchedPlace.province || "Indonesia" };
+        renderLocationUI(viewedPlaceObj, searchedPlace.lat, searchedPlace.lon);
+        showPlacePinMarker(searchedPlace.lat, searchedPlace.lon, searchedPlace.name);
+        fetchWeather(searchedPlace.lat, searchedPlace.lon);
+    }
+
+    // Pastikan Nav Rail diperbarui dengan riwayat tempat terbaru
+    if (typeof renderDesktopNavRailRecentPlaces === 'function') {
+        renderDesktopNavRailRecentPlaces();
     }
 }
 
@@ -5766,18 +6151,19 @@ function initHistats() {
 
 function bootApp() {
     // 1. Instan Visual UI & Tema Terang Bawaan (Milidetik ke-0)
-    initTheme();
-    applyMapLayer(currentMapLayer);
-    initMapUrlSync();
-    updateLiveClock();
-    initChipsDragScroll();
-    updateBookmarkIconState();
-    renderSavedPlacesUI();
-    renderBookmarkedQuakesUI();
-    renderRecentSearchesUI();
-    updateRecentQuakesUI();
-    updateAutoBroadcastUI();
-    applyLanguage(currentAppLanguage);
+    try { initTheme(); } catch (e) { console.warn('[Boot] initTheme error:', e); }
+    try { applyMapLayer(currentMapLayer); } catch (e) { console.warn('[Boot] applyMapLayer error:', e); }
+    try { initMapUrlSync(); } catch (e) { console.warn('[Boot] initMapUrlSync error:', e); }
+    try { updateLiveClock(); } catch (e) { console.warn('[Boot] updateLiveClock error:', e); }
+    try { initChipsDragScroll(); } catch (e) { console.warn('[Boot] initChipsDragScroll error:', e); }
+    try { updateBookmarkIconState(); } catch (e) { console.warn('[Boot] updateBookmarkIconState error:', e); }
+    try { renderSavedPlacesUI(); } catch (e) { console.warn('[Boot] renderSavedPlacesUI error:', e); }
+    try { renderBookmarkedQuakesUI(); } catch (e) { console.warn('[Boot] renderBookmarkedQuakesUI error:', e); }
+    try { renderRecentSearchesUI(); } catch (e) { console.warn('[Boot] renderRecentSearchesUI error:', e); }
+    try { renderDesktopNavRailRecentPlaces(); } catch (e) { console.warn('[Boot] renderDesktopNavRailRecentPlaces error:', e); }
+    try { updateRecentQuakesUI(); } catch (e) { console.warn('[Boot] updateRecentQuakesUI error:', e); }
+    try { updateAutoBroadcastUI(); } catch (e) { console.warn('[Boot] updateAutoBroadcastUI error:', e); }
+    try { if (typeof applyLanguage === 'function') applyLanguage(currentAppLanguage); } catch (e) { console.warn('[Boot] applyLanguage error:', e); }
 
     if (window.innerWidth <= 768) {
         toggleMobileDrawer(false);
@@ -5850,6 +6236,9 @@ function bootApp() {
         setTimeout(() => {
             initLocation();
             initHistats();
+            if (typeof renderDesktopNavRailRecentPlaces === 'function') {
+                renderDesktopNavRailRecentPlaces();
+            }
         }, 150);
     };
 
@@ -5867,9 +6256,6 @@ if (document.readyState === 'loading') {
 }
 
 // ==================== SIMULASI GEMPA (SEISMOGRAPH EXPERIMENT) ====================
-let isSimulating = false;
-let simShakeTimer = null;
-
 function simulateEarthquake(mag) {
     if (!isStarted) {
         initSystem();
@@ -5987,10 +6373,6 @@ function speakAlert(text) {
 }
 
 // ==================== MODE SIAGA SIARAN SUARA GEMPA REAL-TIME (AUTO BROADCAST) ====================
-let isAutoBroadcastOn = localStorage.getItem('seismo_auto_broadcast') === 'true';
-let lastKnownQuakeSignature = localStorage.getItem('seismo_last_sig') || '';
-let isBroadcastingAlert = false;
-
 function updateAutoBroadcastUI() {
     const btn = document.getElementById("btnAutoBroadcast");
     const txt = document.getElementById("autoBroadcastText");

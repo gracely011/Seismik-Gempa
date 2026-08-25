@@ -539,11 +539,15 @@ body.theme-dark .map-dot.dot-3 {
     }
 
     /* SEPARATOR (.G6LvEb) */
-    .G6LvEb {
-        width: 36px;
-        height: 1px;
-        background: var(--border-subtle);
-        margin: 12px 0 0 0;
+    .G6LvEb,
+    li.G6LvEb {
+        list-style: none !important;
+        width: 36px !important;
+        height: 1px !important;
+        min-height: 1px !important;
+        background: var(--border-subtle) !important;
+        margin: 12px 0 0 0 !important;
+        padding: 0 !important;
     }
 
     /* ==================== DAFTAR CUPLIKAN TEMPAT & BUNDEL TERBARU (GOOGLE MAPS) ==================== */
@@ -1135,6 +1139,7 @@ body.theme-dark .map-dot.dot-3 {
     flex-direction: column;
     padding: 6px;
     backdrop-filter: blur(16px);
+    pointer-events: auto !important;
 }
 
 .search-suggestion-item {
@@ -1145,6 +1150,8 @@ body.theme-dark .map-dot.dot-3 {
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.15s ease;
+    pointer-events: auto !important;
+    user-select: none;
 }
 
 .search-suggestion-item:hover {
@@ -4001,6 +4008,15 @@ body.dark-mode .saved-chips-dropdown-item.active {
 
     .search-icon-btn {
         display: flex !important;
+    }
+
+    .search-suggestions-dropdown {
+        position: fixed !important;
+        top: 66px !important;
+        left: 12px !important;
+        right: 12px !important;
+        z-index: 1005 !important;
+        pointer-events: auto !important;
     }
 
     .filter-chips-wrapper {
