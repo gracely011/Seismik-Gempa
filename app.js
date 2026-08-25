@@ -54,6 +54,9 @@ let quakesArray = [];
 let currentFilter = 'all';
 let searchQuery = '';
 
+let activeFaultPopup = null;
+let activeContextPopup = null;
+
 // LocalStorage Persistent Settings (Default: Tema Terang Google Maps)
 let currentTheme = localStorage.getItem('seismo_theme') || 'light';
 let currentMapLayer = localStorage.getItem('seismo_layer') || 'light';
@@ -620,6 +623,7 @@ map.on('pitch', () => {
     if (tiltLabel) {
         tiltLabel.textContent = isMap3DActive ? "2D" : "3D";
     }
+    cullOccludedGlobeMarkers();
     if (typeof updateUrlHashFromMap === 'function') updateUrlHashFromMap();
 });
 
@@ -1182,28 +1186,60 @@ function updateGlobeUI() {
 }
 
 // ==================== GLOBE 3D HORIZON OCCLUSION CULLING ====================
-// Menghilangkan total seluruh marker yang berada di sisi belakang bola bumi agar tidak tembus pandang / berbayang
+// Menghilangkan total seluruh marker & popup yang berada di sisi belakang bola bumi agar tidak tembus pandang / berbayang / bocor
 function cullOccludedGlobeMarkers() {
     if (!map) return;
     const isGlobe = isGlobeModeActive;
     const zoom = map.getZoom();
 
-    // Pada mode 2D datar atau saat zoom in mendekati permukaan bumi (zoom > 6.0), tampilkan seluruh marker
+    // Pada mode 2D datar atau saat zoom in mendekati permukaan bumi (zoom > 6.0), tampilkan seluruh marker & popup
     if (!isGlobe || zoom > 6.0) {
         if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
             for (let i = 0; i < activeQuakeMarkers.length; i++) {
                 const m = activeQuakeMarkers[i];
                 if (m && m.getElement && m.getElement()) {
                     m.getElement().style.display = '';
+                    m.getElement().classList.remove('maplibregl-marker-occluded');
+                }
+                if (m && m.getPopup && m.getPopup() && m.getPopup().getElement && m.getPopup().getElement()) {
+                    m.getPopup().getElement().style.display = '';
+                    m.getPopup().getElement().classList.remove('maplibregl-popup-occluded');
                 }
             }
         }
-        if (gpsMarker && gpsMarker.getElement && gpsMarker.getElement()) {
-            gpsMarker.getElement().style.display = '';
+        if (gpsMarker) {
+            if (gpsMarker.getElement && gpsMarker.getElement()) {
+                gpsMarker.getElement().style.display = '';
+                gpsMarker.getElement().classList.remove('maplibregl-marker-occluded');
+            }
+            if (gpsMarker.getPopup && gpsMarker.getPopup() && gpsMarker.getPopup().getElement && gpsMarker.getPopup().getElement()) {
+                gpsMarker.getPopup().getElement().style.display = '';
+                gpsMarker.getPopup().getElement().classList.remove('maplibregl-popup-occluded');
+            }
         }
-        if (searchPlaceMarker && searchPlaceMarker.getElement && searchPlaceMarker.getElement()) {
-            searchPlaceMarker.getElement().style.display = '';
+        if (searchPlaceMarker) {
+            if (searchPlaceMarker.getElement && searchPlaceMarker.getElement()) {
+                searchPlaceMarker.getElement().style.display = '';
+                searchPlaceMarker.getElement().classList.remove('maplibregl-marker-occluded');
+            }
+            if (searchPlaceMarker.getPopup && searchPlaceMarker.getPopup() && searchPlaceMarker.getPopup().getElement && searchPlaceMarker.getPopup().getElement()) {
+                searchPlaceMarker.getPopup().getElement().style.display = '';
+                searchPlaceMarker.getPopup().getElement().classList.remove('maplibregl-popup-occluded');
+            }
         }
+        if (activeFaultPopup && activeFaultPopup.getElement && activeFaultPopup.getElement()) {
+            activeFaultPopup.getElement().style.display = '';
+            activeFaultPopup.getElement().classList.remove('maplibregl-popup-occluded');
+        }
+        if (activeContextPopup && activeContextPopup.getElement && activeContextPopup.getElement()) {
+            activeContextPopup.getElement().style.display = '';
+            activeContextPopup.getElement().classList.remove('maplibregl-popup-occluded');
+        }
+        const allPopups = document.querySelectorAll('.maplibregl-popup');
+        allPopups.forEach(p => {
+            p.style.display = '';
+            p.classList.remove('maplibregl-popup-occluded');
+        });
         return;
     }
 
@@ -1215,18 +1251,41 @@ function cullOccludedGlobeMarkers() {
     // Sudut angular > 78° dari titik pusat kamera bumi berada di balik cakrawala horizon
     const HORIZON_COS_THRESHOLD = 0.20;
 
-    function checkAndCull(marker, qLat, qLon) {
-        if (!marker || !marker.getElement) return;
-        const el = marker.getElement();
-        if (!el) return;
+    function checkAndCull(target, qLat, qLon) {
+        if (!target) return;
+        const el = (typeof target.getElement === 'function') ? target.getElement() : (target instanceof HTMLElement ? target : null);
+        
+        let popupEl = null;
+        if (typeof target.getPopup === 'function') {
+            const p = target.getPopup();
+            if (p && typeof p.getElement === 'function') {
+                popupEl = p.getElement();
+            }
+        } else if (target && typeof target.isOpen === 'function' && typeof target.getElement === 'function') {
+            popupEl = target.getElement();
+        }
+
         const mLatRad = (qLat * Math.PI) / 180;
         const mLonRad = (qLon * Math.PI) / 180;
         const cosDist = (sinCLat * Math.sin(mLatRad)) + (cosCLat * Math.cos(mLatRad) * Math.cos(mLonRad - cLonRad));
 
-        if (cosDist < HORIZON_COS_THRESHOLD) {
-            el.style.display = 'none';
-        } else {
-            el.style.display = '';
+        const isOccluded = cosDist < HORIZON_COS_THRESHOLD;
+
+        if (el) {
+            el.style.display = isOccluded ? 'none' : '';
+            if (isOccluded) {
+                el.classList.add('maplibregl-marker-occluded');
+            } else {
+                el.classList.remove('maplibregl-marker-occluded');
+            }
+        }
+        if (popupEl) {
+            popupEl.style.display = isOccluded ? 'none' : '';
+            if (isOccluded) {
+                popupEl.classList.add('maplibregl-popup-occluded');
+            } else {
+                popupEl.classList.remove('maplibregl-popup-occluded');
+            }
         }
     }
 
@@ -1258,6 +1317,14 @@ function cullOccludedGlobeMarkers() {
         } else if (viewedCoords) {
             checkAndCull(searchPlaceMarker, viewedCoords[0], viewedCoords[1]);
         }
+    }
+
+    if (activeFaultPopup && activeFaultPopup._coords) {
+        checkAndCull(activeFaultPopup, activeFaultPopup._coords[0], activeFaultPopup._coords[1]);
+    }
+
+    if (activeContextPopup && activeContextPopup._coords) {
+        checkAndCull(activeContextPopup, activeContextPopup._coords[0], activeContextPopup._coords[1]);
     }
 }
 
@@ -1638,10 +1705,12 @@ function initFaultLinesGeoJSON() {
                 <div class="fault-popup-desc">${f.desc}</div>
             </div>
         `;
-        new maplibregl.Popup({ offset: 10, maxWidth: '340px', className: 'gmap-custom-popup' })
+        activeFaultPopup = new maplibregl.Popup({ offset: 10, maxWidth: '340px', closeOnClick: false, className: 'gmap-custom-popup' })
             .setLngLat(e.lngLat)
             .setHTML(popupContent)
             .addTo(map);
+        activeFaultPopup._coords = [e.lngLat.lat, e.lngLat.lng];
+        cullOccludedGlobeMarkers();
     });
 
     map.on('mouseenter', 'faults-layer', () => {
@@ -1793,7 +1862,7 @@ function showPlacePinMarker(lat, lon, name) {
         offset: [0, -32],
         maxWidth: '360px',
         closeButton: false,
-        closeOnClick: true,
+        closeOnClick: false,
         className: 'custom-area-popup'
     }).setHTML(createAreaPopupHTML(placeObj, lat, lon));
 
@@ -1838,7 +1907,7 @@ function updateGPSMarker(lat, lon, accuracy = 50, pan = false) {
         offset: 14,
         maxWidth: '360px',
         closeButton: false,
-        closeOnClick: true,
+        closeOnClick: false,
         className: 'custom-area-popup'
     }).setHTML(popupHtml);
 
@@ -2813,22 +2882,96 @@ function closeActiveQuakePopup(e) {
         if (typeof e.stopPropagation === 'function') e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
     }
-    // Hapus seluruh popup yang aktif di DOM
-    const popups = document.querySelectorAll('.maplibregl-popup');
-    popups.forEach(p => p.remove());
 
-    if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
-        activeQuakeMarkers.forEach(m => {
-            if (m && m.getPopup && m.getPopup() && m.getPopup().isOpen()) {
-                m.getPopup().remove();
+    const targetPopupEl = (e && e.target && typeof e.target.closest === 'function')
+        ? e.target.closest('.maplibregl-popup')
+        : null;
+
+    if (targetPopupEl) {
+        // Tutup HANYA popup spesifik yang tombol close-nya diklik
+        let closed = false;
+
+        if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
+            for (let i = 0; i < activeQuakeMarkers.length; i++) {
+                const m = activeQuakeMarkers[i];
+                if (m && m.getPopup && m.getPopup()) {
+                    const p = m.getPopup();
+                    const pEl = (typeof p.getElement === 'function') ? p.getElement() : null;
+                    if (pEl && (pEl === targetPopupEl || pEl.contains(targetPopupEl))) {
+                        p.remove();
+                        closed = true;
+                        break;
+                    }
+                }
             }
-        });
-    }
-    if (searchPlaceMarker && searchPlaceMarker.getPopup && searchPlaceMarker.getPopup() && searchPlaceMarker.getPopup().isOpen()) {
-        searchPlaceMarker.getPopup().remove();
-    }
-    if (gpsMarker && gpsMarker.getPopup && gpsMarker.getPopup() && gpsMarker.getPopup().isOpen()) {
-        gpsMarker.getPopup().remove();
+        }
+
+        if (!closed && searchPlaceMarker && searchPlaceMarker.getPopup && searchPlaceMarker.getPopup()) {
+            const p = searchPlaceMarker.getPopup();
+            const pEl = (typeof p.getElement === 'function') ? p.getElement() : null;
+            if (pEl && (pEl === targetPopupEl || pEl.contains(targetPopupEl))) {
+                p.remove();
+                closed = true;
+            }
+        }
+
+        if (!closed && gpsMarker && gpsMarker.getPopup && gpsMarker.getPopup()) {
+            const p = gpsMarker.getPopup();
+            const pEl = (typeof p.getElement === 'function') ? p.getElement() : null;
+            if (pEl && (pEl === targetPopupEl || pEl.contains(targetPopupEl))) {
+                p.remove();
+                closed = true;
+            }
+        }
+
+        if (!closed && activeFaultPopup) {
+            const pEl = (typeof activeFaultPopup.getElement === 'function') ? activeFaultPopup.getElement() : null;
+            if (pEl && (pEl === targetPopupEl || pEl.contains(targetPopupEl))) {
+                activeFaultPopup.remove();
+                activeFaultPopup = null;
+                closed = true;
+            }
+        }
+
+        if (!closed && activeContextPopup) {
+            const pEl = (typeof activeContextPopup.getElement === 'function') ? activeContextPopup.getElement() : null;
+            if (pEl && (pEl === targetPopupEl || pEl.contains(targetPopupEl))) {
+                activeContextPopup.remove();
+                activeContextPopup = null;
+                closed = true;
+            }
+        }
+
+        // Pastikan elemen DOM target dihapus jika belum terhapus
+        if (!closed && targetPopupEl.parentNode) {
+            targetPopupEl.remove();
+        }
+    } else {
+        // Hapus seluruh popup yang aktif jika dipanggil global tanpa event spesifik
+        const popups = document.querySelectorAll('.maplibregl-popup');
+        popups.forEach(p => p.remove());
+
+        if (activeQuakeMarkers && activeQuakeMarkers.length > 0) {
+            activeQuakeMarkers.forEach(m => {
+                if (m && m.getPopup && m.getPopup() && m.getPopup().isOpen()) {
+                    m.getPopup().remove();
+                }
+            });
+        }
+        if (searchPlaceMarker && searchPlaceMarker.getPopup && searchPlaceMarker.getPopup() && searchPlaceMarker.getPopup().isOpen()) {
+            searchPlaceMarker.getPopup().remove();
+        }
+        if (gpsMarker && gpsMarker.getPopup && gpsMarker.getPopup() && gpsMarker.getPopup().isOpen()) {
+            gpsMarker.getPopup().remove();
+        }
+        if (activeFaultPopup) {
+            activeFaultPopup.remove();
+            activeFaultPopup = null;
+        }
+        if (activeContextPopup) {
+            activeContextPopup.remove();
+            activeContextPopup = null;
+        }
     }
 }
 
@@ -2933,7 +3076,7 @@ function addEarthquakeMarker(q, isLatest = false) {
         offset: 12,
         maxWidth: '380px',
         closeButton: false,
-        closeOnClick: true,
+        closeOnClick: false,
         className: 'gmap-custom-popup'
     }).setHTML(popupContent);
 
@@ -5989,7 +6132,7 @@ function initGmapContextMenu() {
                         }
 
                         if (map) {
-                            new maplibregl.Popup({ closeOnClick: true, className: 'gmap-context-popup' })
+                            activeContextPopup = new maplibregl.Popup({ closeOnClick: true, className: 'gmap-context-popup' })
                                 .setLngLat([activeContextLng, activeContextLat])
                                 .setHTML(`
                                     <div class="gmap-info-popup">
@@ -6002,6 +6145,8 @@ function initGmapContextMenu() {
                                     </div>
                                 `)
                                 .addTo(map);
+                            activeContextPopup._coords = [activeContextLat, activeContextLng];
+                            cullOccludedGlobeMarkers();
                         }
                     })
                     .catch(() => {
@@ -6012,7 +6157,7 @@ function initGmapContextMenu() {
             case 'search-quakes':
                 showToastNotification('🔍 Memindai gempa dalam radius 250 km...');
                 if (map) {
-                    new maplibregl.Popup({ closeOnClick: true, className: 'gmap-context-popup' })
+                    activeContextPopup = new maplibregl.Popup({ closeOnClick: true, className: 'gmap-context-popup' })
                         .setLngLat([activeContextLng, activeContextLat])
                         .setHTML(`
                             <div class="gmap-info-popup">
@@ -6025,6 +6170,8 @@ function initGmapContextMenu() {
                             </div>
                         `)
                         .addTo(map);
+                    activeContextPopup._coords = [activeContextLat, activeContextLng];
+                    cullOccludedGlobeMarkers();
                 }
                 break;
 

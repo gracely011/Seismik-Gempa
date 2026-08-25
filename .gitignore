@@ -30,3 +30,4 @@ backup/
 *.bak
 gemini-code-*.md
 extracted_*.css
+patch/
