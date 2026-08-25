@@ -19,6 +19,27 @@ try {
     };
 } catch (e) {}
 
+// ==================== FAST NETWORK HELPER WITH TIMEOUT ====================
+async function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+        try {
+            return await fetch(url, { ...options, signal: AbortSignal.timeout(timeoutMs) });
+        } catch (e) {
+            throw e;
+        }
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+    } catch (err) {
+        clearTimeout(timer);
+        throw err;
+    }
+}
+
 // ==================== GLOBAL STATE ====================
 let sData = [];
 let historyLog = [];
@@ -3456,8 +3477,8 @@ async function loadMapData(silent = false) {
 
     // 1. BMKG Realtime AutoGempa (Gempa paling mutakhir BMKG)
     try {
-        const resAuto = await fetch("https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json", { cache: "no-store" });
-        if (resAuto.ok) {
+        const resAuto = await fetchWithTimeout("https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json", { cache: "no-store" }, 3500);
+        if (resAuto && resAuto.ok) {
             const dataAuto = await resAuto.json();
             if (dataAuto && dataAuto.Infogempa && dataAuto.Infogempa.gempa) {
                 const g = dataAuto.Infogempa.gempa;
@@ -3489,8 +3510,8 @@ async function loadMapData(silent = false) {
 
     // 2. BMKG 15 Gempa M 5.0+ Terbaru
     try {
-        const resTerkini = await fetch("https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json", { cache: "no-store" });
-        if (resTerkini.ok) {
+        const resTerkini = await fetchWithTimeout("https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json", { cache: "no-store" }, 3500);
+        if (resTerkini && resTerkini.ok) {
             const dataTerkini = await resTerkini.json();
             if (dataTerkini && dataTerkini.Infogempa && dataTerkini.Infogempa.gempa) {
                 dataTerkini.Infogempa.gempa.forEach(g => {
@@ -3523,8 +3544,8 @@ async function loadMapData(silent = false) {
 
     // 3. BMKG 15 Gempa Dirasakan (Termasuk M < 5.0 Lokal / Daratan)
     try {
-        const resDirasakan = await fetch("https://data.bmkg.go.id/DataMKG/TEWS/gempadirasakan.json", { cache: "no-store" });
-        if (resDirasakan.ok) {
+        const resDirasakan = await fetchWithTimeout("https://data.bmkg.go.id/DataMKG/TEWS/gempadirasakan.json", { cache: "no-store" }, 3500);
+        if (resDirasakan && resDirasakan.ok) {
             const dataDirasakan = await resDirasakan.json();
             if (dataDirasakan && dataDirasakan.Infogempa && dataDirasakan.Infogempa.gempa) {
                 dataDirasakan.Infogempa.gempa.forEach(g => {
@@ -3563,12 +3584,12 @@ async function loadMapData(silent = false) {
         const startTimeStr = pastDate.toISOString().split('T')[0];
         const usgsIndoUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTimeStr}&minmagnitude=1.0&minlatitude=-11&maxlatitude=6&minlongitude=95&maxlongitude=141`;
 
-        const fetchPromises = [fetch(usgsIndoUrl)];
+        const fetchPromises = [fetchWithTimeout(usgsIndoUrl, {}, 4500)];
 
         // B. Jika Mode Gempa Seluruh Dunia AKTIF, tambahkan feed USGS Global (24 jam M2.5+ & 7 hari M4.5+)
         if (isGlobalQuakeMode) {
-            fetchPromises.push(fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"));
-            fetchPromises.push(fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson"));
+            fetchPromises.push(fetchWithTimeout("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson", {}, 4000));
+            fetchPromises.push(fetchWithTimeout("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson", {}, 4000));
         }
 
         const usgsResponses = await Promise.allSettled(fetchPromises);
@@ -5716,19 +5737,6 @@ function renderLocationUI(obj, lat, lon) {
     updateBookmarkIconState();
 }
 
-// Helper Fetch dengan AbortController Timeout Otomatis (Mencegah Tab Browser Hang)
-async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        const res = await fetch(url, { ...options, signal: controller.signal });
-        clearTimeout(timer);
-        return res;
-    } catch (err) {
-        clearTimeout(timer);
-        throw err;
-    }
-}
 
 async function fetchLocationName(lat, lon) {
     // 0. Cek Cache Lokal Terlebih Dahulu (Jika koordinat tidak berubah signifikan < ~500m)
@@ -6124,7 +6132,7 @@ function requestFreshGPS(panToLocation = true) {
                 map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 9, duration: 1200, essential: true });
             }
         },
-        { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+        { timeout: 4000, enableHighAccuracy: true, maximumAge: 60000 }
     );
 }
 
