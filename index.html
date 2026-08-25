@@ -368,7 +368,10 @@
                 </button>
             </li>
 
-            <div class="G6LvEb"></div>
+            <div class="G6LvEb" id="railRecentDivider" style="display: none;"></div>
+
+            <!-- 4. DAFTAR CUPLIKAN TEMPAT & BUNDEL TERBARU (DIRENDER DINAMIS BERDASARKAN RIWAYAT) -->
+            <li class="rail-recent-places-list" id="railRecentPlacesList"></li>
         </ul>
     </nav>
 
@@ -554,28 +557,28 @@
     <!-- ==================== UNIFIED SOLID SEARCH & CARDS PANEL (GOOGLE MAPS SIDEBAR) ==================== -->
     <div class="panel-container" id="mainPanel">
         <!-- GOOGLE MAPS SEARCH BAR -->
-        <div class="search-box-card" id="searchBoxCard">
+        <div class="search-box-card" id="searchBoxCard" onclick="handleSearchBoxCardClick(event)">
             <!-- MENU HAMBURGER BUTTON (VISIBLE WHEN SIDEBAR/NAV-RAIL IS COLLAPSED) -->
             <button class="search-menu-btn notranslate" id="searchMenuBtn" onclick="toggleDesktopSettings()" aria-label="Menu" title="Menu" translate="no">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                <span class="google-symbols icon-menu" aria-hidden="true" style="font-size: 24px;"></span>
             </button>
             <!-- SEARCH ICON BUTTON (VISIBLE WHEN SIDEBAR IS OPEN & ON MOBILE) -->
             <button class="search-icon-btn notranslate" id="searchIconBtn" onclick="document.getElementById('searchInput').focus()" title="Cari" translate="no">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span class="google-symbols icon-search" aria-hidden="true" style="font-size: 24px;"></span>
             </button>
-            <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)" autocomplete="off">
+            <input type="text" id="searchInput" class="search-input" placeholder="Telusuri kota / daerah gempa..." oninput="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)" onclick="handleSearchInputClick(event)" onfocus="handleSearchInputFocus(event)" autocomplete="off">
             <button id="searchClearBtn" class="search-clear-btn notranslate" onclick="clearSearch()" title="Hapus Pencarian" translate="no">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                <span class="google-symbols icon-close" aria-hidden="true" style="font-size: 24px;"></span>
             </button>
             <!-- SEARCH SUBMIT BUTTON (MAGNIFYING GLASS NEXT TO INPUT ON COLLAPSED STATE) -->
             <button class="search-submit-btn notranslate" id="searchSubmitBtn" onclick="triggerSearchCity()" title="Telusuri" translate="no">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span class="google-symbols icon-search" aria-hidden="true" style="font-size: 24px;"></span>
             </button>
             <!-- VERTICAL DIVIDER -->
             <div class="search-divider-vertical" id="searchDividerVertical"></div>
-            <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL) -->
-            <button class="directions-btn notranslate" onclick="triggerSearchCity()" title="Cari Kota / Arahkan" translate="no">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41zM14 14.5V12h-4v3H8v-4c0-.55.45-1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>
+            <!-- GOOGLE MAPS DIRECTIONS / RUTE ICON BUTTON (TEAL NO CIRCULAR BACKGROUND) -->
+            <button class="directions-btn hArJGc vF7Cdb notranslate" onclick="triggerSearchCity()" title="Rute" aria-label="Rute" translate="no">
+                <span class="google-symbols NhBTye G47vBd icon-directions" aria-hidden="true" style="font-size: 24px;"></span>
             </button>
         </div>
 
@@ -713,7 +716,7 @@
                     <!-- Filter Chips Row (Scrollable Horizontal) -->
                     <div class="gmap-filter-chips-row" id="savedFilterChipsRow">
                         <button class="gmap-dropdown-chip" id="chipSavedSearch" onclick="toggleSavedInlineSearch()" title="Cari Tempat" aria-label="Cari Tempat">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            <svg viewBox="0 -960 960 960" width="16" height="16" fill="currentColor"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
                         </button>
                         <button class="gmap-dropdown-chip" id="chipSavedRegion" onclick="toggleSavedFilterDropdown('region', this)">
                             <span id="chipSavedRegionLabel">Wilayah</span> <span class="chip-arrow">▾</span>
@@ -732,7 +735,7 @@
                     <!-- INLINE SEARCH INPUT (EXPANDABLE) -->
                     <div class="saved-inline-search-wrap" id="savedInlineSearchWrap" style="display: none;">
                         <div class="saved-inline-search-box">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-muted)"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            <svg viewBox="0 -960 960 960" width="18" height="18" fill="var(--text-muted)"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
                             <input type="text" id="savedInlineSearchInput" placeholder="Cari di tempat tersimpan &amp; histori..." oninput="handleSavedPlacesSearch(this.value)" autocomplete="off">
                             <button class="saved-search-clear-btn" id="savedSearchClearBtn" onclick="clearSavedInlineSearch()" title="Hapus">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -944,100 +947,16 @@
                     </g>
                 </svg>
             </div>
-            <span class="google-symbols mobile-layer-icon" style="font-size: 20px;">&#xe53b;</span>
             <div class="layer-thumbnail-badge">
-                <span class="google-symbols" style="font-size: 15px;">&#xe53b;</span>
-                <span id="layerBadgeText">Lapisan</span>
+                <span class="icon-layers" aria-hidden="true"></span>
+                <span class="badge-text-default">Lapisan</span>
+                <span class="badge-text-hover" id="layerActiveLabel">Standar</span>
             </div>
         </div>
 
-        <!-- HOVER POPUP MENU (GOOGLE MAPS STYLE DESKTOP - HORIZONTAL STRIP) -->
+        <!-- HOVER POPUP MENU (GOOGLE MAPS STYLE DESKTOP - 5 MENU STRIP) -->
         <div class="layer-popup-menu" id="layerPopupMenu">
-            <!-- 1. STANDAR / DEFAULT -->
-            <div class="layer-option-item active" id="layerOptLight" onclick="selectMapLayer('light')" title="Peta Standar">
-                <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <clipPath id="sqClipDeskDef"><rect width="64" height="64" rx="14"/></clipPath>
-                        </defs>
-                        <g clip-path="url(#sqClipDeskDef)">
-                            <rect width="64" height="64" fill="#aadaff"/>
-                            <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#cbe6a3"/>
-                            <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#e8f0d8"/>
-                            <path d="M8 32 Q14 26 22 34 Q18 44 10 40 Z" fill="#b7df94"/>
-                            <path d="M42 42 Q50 36 58 44 Q52 56 40 52 Z" fill="#b7df94"/>
-                            <path d="M-5 45 Q20 38 48 58" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                            <path d="M26 12 Q32 30 38 66" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#ffffff" stroke-width="6.5" fill="none" stroke-linecap="round"/>
-                            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#8ab4f8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
-                            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#fbbc04" stroke-width="4" fill="none" stroke-linecap="round"/>
-                        </g>
-                    </svg>
-                </div>
-                <span class="layer-opt-label">Standar</span>
-            </div>
-
-            <!-- 2. SATELIT -->
-            <div class="layer-option-item" id="layerOptSat" onclick="selectMapLayer('sat')" title="Citra Satelit">
-                <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <clipPath id="sqClipDeskSat"><rect width="64" height="64" rx="14"/></clipPath>
-                            <linearGradient id="satDeskLandGrad" x1="0" y1="0" x2="1" y2="1">
-                                <stop offset="0%" stop-color="#4a5d4e"/>
-                                <stop offset="50%" stop-color="#2d3e32"/>
-                                <stop offset="100%" stop-color="#5c6d54"/>
-                            </linearGradient>
-                            <linearGradient id="satDeskFieldGrad" x1="0" y1="1" x2="1" y2="0">
-                                <stop offset="0%" stop-color="#697762"/>
-                                <stop offset="100%" stop-color="#3d4c38"/>
-                            </linearGradient>
-                        </defs>
-                        <g clip-path="url(#sqClipDeskSat)">
-                            <rect width="64" height="64" fill="url(#satDeskLandGrad)"/>
-                            <path d="M0 0 L40 0 L28 28 L0 20 Z" fill="url(#satDeskFieldGrad)" opacity="0.9"/>
-                            <path d="M38 34 L64 26 L64 64 L24 64 Z" fill="#384534" opacity="0.95"/>
-                            <path d="M0 24 L24 30 L16 64 L0 64 Z" fill="#58674f"/>
-                            <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#2b2d2f" stroke-width="7" fill="none" stroke-linecap="round"/>
-                            <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#686b6e" stroke-width="5" fill="none" stroke-linecap="round"/>
-                            <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" fill="none"/>
-                            <path d="M-4 56 Q24 50 48 28 Q58 16 72 10" stroke="#2b2d2f" stroke-width="5.5" fill="none" stroke-linecap="round"/>
-                            <path d="M-4 56 Q24 50 48 28 Q58 16 72 10" stroke="#686b6e" stroke-width="4" fill="none" stroke-linecap="round"/>
-                            <path d="M32 66 Q36 44 58 36" stroke="#9aa0a6" stroke-width="2.5" fill="none"/>
-                        </g>
-                    </svg>
-                </div>
-                <span class="layer-opt-label">Satelit</span>
-            </div>
-
-            <!-- 3. GELAP / DARK -->
-            <div class="layer-option-item" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
-                <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <clipPath id="sqClipDeskDark"><rect width="64" height="64" rx="14"/></clipPath>
-                            <linearGradient id="darkDeskBgGrad" x1="0" y1="0" x2="1" y2="1">
-                                <stop offset="0%" stop-color="#1e222d"/>
-                                <stop offset="50%" stop-color="#151922"/>
-                                <stop offset="100%" stop-color="#0f1117"/>
-                            </linearGradient>
-                        </defs>
-                        <g clip-path="url(#sqClipDeskDark)">
-                            <rect width="64" height="64" fill="url(#darkDeskBgGrad)"/>
-                            <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#242b38"/>
-                            <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#1b202a"/>
-                            <path d="M-5 45 Q20 38 48 58" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                            <path d="M26 12 Q32 30 38 66" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#4f46e5" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
-                            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#38bdf8" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"/>
-                        </g>
-                    </svg>
-                </div>
-                <span class="layer-opt-label">Gelap</span>
-            </div>
-
-            <!-- 4. MEDAN / TERRAIN -->
+            <!-- 1. MEDAN / TERRAIN -->
             <div class="layer-option-item" id="layerOptTerrain" onclick="selectMapLayer('terrain')" title="Peta Medan">
                 <div class="layer-thumb-preview">
                     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
@@ -1064,62 +983,319 @@
                 <span class="layer-opt-label">Medan</span>
             </div>
 
-            <!-- 5. SESAR AKTIF & MEGATHRUST OVERLAY TOGGLE -->
-            <div class="layer-option-item" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Garis Patahan Sesar &amp; Megathrust">
-                <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <clipPath id="sqClipDeskFault"><rect width="64" height="64" rx="14"/></clipPath>
-                        </defs>
-                        <g clip-path="url(#sqClipDeskFault)">
-                            <rect width="64" height="64" fill="#fce8e6"/>
-                            <path d="M0 20 L64 20 M0 44 L64 44 M20 0 L20 64 M44 0 L44 64" stroke="#fad2cf" stroke-width="1.5"/>
-                            <path d="M32 10 L54 48 L10 48 Z" fill="#ea4335" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-                            <rect x="30" y="22" width="4" height="13" rx="2" fill="#ffffff"/>
-                            <circle cx="32" cy="41" r="2.3" fill="#ffffff"/>
-                        </g>
-                    </svg>
+            <!-- KONTAINER DINAMIS 3 MENU TENGAH (LALU LINTAS / TRANSPORTASI / BERSEPEDA ATAU SESAR / UKUR / GELAP) -->
+            <div id="desktopStripDynamicHook" style="display: contents;">
+                <!-- 2. SESAR AKTIF -->
+                <div class="layer-option-item" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Sesar Aktif & Megathrust">
+                    <div class="layer-thumb-preview">
+                        <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                            <defs><clipPath id="sqClipDeskFault"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                            <g clip-path="url(#sqClipDeskFault)">
+                                <rect width="64" height="64" fill="#fce8e6"/>
+                                <path d="M0 20 L64 20 M0 44 L64 44 M20 0 L20 64 M44 0 L44 64" stroke="#fad2cf" stroke-width="1.5"/>
+                                <path d="M32 10 L54 48 L10 48 Z" fill="#ea4335" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                <rect x="30" y="22" width="4" height="13" rx="2" fill="#ffffff"/>
+                                <circle cx="32" cy="41" r="2.3" fill="#ffffff"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <span class="layer-opt-label">Sesar<br>Aktif</span>
                 </div>
-                <span class="layer-opt-label">Sesar Aktif</span>
+
+                <!-- 3. UKUR -->
+                <div class="layer-option-item" id="layerOptMeasure" onclick="toggleMeasureFromLayer()" title="Ukur Jarak">
+                    <div class="layer-thumb-preview">
+                        <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                            <defs><clipPath id="sqClipDeskMeasure"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                            <g clip-path="url(#sqClipDeskMeasure)">
+                                <rect width="64" height="64" fill="#e8f0fe"/>
+                                <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#d2e3fc" stroke-width="1.5" stroke-dasharray="3,3"/>
+                                <path d="M14 50 L50 14" stroke="#1a73e8" stroke-width="4.5" stroke-linecap="round"/>
+                                <circle cx="14" cy="50" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
+                                <circle cx="50" cy="14" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
+                                <circle cx="14" cy="50" r="2.5" fill="#1a73e8"/>
+                                <circle cx="50" cy="14" r="2.5" fill="#1a73e8"/>
+                                <path d="M24 36 L29 31 M33 27 L38 22" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <span class="layer-opt-label">Ukur</span>
+                </div>
+
+                <!-- 4. GELAP -->
+                <div class="layer-option-item" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
+                    <div class="layer-thumb-preview">
+                        <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                            <defs><clipPath id="sqClipDeskDark"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                            <g clip-path="url(#sqClipDeskDark)">
+                                <rect width="64" height="64" fill="#151922"/>
+                                <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#242b38"/>
+                                <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#1b202a"/>
+                                <path d="M-5 45 Q20 38 48 58" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                <path d="M26 12 Q32 30 38 66" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#4f46e5" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
+                                <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#38bdf8" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <span class="layer-opt-label">Gelap</span>
+                </div>
             </div>
 
-            <!-- 6. UKUR JARAK -->
-            <div class="layer-option-item" id="layerOptMeasure" onclick="toggleMeasureFromLayer()" title="Ukur Jarak Antar Titik di Peta">
-                <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <clipPath id="sqClipDeskMeasure"><rect width="64" height="64" rx="14"/></clipPath>
-                        </defs>
-                        <g clip-path="url(#sqClipDeskMeasure)">
-                            <rect width="64" height="64" fill="#e8f0fe"/>
-                            <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#d2e3fc" stroke-width="1.5" stroke-dasharray="3,3"/>
-                            <path d="M14 50 L50 14" stroke="#1a73e8" stroke-width="4.5" stroke-linecap="round"/>
-                            <circle cx="14" cy="50" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
-                            <circle cx="50" cy="14" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
-                            <circle cx="14" cy="50" r="2.5" fill="#1a73e8"/>
-                            <circle cx="50" cy="14" r="2.5" fill="#1a73e8"/>
-                            <path d="M24 36 L29 31 M33 27 L38 22" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                        </g>
+            <!-- 5. TOMBOL LAINNYA (MEMBUKA DETAIL PETA FLYOUT) -->
+            <div class="layer-option-item" id="layerOptMore" onclick="openDesktopLayerDetailModal(event)" title="Detail peta lainnya">
+                <div class="layer-thumb-preview layer-thumb-more">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                        <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9.07l-9-7-9 7 1.63 1.2L12 16z"/>
                     </svg>
                 </div>
-                <span class="layer-opt-label">Ukur</span>
+                <span class="layer-opt-label">Lainnya</span>
             </div>
+        </div>
 
-            <!-- KONTAINER DINAMIS UNTUK DETAIL EKSTRA GOOGLE MAPS (LALU LINTAS, TRANSPORTASI, BERSEPEDA) -->
-            <div id="desktopExtraDetailsHook" style="display: contents;"></div>
+        <!-- ==================== DESKTOP LAYER DETAIL MODAL (GOOGLE MAPS FLYOUT PANEL) ==================== -->
+        <div class="desktop-layer-detail-modal" id="desktopLayerDetailModal" onclick="event.stopPropagation()">
+            <div class="detail-modal-header">
+                <span class="detail-modal-title">Detail peta</span>
+                <button class="detail-modal-close-btn" onclick="closeDesktopLayerDetailModal(event)" title="Tutup" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                </button>
+            </div>
+            
+            <div class="detail-modal-body">
+                <!-- 1. DETAIL PETA GRID (3 COLUMNS) -->
+                <div class="detail-modal-grid">
+                    <!-- Transportasi Umum -->
+                    <div class="layer-option-item" id="dtlOptTransit" onclick="toggleTransitLayer()" title="Transportasi Umum">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlTrans"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlTrans)">
+                                    <rect width="64" height="64" fill="#f8f9fa"/>
+                                    <path d="M-4 22 L68 22" stroke="#7baaf7" stroke-width="4"/>
+                                    <path d="M-4 32 L68 32" stroke="#8430ce" stroke-width="5"/>
+                                    <path d="M28 22 L36 32" stroke="#ea4335" stroke-width="3"/>
+                                    <rect x="12" y="10" width="18" height="18" rx="4" fill="#1a73e8"/>
+                                    <text x="21" y="24" font-family="'Google Sans', Roboto, sans-serif" font-weight="900" font-size="13" fill="#ffffff" text-anchor="middle">M</text>
+                                    <rect x="34" y="26" width="18" height="18" rx="4" fill="#0288d1"/>
+                                    <rect x="38" y="30" width="10" height="7" rx="1.5" fill="#ffffff"/>
+                                    <circle cx="40" cy="40.5" r="1.2" fill="#ffffff"/>
+                                    <circle cx="46" cy="40.5" r="1.2" fill="#ffffff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Transportasi<br>Umum</span>
+                    </div>
 
-            <!-- SUB-OPSI LAYER (GLOBE 3D & LABEL SATELIT DESKTOP) -->
-            <div class="layer-popup-suboptions" id="layerPopupSuboptions">
-                <label class="layer-checkbox-item" id="desktopGlobe3DRow" title="Tampilkan peta dalam bentuk Bola Dunia 3D interaktif">
-                    <input type="checkbox" id="desktopGlobe3DCheckbox" checked onchange="toggleGlobeProjection(this.checked)">
-                    <span class="custom-chk-box"></span>
-                    <span class="layer-chk-label">Tampilan Globe 3D</span>
-                </label>
-                <label class="layer-checkbox-item" id="desktopSatLabelRow" title="Tampilkan nama kota, jalan, dan batas wilayah pada peta satelit">
-                    <input type="checkbox" id="desktopSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
-                    <span class="custom-chk-box"></span>
-                    <span class="layer-chk-label">Label nama tempat</span>
-                </label>
+                    <!-- Lalu lintas -->
+                    <div class="layer-option-item" id="dtlOptTraffic" onclick="toggleTrafficLayer()" title="Lalu lintas">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlTraf"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlTraf)">
+                                    <rect width="64" height="64" fill="#f8f9fa"/>
+                                    <path d="M-4 32 L68 32" stroke="#dadce0" stroke-width="16"/>
+                                    <path d="M32 -4 L32 68" stroke="#dadce0" stroke-width="16"/>
+                                    <path d="M-4 26 L26 26 Q38 26 38 -4" stroke="#34a853" stroke-width="5" fill="none" stroke-linecap="round"/>
+                                    <path d="M38 68 L38 38 Q38 26 68 26" stroke="#fbbc04" stroke-width="5" fill="none" stroke-linecap="round"/>
+                                    <path d="M26 68 L26 38 Q26 38 -4 38" stroke="#ea4335" stroke-width="5" fill="none" stroke-linecap="round"/>
+                                    <path d="M26 -4 L26 26 Q26 38 68 38" stroke="#34a853" stroke-width="5" fill="none" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Lalu lintas</span>
+                    </div>
+
+                    <!-- Bersepeda -->
+                    <div class="layer-option-item" id="dtlOptBike" onclick="toggleBikeLayer()" title="Bersepeda">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlBike"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlBike)">
+                                    <rect width="64" height="64" fill="#e6f4ea"/>
+                                    <circle cx="20" cy="38" r="9" stroke="#137333" stroke-width="3" fill="none"/>
+                                    <circle cx="44" cy="38" r="9" stroke="#137333" stroke-width="3" fill="none"/>
+                                    <circle cx="32" cy="20" r="11" stroke="#34a853" stroke-width="3.5" fill="none" stroke-dasharray="5,3"/>
+                                    <path d="M20 38 L30 26 L38 26 L44 38 M30 26 L34 38 M27 22 L33 22" stroke="#137333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Bersepeda</span>
+                    </div>
+
+                    <!-- Medan -->
+                    <div class="layer-option-item" id="dtlOptTerrain" onclick="selectMapLayer('terrain')" title="Medan">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlTerr"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlTerr)">
+                                    <rect width="64" height="64" fill="url(#terrDeskGrad)"/>
+                                    <path d="M-10 64 Q10 40 26 44 Q42 48 64 24 L64 64 Z" fill="#889c79" opacity="0.75"/>
+                                    <path d="M-10 42 Q14 26 30 32 Q46 38 68 14 L68 0 L-10 0 Z" fill="#e8eee0" opacity="0.8"/>
+                                    <path d="M12 64 Q28 36 46 34 Q58 32 74 16 L74 64 Z" fill="#758866" opacity="0.6"/>
+                                    <path d="M-6 24 Q18 12 36 18 Q50 24 70 6" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Medan</span>
+                    </div>
+
+                    <!-- Street View -->
+                    <div class="layer-option-item" id="dtlOptStreetView" onclick="toggleStreetViewLayer()" title="Street View">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlSV"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlSV)">
+                                    <rect width="64" height="64" fill="#e8f0fe"/>
+                                    <path d="M-4 38 Q32 30 68 38" stroke="#8ab4f8" stroke-width="8" fill="none"/>
+                                    <path d="M32 -4 L32 68" stroke="#8ab4f8" stroke-width="8" fill="none"/>
+                                    <circle cx="32" cy="18" r="4.5" fill="#fbbc04"/>
+                                    <path d="M28 25 C28 23 36 23 36 25 L38 36 L34 36 L33 48 L31 48 L30 36 L26 36 Z" fill="#fbbc04" stroke="#e37400" stroke-width="0.7"/>
+                                    <path d="M25 28 L28 32 M39 28 L36 32" stroke="#fbbc04" stroke-width="2.5" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Street View</span>
+                    </div>
+
+                    <!-- Kebakaran hutan -->
+                    <div class="layer-option-item" id="dtlOptWildfire" onclick="toggleWildfireLayer()" title="Kebakaran hutan">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlFire"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlFire)">
+                                    <rect width="64" height="64" fill="#f8f9fa"/>
+                                    <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#e8eaed" stroke-width="8"/>
+                                    <circle cx="32" cy="32" r="18" fill="#ea4335"/>
+                                    <path d="M32 18 C32 18 36 23 36 27 C36 28.5 35.5 29.5 34.5 30.5 C36.5 30 38 32 38 34.5 C38 38 35 41 32 41 C29 41 26 38 26 34.5 C26 31 29 27.5 29 27.5 C29 27.5 30 26 30 24 C30 21.5 32 18 32 18 Z" fill="#ffffff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Kebakaran<br>hutan</span>
+                    </div>
+
+                    <!-- Kualitas Udara -->
+                    <div class="layer-option-item" id="dtlOptAirQuality" onclick="toggleAirQualityLayer()" title="Kualitas Udara">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlAQ"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlAQ)">
+                                    <rect width="64" height="64" fill="#f8f9fa"/>
+                                    <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#e8eaed" stroke-width="8"/>
+                                    <circle cx="32" cy="32" r="18" fill="#34a853"/>
+                                    <path d="M22 28 Q27 25 32 28 T42 28 M22 32 Q27 29 32 32 T42 32 M22 36 Q27 33 32 36 T42 36" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Kualitas<br>Udara</span>
+                    </div>
+
+                    <!-- Sesar Aktif & Megathrust -->
+                    <div class="layer-option-item" id="dtlOptFaults" onclick="toggleFaultsLayer()" title="Sesar Aktif & Megathrust">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlFault"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlFault)">
+                                    <rect width="64" height="64" fill="#fce8e6"/>
+                                    <path d="M0 20 L64 20 M0 44 L64 44 M20 0 L20 64 M44 0 L44 64" stroke="#fad2cf" stroke-width="1.5"/>
+                                    <path d="M32 10 L54 48 L10 48 Z" fill="#ea4335" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                    <rect x="30" y="22" width="4" height="13" rx="2" fill="#ffffff"/>
+                                    <circle cx="32" cy="41" r="2.3" fill="#ffffff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Sesar<br>Aktif</span>
+                    </div>
+                </div>
+
+                <!-- 2. ALAT PETA -->
+                <div class="detail-modal-divider"></div>
+                <div class="detail-modal-section-title">Alat peta</div>
+                <div class="detail-modal-grid">
+                    <div class="layer-option-item" id="dtlOptTravelTime" onclick="toggleTravelTimeTool()" title="Waktu perjalanan">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlTravel"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlTravel)">
+                                    <rect width="64" height="64" fill="#e8f0fe"/>
+                                    <path d="M12 40 C12 24 24 16 38 18 C52 20 54 36 46 48 C38 60 20 56 12 40 Z" stroke="#1a73e8" stroke-width="2" stroke-dasharray="3,3" fill="rgba(26, 115, 232, 0.15)"/>
+                                    <circle cx="32" cy="32" r="4" fill="#ea4335"/>
+                                    <circle cx="32" cy="32" r="2" fill="#ffffff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Waktu<br>perjalanan</span>
+                    </div>
+                    <div class="layer-option-item" id="dtlOptMeasure" onclick="toggleMeasureFromLayer()" title="Ukur jarak">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlMeas"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlMeas)">
+                                    <rect width="64" height="64" fill="#e8f0fe"/>
+                                    <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#d2e3fc" stroke-width="1.5" stroke-dasharray="3,3"/>
+                                    <path d="M14 50 L50 14" stroke="#1a73e8" stroke-width="4.5" stroke-linecap="round"/>
+                                    <circle cx="14" cy="50" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
+                                    <circle cx="50" cy="14" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
+                                    <circle cx="14" cy="50" r="2.5" fill="#1a73e8"/>
+                                    <circle cx="50" cy="14" r="2.5" fill="#1a73e8"/>
+                                    <path d="M24 36 L29 31 M33 27 L38 22" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Ukur</span>
+                    </div>
+                </div>
+
+                <!-- 3. JENIS PETA -->
+                <div class="detail-modal-divider"></div>
+                <div class="detail-modal-section-title">Jenis peta</div>
+                <div class="detail-modal-grid base-maps-grid">
+                    <div class="layer-option-item active" id="dtlOptLight" onclick="selectMapLayer('light')" title="Peta Default / Standar">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlDef"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlDef)">
+                                    <rect width="64" height="64" fill="#aadaff"/>
+                                    <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#cbe6a3"/>
+                                    <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#e8f0d8"/>
+                                    <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#8ab4f8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#fbbc04" stroke-width="4" fill="none" stroke-linecap="round"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Default</span>
+                    </div>
+                    <div class="layer-option-item" id="dtlOptSat" onclick="selectMapLayer('sat')" title="Citra Satelit">
+                        <div class="layer-thumb-preview">
+                            <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                                <defs><clipPath id="sqClipDtlSat"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                                <g clip-path="url(#sqClipDtlSat)">
+                                    <rect width="64" height="64" fill="url(#satDeskLandGrad)"/>
+                                    <path d="M0 0 L40 0 L28 28 L0 20 Z" fill="url(#satDeskFieldGrad)" opacity="0.9"/>
+                                    <path d="M38 34 L64 26 L64 64 L24 64 Z" fill="#384534" opacity="0.95"/>
+                                    <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#686b6e" stroke-width="5" fill="none" stroke-linecap="round"/>
+                                    <path d="M-6 48 Q22 42 42 22 Q54 10 70 4" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3,3" fill="none"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <span class="layer-opt-label">Satelit</span>
+                    </div>
+                </div>
+
+                <!-- FOOTER CHECKBOXES -->
+                <div class="detail-modal-divider"></div>
+                <div class="detail-modal-checkboxes">
+                    <label class="layer-checkbox-item" id="dtlGlobe3DRow" title="Tampilkan peta dalam bentuk Bola Dunia 3D interaktif">
+                        <input type="checkbox" id="dtlGlobe3DCheckbox" checked onchange="toggleGlobeProjection(this.checked)">
+                        <span class="custom-chk-box"></span>
+                        <span class="layer-chk-label">Tampilan globe <span class="chk-info-circle">?</span></span>
+                    </label>
+                    <label class="layer-checkbox-item" id="dtlSatLabelRow" title="Tampilkan nama tempat pada peta">
+                        <input type="checkbox" id="dtlSatLabelCheckbox" checked onchange="toggleSatelliteLabels(this.checked)">
+                        <span class="custom-chk-box"></span>
+                        <span class="layer-chk-label">Label</span>
+                    </label>
+                </div>
             </div>
         </div>
     </div>

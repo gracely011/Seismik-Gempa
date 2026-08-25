@@ -25,6 +25,14 @@
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
     --rail-width: 72px;
     --panel-width: 390px;
+    --gmap-directions-color: #007b8b;
+
+    /* SVG Mask Ikon Google Maps Resmi (Bisa dipanggil bebas di CSS) */
+    --icon-search-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960'%3E%3Cpath fill='%23000' d='M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z'/%3E%3C/svg%3E");
+    --icon-directions-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41zM14 14.5V12h-4v3H8v-4c0-.55.45-1 1-1h5V7.5l3.5 3.5-3.5 3.5z'/%3E%3C/svg%3E");
+    --icon-menu-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z'/%3E%3C/svg%3E");
+    --icon-close-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z'/%3E%3C/svg%3E");
+    --icon-layers-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960'%3E%3Cpath fill='%23000' d='M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z'/%3E%3C/svg%3E");
 }
 
 /* LIGHT THEME (GOOGLE MAPS LIGHT MODE) */
@@ -537,6 +545,200 @@ body.theme-dark .map-dot.dot-3 {
         background: var(--border-subtle);
         margin: 12px 0 0 0;
     }
+
+    /* ==================== DAFTAR CUPLIKAN TEMPAT & BUNDEL TERBARU (GOOGLE MAPS) ==================== */
+    .desktop-nav-rail,
+    .ODXihb.Hk4XGb {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scrollbar-width: none !important;
+    }
+    .desktop-nav-rail::-webkit-scrollbar,
+    .ODXihb.Hk4XGb::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .rail-recent-places-list {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Tombol Cuplikan Tempat / Bundel (.wR3cXd.aJPqP) */
+    .wR3cXd.aJPqP {
+        width: 72px !important;
+        margin-top: 8px !important;
+        cursor: pointer !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        position: relative !important;
+    }
+
+    .aJPqP .NP7r5c {
+        height: 40px !important;
+        width: 100% !important;
+        margin-top: 4px !important;
+        margin-bottom: 0 !important;
+        position: relative !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    /* Kontainer Thumbnail Bertumpuk & Tunggal */
+    .hkjMUd,
+    .xSVTVc {
+        align-items: center !important;
+        display: flex !important;
+        height: 32px !important;
+        width: 32px !important;
+        justify-content: center !important;
+        position: absolute !important;
+    }
+
+    .flwnib .hkjMUd,
+    .flwnib .xSVTVc {
+        height: 28px !important;
+        width: 28px !important;
+    }
+
+    .flwnib .xSVTVc {
+        transform: translate(-3px, -3px) !important;
+        z-index: 2 !important;
+    }
+
+    .hkjMUd {
+        transform: translate(3px, 3px) !important;
+        z-index: 1 !important;
+    }
+
+    /* Border Outline & Shadow Frame (.wiquBf) */
+    .wiquBf {
+        border-radius: 8px !important;
+        box-shadow: 0 0 0 2px var(--bg-rail, #ffffff) !important;
+        z-index: 3 !important;
+        position: absolute !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+        transition: box-shadow 0.2s ease;
+    }
+
+    body.theme-dark .wiquBf {
+        box-shadow: 0 0 0 2px var(--bg-rail, #202124) !important;
+    }
+
+    .flwnib .xSVTVc .wiquBf,
+    .flwnib .xSVTVc .hZI5De,
+    .flwnib .xSVTVc .kSOdnb {
+        border-radius: 6px !important;
+    }
+
+    /* Efek Hover Bundel / Tempat */
+    .aJPqP:hover:not(.atHn2d) .wiquBf {
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.4), 0 0 0 2px var(--bg-rail, #ffffff) !important;
+    }
+    body.theme-dark .aJPqP:hover:not(.atHn2d) .wiquBf {
+        box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.4), 0 0 0 2px var(--bg-rail, #202124) !important;
+    }
+
+    /* Selected / Active Bundle State (.atHn2d) */
+    .aJPqP.atHn2d .wiquBf {
+        box-shadow: inset 0 0 0 2px var(--bg-rail, #ffffff), 0 0 0 2px #1a73e8 !important;
+    }
+    body.theme-dark .aJPqP.atHn2d .wiquBf {
+        box-shadow: inset 0 0 0 2px var(--bg-rail, #202124), 0 0 0 2px #8ab4f8 !important;
+    }
+
+    /* Overlay Efek Gelap (.hZI5De) */
+    .hZI5De {
+        border-radius: 8px !important;
+        display: flex !important;
+        position: absolute !important;
+        z-index: 2 !important;
+        width: 100% !important;
+        height: 100% !important;
+        pointer-events: none !important;
+    }
+
+    .xkqFBc .hZI5De {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+    }
+    .xSVTVc .hZI5De { opacity: 0.05 !important; }
+    .hkjMUd .hZI5De { opacity: 0.5 !important; }
+
+    /* Gambar Thumbnail (.kSOdnb) */
+    .kSOdnb {
+        border-radius: 8px !important;
+        display: flex !important;
+        margin: auto !important;
+        object-fit: cover !important;
+        position: absolute !important;
+        z-index: 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Badge Jumlah Tempat / Counter (.aJVa5c) */
+    .aJVa5c {
+        color: #ffffff !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+        position: absolute !important;
+        text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 5px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 0, 0, 0.5) !important;
+        transform: translate(-4px, 2px) !important;
+        width: 21px !important;
+        z-index: 3 !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        font-family: "Google Sans Text", Roboto, Arial, sans-serif !important;
+        pointer-events: none !important;
+    }
+
+    /* Label Teks di Bawah Thumbnail */
+    .xkqFBc .d0UoQ {
+        margin-bottom: 3px !important;
+        padding-top: 1px !important;
+    }
+
+    .cGRe9e.f0A9Ob {
+        -webkit-line-clamp: 1 !important;
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+    }
+
+    .rail-recent-places-list .cGRe9e,
+    .aJPqP .cGRe9e {
+        position: relative !important;
+        top: 1px !important;
+        font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif !important;
+        font-size: 0.75rem !important; /* 12px */
+        font-weight: 400 !important;
+        letter-spacing: 0.0125rem !important;
+        line-height: 1rem !important;
+        max-width: 64px !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        color: var(--text-secondary) !important;
+    }
+
+    .aJPqP:hover .cGRe9e {
+        color: var(--text-primary) !important;
+    }
+
+    .aJPqP.atHn2d .cGRe9e {
+        color: var(--color-primary, #1a73e8) !important;
+        font-weight: 500 !important;
+    }
 }
 
 /* Backward compatibility fallback utility */
@@ -564,7 +766,7 @@ body.theme-dark .map-dot.dot-3 {
 .panel-container {
     position: fixed;
     top: 12px;
-    left: calc(var(--rail-width) + 12px);
+    left: calc(var(--rail-width) + 20px);
     bottom: 12px;
     width: var(--panel-width);
     max-width: calc(100vw - var(--rail-width) - 24px);
@@ -623,7 +825,7 @@ body.theme-dark .map-dot.dot-3 {
     }
 
     body.nav-rail-disabled .panel-container {
-        left: 12px !important;
+        left: 20px !important;
         width: 376px !important;
     }
 
@@ -702,27 +904,27 @@ body.theme-dark .map-dot.dot-3 {
         border-bottom: 1px solid var(--border-color) !important;
     }
 
-    /* Posisi Layer Thumbnail saat Panel Collapsed vs Expanded pada Desktop */
+    /* Posisi Layer Thumbnail saat Panel Collapsed vs Expanded pada Desktop (Sejajar Tegak Lurus dengan Searchbar) */
     body.panel-collapsed .layer-switcher-wrapper {
-        left: calc(var(--rail-width) + 12px) !important;
+        left: calc(var(--rail-width) + 20px) !important;
         bottom: 20px !important;
         transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
     }
 
     body.nav-rail-disabled.panel-collapsed .layer-switcher-wrapper {
-        left: 12px !important;
+        left: 20px !important;
         bottom: 20px !important;
         transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
     }
 
     body:not(.panel-collapsed):not(.nav-rail-disabled) .layer-switcher-wrapper {
-        left: calc(var(--rail-width) + var(--panel-width) + 24px) !important;
+        left: calc(var(--rail-width) + var(--panel-width) + 36px) !important;
         bottom: 20px !important;
         transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
     }
 
     body.nav-rail-disabled:not(.panel-collapsed) .layer-switcher-wrapper {
-        left: 404px !important;
+        left: calc(var(--panel-width) + 36px) !important;
         bottom: 20px !important;
         transition: left 0.2s cubic-bezier(0.0, 0, 0.2, 1);
     }
@@ -826,24 +1028,94 @@ body.theme-dark .map-dot.dot-3 {
     color: var(--text-primary);
 }
 
-.directions-btn {
-    background: var(--accent-teal);
-    color: #ffffff;
+.directions-btn,
+.hArJGc {
+    background: transparent !important;
+    color: var(--gmap-directions-color, #007b8b) !important;
     border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 44px;
+    height: 48px;
+    border-radius: 0;
+    box-shadow: none !important;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s, background 0.2s;
-    box-shadow: 0 2px 6px rgba(0, 131, 143, 0.4);
+    padding: 0;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
 }
 
-.directions-btn:hover {
-    transform: scale(1.08);
-    background: #006064;
+.directions-btn:hover,
+.hArJGc:hover {
+    transform: none !important;
+    opacity: 0.85;
+    background: transparent !important;
+}
+
+/* HELPER UTILITY CLASSES GOOGLE SYMBOLS (Bisa dipanggil bebas di HTML / JS) */
+.google-symbols {
+    font-size: 24px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.google-symbols.icon-search,
+.icon-search,
+.gmap-search-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    background-color: currentColor;
+    -webkit-mask: var(--icon-search-svg) no-repeat center / contain;
+    mask: var(--icon-search-svg) no-repeat center / contain;
+    vertical-align: middle;
+}
+
+.google-symbols.icon-directions,
+.icon-directions,
+.gmap-directions-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    background-color: currentColor;
+    -webkit-mask: var(--icon-directions-svg) no-repeat center / contain;
+    mask: var(--icon-directions-svg) no-repeat center / contain;
+    vertical-align: middle;
+}
+
+.google-symbols.icon-menu,
+.icon-menu,
+.gmap-menu-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    background-color: currentColor;
+    -webkit-mask: var(--icon-menu-svg) no-repeat center / contain;
+    mask: var(--icon-menu-svg) no-repeat center / contain;
+    vertical-align: middle;
+}
+
+.google-symbols.icon-close,
+.icon-close,
+.gmap-close-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    background-color: currentColor;
+    -webkit-mask: var(--icon-close-svg) no-repeat center / contain;
+    mask: var(--icon-close-svg) no-repeat center / contain;
+    vertical-align: middle;
 }
 
 /* SEARCH SUGGESTIONS DROPDOWN (GOOGLE MAPS STYLE) */
@@ -1915,12 +2187,74 @@ body.layer-sat-active .gmap-zoom-divider {
     flex-shrink: 0;
 }
 
+/* ==================== GOOGLE MAPS LAYER SWITCHER MOBILE (FLOATING CIRCULAR BUTTON) ==================== */
+@media (max-width: 768px) {
+    .layer-switcher-wrapper {
+        position: fixed !important;
+        top: 116px !important;
+        right: 14px !important;
+        left: auto !important;
+        bottom: auto !important;
+        z-index: 1000 !important;
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        pointer-events: auto !important;
+    }
+
+    .layer-thumbnail-card,
+    body.theme-light .layer-thumbnail-card {
+        position: relative !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        background-color: #c2e7ff !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='%23001d35'%3E%3Cpath d='M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: center center !important;
+        background-size: 22px 22px !important;
+        border: none !important;
+        box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 2px 6px rgba(60, 64, 67, 0.15) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    body.theme-dark .layer-thumbnail-card {
+        background-color: #1b2a3a !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='%23c2e7ff'%3E%3Cpath d='M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: center center !important;
+        background-size: 22px 22px !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .layer-thumbnail-card .layer-card-svg-bg,
+    .layer-thumbnail-card .layer-thumbnail-badge {
+        display: none !important;
+    }
+
+    .layer-popup-menu,
+    .desktop-layer-detail-modal {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+}
+
 /* ==================== GOOGLE MAPS LAYER SWITCHER DESKTOP (DYNAMIC POSITIONING) ==================== */
 @media (min-width: 769px) {
     .layer-switcher-wrapper {
         position: fixed !important;
         bottom: 20px !important;
-        left: calc(var(--rail-width) + 12px + var(--panel-width) + 16px) !important;
+        left: calc(var(--rail-width) + var(--panel-width) + 36px) !important;
         right: auto !important;
         top: auto !important;
         z-index: 1000 !important;
@@ -1933,22 +2267,22 @@ body.layer-sat-active .gmap-zoom-divider {
         transition: left 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s ease !important;
     }
 
-    /* Saat Sidebar Ditutup (Collapsed) & Nav Rail Aktif -> Merapat langsung ke samping nav-rail (72px + 12px = 84px) */
+    /* Saat Sidebar Ditutup (Collapsed) & Nav Rail Aktif -> Sejajar lurus dengan Searchbar (72px + 20px = 92px) */
     body:not(.nav-rail-disabled).panel-collapsed .layer-switcher-wrapper,
     body:not(.nav-rail-disabled) .panel-container.collapsed ~ .layer-switcher-wrapper {
-        left: calc(var(--rail-width) + 12px) !important;
+        left: calc(var(--rail-width) + 20px) !important;
     }
 
     .layer-thumbnail-card {
         position: relative;
-        width: 75px !important;
-        height: 75px !important;
+        width: 79px !important;
+        height: 79px !important;
         border-radius: 8px !important;
         border: 2px solid #ffffff !important;
         background-size: cover;
         background-position: center;
         cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 2px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15) !important;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         overflow: hidden;
         display: flex;
@@ -1962,16 +2296,15 @@ body.layer-sat-active .gmap-zoom-divider {
 
     body.theme-light .layer-thumbnail-card {
         border: 2px solid #ffffff !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 2px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15) !important;
     }
 
     .layer-thumbnail-card:hover {
-        transform: scale(1.04);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 6px rgba(255, 255, 255, 0.3) !important;
     }
 
     .layer-thumbnail-card:active {
-        transform: scale(0.97);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
     }
 
     .layer-card-svg-bg {
@@ -1994,32 +2327,61 @@ body.layer-sat-active .gmap-zoom-divider {
     }
 
     .layer-thumbnail-badge {
+        border-radius: 6px;
+        cursor: pointer;
+        color: #fff;
+        font-family: "Google Sans", Roboto, Arial, sans-serif;
+        font-size: 11px;
         position: absolute;
+        line-height: normal;
+        padding: 54px 0 6px;
         bottom: 0;
         left: 0;
-        right: 0;
-        z-index: 2;
-        background: rgba(0, 0, 0, 0.65) !important;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        color: #ffffff !important;
-        font-family: "Google Sans", Roboto, Arial, sans-serif !important;
-        font-size: 11px !important;
-        font-weight: 500 !important;
-        text-align: center;
-        padding: 4px 6px !important;
-        display: flex !important;
+        width: 100%;
+        background-image: linear-gradient(transparent, transparent 20%, rgba(0, 0, 0, .1) 40%, rgba(0, 0, 0, .4) 60%, rgba(0, 0, 0, .6) 80%, rgba(0, 0, 0, .6));
+        height: 15px;
+        text-shadow: rgba(0, 0, 0, .7) 0 1px 8px;
+        display: flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        line-height: 1.1;
-        border-radius: 0 0 6px 6px !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        gap: 5px;
+        box-sizing: content-box;
+        z-index: 2;
+        pointer-events: none;
     }
 
-    .layer-thumbnail-badge .gmap-icon {
-        width: 15px;
-        height: 15px;
+    .layer-thumbnail-badge svg,
+    .layer-badge-icon,
+    .layer-thumbnail-badge .icon-layers {
+        width: 18px !important;
+        height: 18px !important;
+        background-color: currentColor !important;
+        -webkit-mask: var(--icon-layers-svg) no-repeat center / contain;
+        mask: var(--icon-layers-svg) no-repeat center / contain;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .layer-thumbnail-badge .badge-text-default {
+        display: inline-block;
+    }
+
+    .layer-thumbnail-badge .badge-text-hover {
+        display: none;
+    }
+
+    @media (min-width: 769px) {
+        .layer-switcher-wrapper:hover .layer-thumbnail-badge .icon-layers,
+        .layer-thumbnail-card:hover .layer-thumbnail-badge .icon-layers,
+        .layer-switcher-wrapper:hover .layer-thumbnail-badge .badge-text-default,
+        .layer-thumbnail-card:hover .layer-thumbnail-badge .badge-text-default {
+            display: none !important;
+        }
+
+        .layer-switcher-wrapper:hover .layer-thumbnail-badge .badge-text-hover,
+        .layer-thumbnail-card:hover .layer-thumbnail-badge .badge-text-hover {
+            display: inline-block !important;
+        }
     }
 
     .mobile-layer-icon {
@@ -2032,18 +2394,20 @@ body.layer-sat-active .gmap-zoom-divider {
 
     .layer-popup-menu {
         position: absolute;
-        left: 88px;
-        bottom: 0;
+        left: 92px;
+        top: 0;
+        bottom: auto;
         margin-left: 0;
         display: flex;
         flex-direction: row;
-        align-items: center;
-        height: 75px;
-        gap: 14px;
+        align-items: flex-start;
+        min-height: 92px;
+        height: auto;
+        gap: 8px;
         background: var(--bg-panel);
         border: 1px solid var(--border-color);
         border-radius: 14px;
-        padding: 0 16px;
+        padding: 8px 12px 10px;
         box-shadow: var(--shadow-panel);
         opacity: 0;
         pointer-events: none;
@@ -2085,15 +2449,25 @@ body.theme-light .layer-popup-menu {
     transition-delay: 0s;
 }
 
+/* Ketika panel Detail Peta aktif, matikan popup menu horizontal sepenuhnya dari interaksi hover */
+.layer-switcher-wrapper.detail-open .layer-popup-menu,
+.layer-switcher-wrapper:has(.desktop-layer-detail-modal.show) .layer-popup-menu {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    display: none !important;
+}
+
 .layer-option-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     cursor: pointer;
     text-align: center;
     transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.15s ease;
     user-select: none;
-    width: 52px;
+    width: 60px;
     flex-shrink: 0;
     -webkit-tap-highlight-color: transparent;
 }
@@ -2122,6 +2496,7 @@ body.theme-light .layer-popup-menu {
     background-color: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
 }
 
 body.theme-dark .layer-thumb-preview {
@@ -2145,16 +2520,46 @@ body.theme-dark .layer-option-item.active .layer-thumb-preview {
     box-shadow: 0 0 0 1px #8ab4f8, 0 3px 8px rgba(138, 180, 248, 0.3);
 }
 
+/* Tombol Lainnya (More button) */
+.layer-thumb-more {
+    background-color: #f1f3f4;
+    color: #5f6368;
+}
+
+body.theme-dark .layer-thumb-more {
+    background-color: #303134;
+    color: #e8eaed;
+}
+
+.layer-option-item:hover .layer-thumb-more {
+    background-color: #e8eaed;
+    color: #202124;
+}
+
+body.theme-dark .layer-option-item:hover .layer-thumb-more {
+    background-color: #3c4043;
+    color: #ffffff;
+}
+
 /* Label nama di bawah thumbnail untuk semua item */
 .layer-opt-label {
+    color: #5e5e5e;
+    cursor: pointer;
     display: block;
-    font-size: 11px;
+    margin-top: 3px;
+    font-size: 10.5px;
     font-weight: 500;
-    color: var(--text-secondary);
-    margin-top: 4px;
-    line-height: 1.2;
-    white-space: nowrap;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+    width: 100%;
+    word-break: normal;
+    overflow-wrap: break-word;
     transition: color 0.15s ease, font-weight 0.15s ease;
+}
+
+body.theme-dark .layer-opt-label {
+    color: #9aa0a6;
 }
 
 .layer-option-item.active .layer-opt-label {
@@ -2164,6 +2569,160 @@ body.theme-dark .layer-option-item.active .layer-thumb-preview {
 
 body.theme-dark .layer-option-item.active .layer-opt-label {
     color: #8ab4f8;
+}
+
+/* ==================== DESKTOP LAYER DETAIL MODAL (GOOGLE MAPS FLYOUT PANEL) ==================== */
+.desktop-layer-detail-modal {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .desktop-layer-detail-modal {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 290px;
+        max-height: calc(100vh - 120px);
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22), 0 1px 6px rgba(0, 0, 0, 0.12);
+        padding: 16px;
+        z-index: 1005;
+        box-sizing: border-box;
+        display: none;
+        flex-direction: column;
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+        transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+        pointer-events: none;
+        user-select: none;
+    }
+
+    body.theme-dark .desktop-layer-detail-modal {
+        background: #202124;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 1px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .desktop-layer-detail-modal.show {
+        display: flex;
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    .detail-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .detail-modal-title {
+        font-family: 'Google Sans', Roboto, sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-primary);
+        letter-spacing: -0.2px;
+    }
+
+    .detail-modal-close-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .detail-modal-close-btn:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+        color: var(--text-primary);
+    }
+
+    body.theme-dark .detail-modal-close-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+    }
+
+    .detail-modal-body {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+
+    .detail-modal-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px 6px;
+        justify-items: center;
+        align-items: start;
+        margin-bottom: 4px;
+    }
+
+    .detail-modal-grid.base-maps-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px 16px;
+    }
+
+    .detail-modal-grid .layer-option-item {
+        width: 100%;
+        max-width: 72px;
+    }
+
+    .detail-modal-grid .layer-opt-label {
+        font-size: 11px;
+        line-height: 1.15;
+        margin-top: 4px;
+        text-align: center;
+    }
+
+    .detail-modal-divider {
+        height: 1px;
+        background: rgba(60, 64, 67, 0.12);
+        margin: 12px 0;
+        width: 100%;
+    }
+
+    body.theme-dark .detail-modal-divider {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .detail-modal-section-title {
+        font-family: 'Google Sans', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+    }
+
+    .detail-modal-checkboxes {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 2px;
+    }
+
+    .chk-info-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 1px solid currentColor;
+        font-size: 9px;
+        font-weight: 700;
+        margin-left: 2px;
+        line-height: 1;
+    }
 }
 
 /* Akselerasi Hardware & Smooth Dragging Leaflet Tiles */

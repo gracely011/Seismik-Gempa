@@ -432,13 +432,13 @@ function buildMapLibreStyle() {
             tileSize: 256,
             maxzoom: 20
         },
-        'gmap-hybrid-src': {
+        'gmap-labels-src': {
             type: 'raster',
             tiles: [
-                'https://mt0.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}',
-                'https://mt1.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}',
-                'https://mt2.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}',
-                'https://mt3.google.com/vt/lyrs=y&hl=id&gl=ID&x={x}&y={y}&z={z}'
+                'https://mt0.google.com/vt/lyrs=h&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt1.google.com/vt/lyrs=h&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=h&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=h&hl=id&gl=ID&x={x}&y={y}&z={z}'
             ],
             tileSize: 256,
             maxzoom: 20
@@ -462,13 +462,13 @@ function buildMapLibreStyle() {
         },
         'transit-src': {
             type: 'raster',
-            tiles: ['https://mt0.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=m,transit&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tiles: ['https://mt0.google.com/vt/lyrs=h,transit&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=h,transit&hl=id&gl=ID&x={x}&y={y}&z={z}'],
             tileSize: 256,
             maxzoom: 20
         },
         'bike-src': {
             type: 'raster',
-            tiles: ['https://mt0.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=m,bike&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tiles: ['https://mt0.google.com/vt/lyrs=h,bike&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=h,bike&hl=id&gl=ID&x={x}&y={y}&z={z}'],
             tileSize: 256,
             maxzoom: 20
         },
@@ -480,7 +480,7 @@ function buildMapLibreStyle() {
         },
         'streetview-src': {
             type: 'raster',
-            tiles: ['https://mt0.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=m,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}'],
+            tiles: ['https://mt0.google.com/vt/lyrs=h,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}', 'https://mt1.google.com/vt/lyrs=h,sv_coverage&hl=id&gl=ID&x={x}&y={y}&z={z}'],
             tileSize: 256,
             maxzoom: 20
         },
@@ -506,8 +506,8 @@ function buildMapLibreStyle() {
         { id: 'layer-light', type: 'raster', source: isGmap ? 'gmap-roadmap-src' : 'light-src', layout: { visibility: currentMapLayer === 'light' ? 'visible' : 'none' } },
         { id: 'layer-dark', type: 'raster', source: isGmap ? 'gmap-roadmap-src' : 'dark-src', layout: { visibility: currentMapLayer === 'dark' ? 'visible' : 'none' } },
         { id: 'layer-terrain', type: 'raster', source: isGmap ? 'gmap-terrain-src' : 'terrain-src', layout: { visibility: currentMapLayer === 'terrain' ? 'visible' : 'none' } },
-        { id: 'layer-sat', type: 'raster', source: isGmap ? (isSatelliteLabelsEnabled ? 'gmap-hybrid-src' : 'gmap-sat-src') : 'sat-src', layout: { visibility: currentMapLayer === 'sat' ? 'visible' : 'none' } },
-        { id: 'layer-sat-labels', type: 'raster', source: 'sat-labels-src', layout: { visibility: (!isGmap && currentMapLayer === 'sat' && isSatelliteLabelsEnabled) ? 'visible' : 'none' } },
+        { id: 'layer-sat', type: 'raster', source: isGmap ? 'gmap-sat-src' : 'sat-src', layout: { visibility: currentMapLayer === 'sat' ? 'visible' : 'none' } },
+        { id: 'layer-sat-labels', type: 'raster', source: isGmap ? 'gmap-labels-src' : 'sat-labels-src', layout: { visibility: (currentMapLayer === 'sat' && isSatelliteLabelsEnabled) ? 'visible' : 'none' } },
         {
             id: 'layer-geo-ref-lines',
             type: 'line',
@@ -582,6 +582,18 @@ map.on('load', () => {
     updateGlobeUI();
     updateGlobeZoomState();
     cullOccludedGlobeMarkers();
+});
+
+map.on('click', (e) => {
+    if (window.innerWidth > 768 && !isPanelCollapsed) {
+        // Jika klik bukan pada marker atau popup
+        if (!e.originalEvent || !e.originalEvent.target.closest('.maplibregl-popup') && !e.originalEvent.target.closest('.maplibregl-marker')) {
+            toggleSidebar(false);
+            const searchInputEl = document.getElementById("searchInput");
+            if (searchInputEl) searchInputEl.blur();
+            if (typeof closeSearchSuggestions === 'function') closeSearchSuggestions();
+        }
+    }
 });
 
 map.on('move', () => {
@@ -727,6 +739,110 @@ function updateLayerDetailUI() {
 }
 
 // ==================== DYNAMIC DOM INJECTION & PURGE MODULE (STEALTH) ====================
+function openDesktopLayerDetailModal(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const modal = document.getElementById('desktopLayerDetailModal');
+    const popup = document.getElementById('layerPopupMenu');
+    const wrapper = document.querySelector('.layer-switcher-wrapper');
+    if (popup) popup.classList.remove('show');
+    if (wrapper) wrapper.classList.add('detail-open');
+    if (modal) {
+        modal.classList.add('show');
+    }
+}
+
+function closeDesktopLayerDetailModal(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const modal = document.getElementById('desktopLayerDetailModal');
+    const wrapper = document.querySelector('.layer-switcher-wrapper');
+    if (wrapper) wrapper.classList.remove('detail-open');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+function toggleTravelTimeTool() {
+    if (typeof showToastNotification === 'function') {
+        showToastNotification('Alat Waktu Perjalanan Google Maps');
+    }
+}
+
+function updateLayerDetailUI() {
+    const isLight = currentMapLayer === 'light' || (!currentMapLayer);
+    const isSat = currentMapLayer === 'sat';
+    const isTerrain = currentMapLayer === 'terrain';
+    const isDark = currentMapLayer === 'dark';
+
+    // Base maps in popup strip
+    const optTerrain = document.getElementById('layerOptTerrain');
+    if (optTerrain) optTerrain.classList.toggle('active', isTerrain);
+    const optDark = document.getElementById('layerOptDark');
+    if (optDark) optDark.classList.toggle('active', isDark);
+
+    // Base maps in Detail modal
+    const dtlLight = document.getElementById('dtlOptLight');
+    if (dtlLight) dtlLight.classList.toggle('active', isLight);
+    const dtlSat = document.getElementById('dtlOptSat');
+    if (dtlSat) dtlSat.classList.toggle('active', isSat);
+    const dtlTerrain = document.getElementById('dtlOptTerrain');
+    if (dtlTerrain) dtlTerrain.classList.toggle('active', isTerrain);
+
+    // Overlays
+    const dtlTransit = document.getElementById('dtlOptTransit');
+    if (dtlTransit) dtlTransit.classList.toggle('active', !!isTransitLayerActive);
+    const optTransit = document.getElementById('layerOptTransit');
+    if (optTransit) optTransit.classList.toggle('active', !!isTransitLayerActive);
+    const mobTransit = document.getElementById('mobLayerOptTransit');
+    if (mobTransit) mobTransit.classList.toggle('active', !!isTransitLayerActive);
+
+    const dtlTraffic = document.getElementById('dtlOptTraffic');
+    if (dtlTraffic) dtlTraffic.classList.toggle('active', !!isTrafficLayerActive);
+    const optTraffic = document.getElementById('layerOptTraffic');
+    if (optTraffic) optTraffic.classList.toggle('active', !!isTrafficLayerActive);
+    const mobTraffic = document.getElementById('mobLayerOptTraffic');
+    if (mobTraffic) mobTraffic.classList.toggle('active', !!isTrafficLayerActive);
+
+    const dtlBike = document.getElementById('dtlOptBike');
+    if (dtlBike) dtlBike.classList.toggle('active', !!isBikeLayerActive);
+    const optBike = document.getElementById('layerOptBike');
+    if (optBike) optBike.classList.toggle('active', !!isBikeLayerActive);
+    const mobBike = document.getElementById('mobLayerOptBike');
+    if (mobBike) mobBike.classList.toggle('active', !!isBikeLayerActive);
+
+    const dtlSV = document.getElementById('dtlOptStreetView');
+    if (dtlSV) dtlSV.classList.toggle('active', !!isStreetViewActive);
+    const mobSV = document.getElementById('mobLayerOptStreetView');
+    if (mobSV) mobSV.classList.toggle('active', !!isStreetViewActive);
+
+    const dtlFire = document.getElementById('dtlOptWildfire');
+    if (dtlFire) dtlFire.classList.toggle('active', !!isWildfireActive);
+    const mobFire = document.getElementById('mobLayerOptWildfire');
+    if (mobFire) mobFire.classList.toggle('active', !!isWildfireActive);
+
+    const dtlAQ = document.getElementById('dtlOptAirQuality');
+    if (dtlAQ) dtlAQ.classList.toggle('active', !!isAirQualityActive);
+    const mobAQ = document.getElementById('mobLayerOptAirQuality');
+    if (mobAQ) mobAQ.classList.toggle('active', !!isAirQualityActive);
+
+    const dtlFault = document.getElementById('dtlOptFaults');
+    if (dtlFault) dtlFault.classList.toggle('active', typeof isFaultsLayerActive !== 'undefined' && !!isFaultsLayerActive);
+    const optFault = document.getElementById('layerOptFaults');
+    if (optFault) optFault.classList.toggle('active', typeof isFaultsLayerActive !== 'undefined' && !!isFaultsLayerActive);
+    const mobFault = document.getElementById('mobLayerOptFaults');
+    if (mobFault) mobFault.classList.toggle('active', typeof isFaultsLayerActive !== 'undefined' && !!isFaultsLayerActive);
+
+    const dtlMeas = document.getElementById('dtlOptMeasure');
+    if (dtlMeas) dtlMeas.classList.toggle('active', typeof isMeasureActive !== 'undefined' && !!isMeasureActive);
+    const optMeas = document.getElementById('layerOptMeasure');
+    if (optMeas) optMeas.classList.toggle('active', typeof isMeasureActive !== 'undefined' && !!isMeasureActive);
+
+    // Checkboxes
+    const dtlGlobeChk = document.getElementById('dtlGlobe3DCheckbox');
+    if (dtlGlobeChk) dtlGlobeChk.checked = typeof isGlobeModeActive !== 'undefined' && !!isGlobeModeActive;
+    const dtlSatChk = document.getElementById('dtlSatLabelCheckbox');
+    if (dtlSatChk) dtlSatChk.checked = typeof isSatelliteLabelsActive !== 'undefined' && !!isSatelliteLabelsActive;
+}
+
 function injectGoogleMapsVersionUI() {
     // 1. Inject Menu Item into Settings Drawer
     if (!document.getElementById('settingsGmapsVersionItem')) {
@@ -752,9 +868,9 @@ function injectGoogleMapsVersionUI() {
         if (sw) sw.setAttribute('aria-checked', isGoogleMapsEngineActive ? 'true' : 'false');
     }
 
-    // 2. Inject Extra Layer Details into Desktop Layer Popup
-    const deskHook = document.getElementById('desktopExtraDetailsHook');
-    if (deskHook && !document.getElementById('layerOptTraffic')) {
+    // 2. Inject 3 Middle Layer Details into Desktop 5-Menu Strip (Medan, Lalu lintas, Transportasi, Bersepeda, Lainnya)
+    const deskHook = document.getElementById('desktopStripDynamicHook');
+    if (deskHook) {
         deskHook.innerHTML = `
             <div class="layer-option-item ${isTrafficLayerActive ? 'active' : ''}" id="layerOptTraffic" onclick="toggleTrafficLayer()" title="Kondisi Lalu Lintas Live Google">
                 <div class="layer-thumb-preview">
@@ -771,7 +887,7 @@ function injectGoogleMapsVersionUI() {
                         </g>
                     </svg>
                 </div>
-                <span class="layer-opt-label">Lalu lintas</span>
+                <span class="layer-opt-label">Lalu<br>lintas</span>
             </div>
             <div class="layer-option-item ${isTransitLayerActive ? 'active' : ''}" id="layerOptTransit" onclick="toggleTransitLayer()" title="Jalur Transportasi Umum Google">
                 <div class="layer-thumb-preview">
@@ -791,7 +907,7 @@ function injectGoogleMapsVersionUI() {
                         </g>
                     </svg>
                 </div>
-                <span class="layer-opt-label">Transportasi</span>
+                <span class="layer-opt-label">Transportasi<br>Umum</span>
             </div>
             <div class="layer-option-item ${isBikeLayerActive ? 'active' : ''}" id="layerOptBike" onclick="toggleBikeLayer()" title="Jalur Sepeda Google">
                 <div class="layer-thumb-preview">
@@ -808,28 +924,10 @@ function injectGoogleMapsVersionUI() {
                 </div>
                 <span class="layer-opt-label">Bersepeda</span>
             </div>
-            <div class="layer-option-item ${is3DBuildingsActive ? 'active' : ''}" id="layerOpt3D" onclick="toggle3DBuildingsLayer()" title="Bangunan 3D Google">
-                <div class="layer-thumb-preview">
-                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                        <defs><clipPath id="sqClipDeskD3D"><rect width="64" height="64" rx="14"/></clipPath></defs>
-                        <g clip-path="url(#sqClipDeskD3D)">
-                            <rect width="64" height="64" fill="#f8f9fa"/>
-                            <path d="M-4 56 Q28 44 68 48 L68 68 L-4 68 Z" fill="#81c995"/>
-                            <polygon points="20,18 34,12 44,18 30,24" fill="#e8eaed" stroke="#bdc1c6" stroke-width="0.5"/>
-                            <polygon points="20,18 30,24 30,48 20,42" fill="#bdc1c6"/>
-                            <polygon points="30,24 44,18 44,42 30,48" fill="#9aa0a6"/>
-                            <polygon points="38,28 48,22 56,27 46,33" fill="#e8eaed" stroke="#bdc1c6" stroke-width="0.5"/>
-                            <polygon points="38,28 46,33 46,50 38,45" fill="#bdc1c6"/>
-                            <polygon points="46,33 56,27 56,44 46,50" fill="#9aa0a6"/>
-                        </g>
-                    </svg>
-                </div>
-                <span class="layer-opt-label">3D</span>
-            </div>
         `;
     }
 
-    // 3. Inject Full Set of 8 Extra Layer Details into Mobile Bottom Sheet
+    // 3. Inject Full Set of Extra Layer Details into Mobile Bottom Sheet
     const mobHook = document.getElementById('mobileExtraDetailsHook');
     if (mobHook) {
         mobHook.innerHTML = `
@@ -976,9 +1074,63 @@ function purgeGoogleMapsVersionUI() {
     const settingsItem = document.getElementById('settingsGmapsVersionItem');
     if (settingsItem) settingsItem.remove();
 
-    // 2. Remove Extra Layer Details from Desktop & Mobile
-    const deskHook = document.getElementById('desktopExtraDetailsHook');
-    if (deskHook) deskHook.innerHTML = '';
+    // 2. Restore Desktop 5-Menu Strip to Default (Medan, Sesar Aktif, Ukur, Gelap, Lainnya)
+    const deskHook = document.getElementById('desktopStripDynamicHook');
+    if (deskHook) {
+        deskHook.innerHTML = `
+            <div class="layer-option-item ${typeof isFaultsLayerActive !== 'undefined' && isFaultsLayerActive ? 'active' : ''}" id="layerOptFaults" onclick="toggleFaultsLayer()" title="Sesar Aktif & Megathrust">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskFault"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskFault)">
+                            <rect width="64" height="64" fill="#fce8e6"/>
+                            <path d="M0 20 L64 20 M0 44 L64 44 M20 0 L20 64 M44 0 L44 64" stroke="#fad2cf" stroke-width="1.5"/>
+                            <path d="M32 10 L54 48 L10 48 Z" fill="#ea4335" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                            <rect x="30" y="22" width="4" height="13" rx="2" fill="#ffffff"/>
+                            <circle cx="32" cy="41" r="2.3" fill="#ffffff"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="layer-opt-label">Sesar<br>Aktif</span>
+            </div>
+            <div class="layer-option-item ${typeof isMeasureActive !== 'undefined' && isMeasureActive ? 'active' : ''}" id="layerOptMeasure" onclick="toggleMeasureFromLayer()" title="Ukur Jarak">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskMeasure"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskMeasure)">
+                            <rect width="64" height="64" fill="#e8f0fe"/>
+                            <path d="M-4 32 L68 32 M32 -4 L32 68" stroke="#d2e3fc" stroke-width="1.5" stroke-dasharray="3,3"/>
+                            <path d="M14 50 L50 14" stroke="#1a73e8" stroke-width="4.5" stroke-linecap="round"/>
+                            <circle cx="14" cy="50" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
+                            <circle cx="50" cy="14" r="6" fill="#ffffff" stroke="#1a73e8" stroke-width="3.5"/>
+                            <circle cx="14" cy="50" r="2.5" fill="#1a73e8"/>
+                            <circle cx="50" cy="14" r="2.5" fill="#1a73e8"/>
+                            <path d="M24 36 L29 31 M33 27 L38 22" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="layer-opt-label">Ukur</span>
+            </div>
+            <div class="layer-option-item ${currentMapLayer === 'dark' ? 'active' : ''}" id="layerOptDark" onclick="selectMapLayer('dark')" title="Peta Gelap">
+                <div class="layer-thumb-preview">
+                    <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="sqClipDeskDark"><rect width="64" height="64" rx="14"/></clipPath></defs>
+                        <g clip-path="url(#sqClipDeskDark)">
+                            <rect width="64" height="64" fill="#151922"/>
+                            <path d="M-10 64 L-10 16 Q18 22 28 32 Q38 42 46 36 Q54 30 74 38 L74 64 Z" fill="#242b38"/>
+                            <path d="M-10 -10 L74 -10 L74 20 Q56 12 40 22 Q24 32 10 18 Q0 8 -10 12 Z" fill="#1b202a"/>
+                            <path d="M-5 45 Q20 38 48 58" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                            <path d="M26 12 Q32 30 38 66" stroke="#374151" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                            <path d="M-6 26 Q18 20 36 34 Q50 44 68 36" stroke="#4f46e5" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
+                            <path d="M14 66 Q20 40 38 24 Q52 12 70 8" stroke="#38bdf8" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="layer-opt-label">Gelap</span>
+            </div>
+        `;
+    }
+
     const mobHook = document.getElementById('mobileExtraDetailsHook');
     if (mobHook) mobHook.innerHTML = '';
 
@@ -1011,6 +1163,7 @@ function purgeGoogleMapsVersionUI() {
         localStorage.removeItem('seismo_wildfire_active');
         localStorage.removeItem('seismo_aq_active');
     } catch(e){}
+    updateLayerDetailUI();
 }
 
 function updateGmapsVersionUI() {
@@ -1059,6 +1212,17 @@ function lockGoogleMapsVersionFeature(silent = false) {
 
     updateGmapsVersionUI();
 
+    if (map) {
+        map.setStyle(buildMapLibreStyle());
+        map.once('style.load', () => {
+            applyGlobeProjection();
+            initFaultLinesGeoJSON();
+            updateSatelliteLabelsLayer();
+            updateLayerDetailUI();
+            if (typeof cullOccludedGlobeMarkers === 'function') cullOccludedGlobeMarkers();
+        });
+    }
+
     // Kembalikan peta ke provider standar
     if (typeof applyMapLayer === 'function') {
         applyMapLayer(currentMapLayer || 'light');
@@ -1074,6 +1238,17 @@ function toggleGoogleMapsEngineMode() {
     try { localStorage.setItem('_sg_engine', isGoogleMapsEngineActive ? '1' : '0'); } catch(e){}
     if (isGoogleMapsEngineActive) injectGoogleMapsPreconnect();
     updateGmapsVersionUI();
+
+    if (map) {
+        map.setStyle(buildMapLibreStyle());
+        map.once('style.load', () => {
+            applyGlobeProjection();
+            initFaultLinesGeoJSON();
+            updateSatelliteLabelsLayer();
+            updateLayerDetailUI();
+            if (typeof cullOccludedGlobeMarkers === 'function') cullOccludedGlobeMarkers();
+        });
+    }
 
     // Terapkan ulang layer aktif dengan engine baru
     if (typeof applyMapLayer === 'function') {
@@ -1344,13 +1519,17 @@ function toggleSatelliteLabels(enabled) {
 }
 
 function updateSatelliteLabelsUI() {
+    const dtlChk = document.getElementById('dtlSatLabelCheckbox');
     const deskChk = document.getElementById('desktopSatLabelCheckbox');
     const mobChk = document.getElementById('mobSatLabelCheckbox');
+    if (dtlChk) dtlChk.checked = isSatelliteLabelsEnabled;
     if (deskChk) deskChk.checked = isSatelliteLabelsEnabled;
     if (mobChk) mobChk.checked = isSatelliteLabelsEnabled;
 
+    const dtlSatRow = document.getElementById('dtlSatLabelRow');
     const deskSatRow = document.getElementById('desktopSatLabelRow');
     const mobSatRow = document.getElementById('mobSatLabelRow');
+    if (dtlSatRow) dtlSatRow.style.display = (currentMapLayer === 'sat') ? 'inline-flex' : 'none';
     if (deskSatRow) deskSatRow.style.display = (currentMapLayer === 'sat') ? 'inline-flex' : 'none';
     if (mobSatRow) mobSatRow.style.display = (currentMapLayer === 'sat') ? 'inline-flex' : 'none';
 
@@ -1479,9 +1658,27 @@ function applyMapLayer(layerName) {
 
     const card = document.getElementById("layerCard");
     const cardSvgBg = document.getElementById("layerCardSvgBg");
-    const badge = document.getElementById("layerBadgeText");
-    if (badge) badge.innerText = "Lapisan";
-    if (card) card.style.backgroundImage = 'none';
+    const badgeDefault = document.querySelector(".badge-text-default");
+    if (card) {
+        if (window.innerWidth > 768) {
+            card.style.backgroundImage = 'none';
+        } else {
+            card.style.backgroundImage = '';
+        }
+    }
+
+    const layerDisplayNames = {
+        'light': 'Standar',
+        'sat': 'Satelit',
+        'terrain': 'Medan',
+        'dark': 'Gelap'
+    };
+    if (activeLabel) {
+        activeLabel.innerText = layerDisplayNames[layerName] || 'Standar';
+    }
+    if (badgeDefault) {
+        badgeDefault.innerText = 'Lapisan';
+    }
 
     // Update active highlight on desktop popup drawer options
     ['layerOptLight', 'layerOptSat', 'layerOptDark', 'layerOptTerrain'].forEach(id => {
@@ -1495,25 +1692,29 @@ function applyMapLayer(layerName) {
     });
 
     if (layerName === 'sat') {
-        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.terrain;
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.sat;
+        if (card) card.title = "Lapisan Peta: Satelit";
         const opt = document.getElementById("layerOptSat");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptSat");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'terrain') {
-        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.dark;
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.terrain;
+        if (card) card.title = "Lapisan Peta: Medan";
         const opt = document.getElementById("layerOptTerrain");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptTerrain");
         if (mobOpt) mobOpt.classList.add('active');
     } else if (layerName === 'dark') {
-        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.light;
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.dark;
+        if (card) card.title = "Lapisan Peta: Gelap";
         const opt = document.getElementById("layerOptDark");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptDark");
         if (mobOpt) mobOpt.classList.add('active');
     } else {
-        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.sat;
+        if (cardSvgBg) cardSvgBg.innerHTML = LAYER_TRIGGER_SVGS.light;
+        if (card) card.title = "Lapisan Peta: Standar";
         const opt = document.getElementById("layerOptLight");
         if (opt) opt.classList.add('active');
         const mobOpt = document.getElementById("mobLayerOptLight");
@@ -2361,6 +2562,344 @@ function updateDesktopNavRailActiveState() {
     if (savedSpan) savedSpan.classList.toggle("NhBTye", currentNavTab === 'saved' && !isPanelCollapsed);
 }
 
+let activeRailBundleId = null;
+
+// Mapping Wilayah Pulau untuk Pengelompokan Bundel Cerdas
+const INDONESIA_REGION_MAP = {
+    // Sumatra
+    'medan': { region: 'Sumatra', lat: 3.5952, lon: 98.6722 },
+    'sibolga': { region: 'Sumatra', lat: 1.7428, lon: 98.7792 },
+    'pekanbaru': { region: 'Sumatra', lat: 0.5071, lon: 101.4478 },
+    'padang': { region: 'Sumatra', lat: -0.9471, lon: 100.4172 },
+    'batam': { region: 'Sumatra', lat: 1.1301, lon: 104.0529 },
+    'palembang': { region: 'Sumatra', lat: -2.9761, lon: 104.7754 },
+    'bandar lampung': { region: 'Sumatra', lat: -5.4500, lon: 105.2667 },
+    'lampung': { region: 'Sumatra', lat: -5.4500, lon: 105.2667 },
+    'banda aceh': { region: 'Sumatra', lat: 5.5483, lon: 95.3238 },
+    'jambi': { region: 'Sumatra', lat: -1.6101, lon: 103.6131 },
+    'bengkulu': { region: 'Sumatra', lat: -3.8004, lon: 102.2655 },
+    'pangkalpinang': { region: 'Sumatra', lat: -2.1316, lon: 106.1106 },
+    'tanjungpinang': { region: 'Sumatra', lat: 0.9167, lon: 104.4500 },
+    'air hitam': { region: 'Sumatra', lat: 0.5280, lon: 101.3900 },
+    'kos widya 2a': { region: 'Sumatra', lat: 0.5071, lon: 101.4478 },
+    
+    // Jawa
+    'jakarta': { region: 'Jawa', lat: -6.2088, lon: 106.8456 },
+    'jakarta selatan': { region: 'Jawa', lat: -6.2615, lon: 106.8106 },
+    'jakarta pusat': { region: 'Jawa', lat: -6.1865, lon: 106.8341 },
+    'jakarta barat': { region: 'Jawa', lat: -6.1683, lon: 106.7589 },
+    'jakarta utara': { region: 'Jawa', lat: -6.1384, lon: 106.8640 },
+    'jakarta timur': { region: 'Jawa', lat: -6.2250, lon: 106.9004 },
+    'depok': { region: 'Jawa', lat: -6.4025, lon: 106.7942 },
+    'bekasi': { region: 'Jawa', lat: -6.2383, lon: 106.9756 },
+    'bogor': { region: 'Jawa', lat: -6.5971, lon: 106.8060 },
+    'tangerang': { region: 'Jawa', lat: -6.1783, lon: 106.6319 },
+    'tangerang selatan': { region: 'Jawa', lat: -6.2886, lon: 106.7179 },
+    'bandung': { region: 'Jawa', lat: -6.9175, lon: 107.6191 },
+    'semarang': { region: 'Jawa', lat: -7.0051, lon: 110.4381 },
+    'yogyakarta': { region: 'Jawa', lat: -7.7956, lon: 110.3695 },
+    'solo': { region: 'Jawa', lat: -7.5755, lon: 110.8243 },
+    'surakarta': { region: 'Jawa', lat: -7.5755, lon: 110.8243 },
+    'surabaya': { region: 'Jawa', lat: -7.2575, lon: 112.7521 },
+    'malang': { region: 'Jawa', lat: -7.9666, lon: 112.6326 },
+    'serang': { region: 'Jawa', lat: -6.1200, lon: 106.1503 },
+    'cirebon': { region: 'Jawa', lat: -6.7320, lon: 108.5523 },
+    'sukabumi': { region: 'Jawa', lat: -6.9277, lon: 106.9300 },
+
+    // Kalimantan
+    'pontianak': { region: 'Kalimantan', lat: -0.0263, lon: 109.3425 },
+    'banjarmasin': { region: 'Kalimantan', lat: -3.3194, lon: 114.5908 },
+    'samarinda': { region: 'Kalimantan', lat: -0.5016, lon: 117.1265 },
+    'balikpapan': { region: 'Kalimantan', lat: -1.2379, lon: 116.8529 },
+    'palangkaraya': { region: 'Kalimantan', lat: -2.2161, lon: 113.9139 },
+    'tarakan': { region: 'Kalimantan', lat: 3.3274, lon: 117.5785 },
+    'sangatta': { region: 'Kalimantan', lat: 0.4890, lon: 117.5850 },
+    'singkawang': { region: 'Kalimantan', lat: 0.9073, lon: 108.9845 },
+    'banjarbaru': { region: 'Kalimantan', lat: -3.4402, lon: 114.8302 },
+
+    // Sulawesi
+    'makassar': { region: 'Sulawesi', lat: -5.1477, lon: 119.4327 },
+    'manado': { region: 'Sulawesi', lat: 1.4748, lon: 124.8428 },
+    'palu': { region: 'Sulawesi', lat: -0.8917, lon: 119.8707 },
+    'kendari': { region: 'Sulawesi', lat: -3.9985, lon: 122.5126 },
+    'gorontalo': { region: 'Sulawesi', lat: 0.5435, lon: 123.0568 },
+    'mamuju': { region: 'Sulawesi', lat: -2.6770, lon: 118.8890 },
+
+    // Bali & Nusa Tenggara
+    'denpasar': { region: 'Bali & Nusa Tenggara', lat: -8.6705, lon: 115.2126 },
+    'bali': { region: 'Bali & Nusa Tenggara', lat: -8.4095, lon: 115.1889 },
+    'mataram': { region: 'Bali & Nusa Tenggara', lat: -8.5799, lon: 116.0999 },
+    'lombok': { region: 'Bali & Nusa Tenggara', lat: -8.6509, lon: 116.3249 },
+    'kupang': { region: 'Bali & Nusa Tenggara', lat: -10.1772, lon: 123.6070 },
+    'labuan bajo': { region: 'Bali & Nusa Tenggara', lat: -8.4964, lon: 119.8877 },
+
+    // Maluku & Papua
+    'ambon': { region: 'Maluku', lat: -3.6547, lon: 128.1906 },
+    'ternate': { region: 'Maluku', lat: 0.7904, lon: 127.3809 },
+    'tidore': { region: 'Maluku', lat: 0.6900, lon: 127.4000 },
+    'jayapura': { region: 'Papua', lat: -2.5916, lon: 140.6690 },
+    'sorong': { region: 'Papua', lat: -0.8762, lon: 131.2558 },
+    'merauke': { region: 'Papua', lat: -8.4991, lon: 140.4011 },
+    'manokwari': { region: 'Papua', lat: -0.8615, lon: 134.0620 },
+    'timika': { region: 'Papua', lat: -4.5467, lon: 136.8837 },
+    'biak': { region: 'Papua', lat: -1.1833, lon: 136.0833 },
+    'nabire': { region: 'Papua', lat: -3.3667, lon: 135.5000 },
+    'wamena': { region: 'Papua', lat: -4.0984, lon: 138.9443 },
+    'papua': { region: 'Papua', lat: -4.2699, lon: 138.0803 },
+    'raja ampat': { region: 'Papua', lat: -0.2333, lon: 130.5167 }
+};
+
+// Thumbnail Foto Tempat & Bundel Google Maps
+const REGION_PHOTOS = {
+    'Sumatra': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no'
+    ],
+    'Jawa': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no'
+    ],
+    'Kalimantan': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlrutLAkZE-7_nWkH7Imti2rDnDms5iuxCUTXTyKSQyo4KRerBPKxNMvc0U7hxyB7yPTlveVBZKE4aRmoG8LoUXj-TaKrFVJp2HLwG9hPfkMG9s-GJ1xK44NVsncPzcOoob-6dBaUPa695-=w32-h32-p-k-no'
+    ],
+    'Sulawesi': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no'
+    ],
+    'Bali & Nusa Tenggara': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkwRRI962b8cL5EyXzfkobgjwuusXbPm38kLRCEAUdxDn6l7bjGvn3rjLWimFNwjE7X7IgzqlLMA8ikjcm_DrhuMKv0fXieLD7K5SS1LJzUBCQZ4bNF7zQCl0g99o139VZL_Z3OMxnMWp0A=w32-h32-p-k-no'
+    ],
+    'Papua': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no'
+    ],
+    'Maluku': [
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
+        'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlrutLAkZE-7_nWkH7Imti2rDnDms5iuxCUTXTyKSQyo4KRerBPKxNMvc0U7hxyB7yPTlveVBZKE4aRmoG8LoUXj-TaKrFVJp2HLwG9hPfkMG9s-GJ1xK44NVsncPzcOoob-6dBaUPa695-=w32-h32-p-k-no'
+    ]
+};
+
+const PLACE_SPECIFIC_PHOTOS = {
+    'batam': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+    'sangatta': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkwRRI962b8cL5EyXzfkobgjwuusXbPm38kLRCEAUdxDn6l7bjGvn3rjLWimFNwjE7X7IgzqlLMA8ikjcm_DrhuMKv0fXieLD7K5SS1LJzUBCQZ4bNF7zQCl0g99o139VZL_Z3OMxnMWp0A=w32-h32-p-k-no',
+    'kos widya 2a': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100',
+    'depok': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100',
+    'denpasar': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+    'yogyakarta': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
+    'jakarta': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no',
+    'jakarta selatan': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzVdVF1pDAOO1bWJL9NnT4FkZvBBbC5GFYcuHIz0zo5LR4fb1SAW30BS5ETx8gfwW9iQ_lMON-rIDH39FzOxkXZH2bnzIRJzycHwMtBGGIHY2fjg0GFkO87XlT-aqzPLBqZt8=w32-h32-p-k-no',
+    'bekasi': 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100',
+    'padang': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
+    'pekanbaru': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlrutLAkZE-7_nWkH7Imti2rDnDms5iuxCUTXTyKSQyo4KRerBPKxNMvc0U7hxyB7yPTlveVBZKE4aRmoG8LoUXj-TaKrFVJp2HLwG9hPfkMG9s-GJ1xK44NVsncPzcOoob-6dBaUPa695-=w32-h32-p-k-no',
+    'sibolga': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
+    'air hitam': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlrutLAkZE-7_nWkH7Imti2rDnDms5iuxCUTXTyKSQyo4KRerBPKxNMvc0U7hxyB7yPTlveVBZKE4aRmoG8LoUXj-TaKrFVJp2HLwG9hPfkMG9s-GJ1xK44NVsncPzcOoob-6dBaUPa695-=w32-h32-p-k-no',
+    'jayapura': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+    'sorong': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkwRRI962b8cL5EyXzfkobgjwuusXbPm38kLRCEAUdxDn6l7bjGvn3rjLWimFNwjE7X7IgzqlLMA8ikjcm_DrhuMKv0fXieLD7K5SS1LJzUBCQZ4bNF7zQCl0g99o139VZL_Z3OMxnMWp0A=w32-h32-p-k-no',
+    'merauke': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnh5Tpl-0Uw90FcoWX-ojNq3h5m1IwxSiKqYqea458k4EUCGtDf0NCPGoXa0QybADYzs3TbiHc-XqB7kP_LqXp1peBvqyrPKIuuhI0L_M5zq2Jw72-fuSjFPFbOnsocOHIzKM4zWA=w32-h32-p-k-no',
+    'manokwari': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmjpssj5raSs1sgoRbSH26y97G74rysu_zlUYSKK63aNuh-cWANUUdxBi128-kQtYKUTk-7F-mtAsGgSWUr-hykAMMwbkzK8kVNNFRQW4qbAfyDVongpMvAF8cCU0VDZsOIatTt=w32-h32-p-k-no',
+    'raja ampat': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no',
+    'papua': 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldCbxzDoVWfUJaAkdRv11YDx-SdeThqPh0WCQOWQ4KAeJH_VfOcJ97b9PkjpFKXL0S_WKBhvZcoL9TReBtBDztr8hcjfRKgOuqtw0tmB5sgAuHy-85pAbF92I-Ol-WkYVfNw1-=w32-h32-p-k-no'
+};
+
+function getPlaceThumbnail(name) {
+    const key = String(name || '').toLowerCase().trim();
+    if (PLACE_SPECIFIC_PHOTOS[key]) return PLACE_SPECIFIC_PHOTOS[key];
+    
+    // Cari kecocokan substring
+    for (const k in PLACE_SPECIFIC_PHOTOS) {
+        if (key.includes(k) || k.includes(key)) {
+            return PLACE_SPECIFIC_PHOTOS[k];
+        }
+    }
+    // Fallback thumbnail streetview / landmark pin
+    return 'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=daonIuiqY2a0ma6VGN7Vjw&cb_client=maps_sv.tactile.gps&w=28&h=28&yaw=292.4803&pitch=0&thumbfov=100';
+}
+
+function renderDesktopNavRailRecentPlaces() {
+    const railList = document.getElementById("railRecentPlacesList");
+    const divider = document.getElementById("railRecentDivider");
+    if (!railList) return;
+
+    const searches = getRecentSearches();
+    if (!searches || searches.length === 0) {
+        railList.innerHTML = '';
+        if (divider) divider.style.display = 'none';
+        return;
+    }
+
+    if (divider) divider.style.display = 'block';
+
+    // Kelompokkan tempat riwayat berdasarkan wilayah kepulauan
+    const regionGroups = {};
+    const individualPlaces = [];
+
+    searches.forEach(place => {
+        const key = String(place.name || '').toLowerCase().trim();
+        let region = null;
+        if (INDONESIA_REGION_MAP[key]) {
+            region = INDONESIA_REGION_MAP[key].region;
+        } else {
+            // Check substring
+            for (const k in INDONESIA_REGION_MAP) {
+                if (key.includes(k) || k.includes(key)) {
+                    region = INDONESIA_REGION_MAP[k].region;
+                    break;
+                }
+            }
+        }
+
+        if (region) {
+            if (!regionGroups[region]) {
+                regionGroups[region] = [];
+            }
+            regionGroups[region].push(place);
+        } else {
+            individualPlaces.push(place);
+        }
+    });
+
+    let html = '';
+
+    // 1. Render Bundel Wilayah jika ada >= 2 tempat dalam wilayah yang sama
+    for (const region in regionGroups) {
+        const placesInRegion = regionGroups[region];
+        if (placesInRegion.length >= 2) {
+            const count = placesInRegion.length;
+            const photos = REGION_PHOTOS[region] || [
+                getPlaceThumbnail(placesInRegion[0].name),
+                getPlaceThumbnail(placesInRegion[1].name)
+            ];
+            const img1 = photos[0] || getPlaceThumbnail(placesInRegion[0].name);
+            const img2 = photos[1] || getPlaceThumbnail(placesInRegion[1].name);
+            const isActive = activeRailBundleId === region;
+
+            html += `
+                <button tabindex="0" class="xkqFBc wR3cXd aJPqP fontBodySmall flwnib ${isActive ? 'atHn2d' : ''}" 
+                    data-bundle-id="${escapeQuotes(region)}" 
+                    onclick="handleRailBundleClick('${escapeQuotes(region)}')" 
+                    title="${escapeQuotes(region)}" 
+                    aria-label="${escapeQuotes(region)}, ${count} tempat">
+                    <div class="NP7r5c">
+                        <div class="xSVTVc">
+                            <div class="wiquBf"></div>
+                            <div class="hZI5De"></div>
+                            <img class="kSOdnb Lyrzac" alt="${escapeQuotes(region)} 1" src="${img1}">
+                        </div>
+                        <div class="hkjMUd">
+                            <div class="wiquBf"></div>
+                            <div class="hZI5De"></div>
+                            <img class="kSOdnb" alt="${escapeQuotes(region)} 2" src="${img2}">
+                        </div>
+                        <div class="aJVa5c" aria-label="${count} tempat">${count}</div>
+                    </div>
+                    <div class="d0UoQ">
+                        <div class="cGRe9e f0A9Ob">${region}</div>
+                    </div>
+                </button>
+            `;
+        } else {
+            // Hanya 1 tempat di wilayah ini, masukkan ke individual
+            individualPlaces.push(...placesInRegion);
+        }
+    }
+
+    // 2. Render Tempat Tunggal (Urutkan sesuai riwayat terbaru, batasi total item di rail)
+    const maxPlaces = 6;
+    let renderedCount = (html.match(/class="xkqFBc/g) || []).length;
+
+    individualPlaces.forEach(p => {
+        if (renderedCount >= maxPlaces) return;
+        renderedCount++;
+        const safeName = escapeQuotes(p.name);
+        const img = getPlaceThumbnail(p.name);
+        const isActive = activeRailBundleId === p.name;
+
+        html += `
+            <button tabindex="0" class="wR3cXd aJPqP fontBodySmall QyI6Nb ${isActive ? 'atHn2d' : ''}" 
+                data-bundle-id="${safeName}" 
+                onclick="handleRailPlaceClick(${p.lat}, ${p.lon}, '${safeName}')" 
+                title="${safeName}" 
+                aria-label="${safeName}">
+                <div class="NP7r5c">
+                    <div class="xSVTVc">
+                        <div class="wiquBf"></div>
+                        <div class="hZI5De"></div>
+                        <img class="kSOdnb Lyrzac" alt="${safeName}" src="${img}">
+                    </div>
+                </div>
+                <div class="d0UoQ">
+                    <div class="cGRe9e f0A9Ob">${p.name}</div>
+                </div>
+            </button>
+        `;
+    });
+
+    railList.innerHTML = html;
+}
+
+function handleRailBundleClick(bundleId) {
+    activeRailBundleId = bundleId;
+    
+    // Perbarui status aktif UI pada tombol bundel rail
+    const allBundleBtns = document.querySelectorAll("#railRecentPlacesList .wR3cXd");
+    allBundleBtns.forEach(btn => {
+        if (btn.getAttribute("data-bundle-id") === bundleId) {
+            btn.classList.add("atHn2d");
+        } else {
+            btn.classList.remove("atHn2d");
+        }
+    });
+
+    // Arahkan peta ke cakupan pulau/wilayah bundel
+    if (typeof map !== 'undefined' && map) {
+        if (bundleId === 'Sumatra') {
+            map.flyTo({ center: [101.5, -0.5], zoom: 6, duration: 1500, essential: true });
+        } else if (bundleId === 'Jawa') {
+            map.flyTo({ center: [110.0, -7.3], zoom: 7, duration: 1500, essential: true });
+        } else if (bundleId === 'Kalimantan') {
+            map.flyTo({ center: [114.0, 0.5], zoom: 6, duration: 1500, essential: true });
+        } else if (bundleId === 'Sulawesi') {
+            map.flyTo({ center: [120.5, -1.8], zoom: 6, duration: 1500, essential: true });
+        } else if (bundleId.includes('Bali') || bundleId.includes('Nusa')) {
+            map.flyTo({ center: [117.0, -8.6], zoom: 7, duration: 1500, essential: true });
+        } else if (bundleId.includes('Maluku') || bundleId.includes('Papua')) {
+            map.flyTo({ center: [134.0, -3.5], zoom: 6, duration: 1500, essential: true });
+        }
+    }
+
+    // Buka tab Terbaru
+    if (typeof switchNavTab === 'function') {
+        if (isPanelCollapsed && typeof toggleSidebar === 'function') {
+            toggleSidebar(true);
+        }
+        switchNavTab('recent');
+    }
+}
+
+function handleRailPlaceClick(lat, lon, name) {
+    activeRailBundleId = name;
+    
+    // Perbarui status aktif UI pada tombol rail
+    const allBundleBtns = document.querySelectorAll("#railRecentPlacesList .wR3cXd");
+    allBundleBtns.forEach(btn => {
+        if (btn.getAttribute("data-bundle-id") === name) {
+            btn.classList.add("atHn2d");
+        } else {
+            btn.classList.remove("atHn2d");
+        }
+    });
+
+    if (isPanelCollapsed && typeof toggleSidebar === 'function') {
+        toggleSidebar(true);
+    }
+
+    if (typeof flyToSavedPlace === 'function') {
+        flyToSavedPlace(lat, lon, name);
+    }
+}
+
 function toggleSidebar(forceOpen = null) {
     if (window.innerWidth <= 768) {
         toggleMobileDrawer();
@@ -2385,22 +2924,55 @@ function toggleSidebar(forceOpen = null) {
     }, 360);
 }
 
-function switchNavTab(tabName) {
+function switchToMonitorAndExpand() {
+    switchNavTab('monitor', true);
+    if (window.innerWidth > 768) {
+        if (isPanelCollapsed) {
+            toggleSidebar(true);
+        }
+    }
+    const wrap = document.getElementById("cardsScrollWrap");
+    if (wrap) wrap.scrollTop = 0;
+}
+
+function handleSearchInputFocus(e) {
+    switchToMonitorAndExpand();
+}
+
+function handleSearchInputClick(e) {
+    if (e) e.stopPropagation();
+    switchToMonitorAndExpand();
+}
+
+function handleSearchBoxCardClick(e) {
+    if (!e || !e.target) return;
+    if (e.target.closest('#searchMenuBtn') || e.target.closest('#searchSubmitBtn') || e.target.closest('#searchClearBtn') || e.target.closest('.directions-btn')) {
+        return;
+    }
+    switchToMonitorAndExpand();
+    const input = document.getElementById("searchInput");
+    if (input) input.focus();
+}
+
+function switchNavTab(tabName, forceOpen = false) {
     if (window.innerWidth > 768) {
         // Desktop: Jika sidebar tertutup, klik tab apapun SELALU membuka sidebar ke tab tersebut
         if (isPanelCollapsed) {
             currentNavTab = tabName;
             toggleSidebar(true);
-        } else if (tabName === currentNavTab) {
-            // Jika klik tab yang sama saat sidebar terbuka, tutup sidebar
+        } else if (tabName === currentNavTab && !forceOpen) {
+            // Jika klik tab yang sama saat sidebar terbuka (dan bukan dipaksa buka), tutup sidebar
             toggleSidebar(false);
             return;
         } else {
             currentNavTab = tabName;
+            if (forceOpen && isPanelCollapsed) {
+                toggleSidebar(true);
+            }
         }
     } else {
         // Mobile behavior
-        if (tabName === currentNavTab) {
+        if (tabName === currentNavTab && !forceOpen) {
             if (tabName === 'saved' || tabName === 'contribution' || tabName === 'guide') {
                 if (currentDrawerSnapState === '100') {
                     setDrawerSnapState('0');
@@ -2419,6 +2991,13 @@ function switchNavTab(tabName) {
             return;
         }
         currentNavTab = tabName;
+        if (forceOpen) {
+            if (tabName === 'monitor') {
+                if (currentDrawerSnapState === '0') setDrawerSnapState('30');
+            } else {
+                setDrawerSnapState('100');
+            }
+        }
     }
 
     // Inisialisasi on-demand tab panduan siaga jika dipilih
@@ -4301,6 +4880,10 @@ function clearRecentSearches() {
 function renderRecentSearchesUI() {
     const container = document.getElementById("recentSearchesList");
     const badge = document.getElementById("recentSearchesCountBadge");
+    
+    // Sinkronisasi otomatis ke bilah navigasi desktop
+    renderDesktopNavRailRecentPlaces();
+
     if (!container) return;
 
     const searches = getRecentSearches();
@@ -4320,7 +4903,7 @@ function renderRecentSearchesUI() {
         return `
             <div class="recent-search-card" onclick="flyToSavedPlace(${s.lat}, ${s.lon}, '${safeName}')">
                 <div class="recent-search-left">
-                    <span class="google-symbols" style="font-size: 15px; color:var(--text-muted);">&#xe8b5;</span>
+                    <svg viewBox="0 -960 960 960" width="16" height="16" fill="var(--text-muted)" style="flex-shrink:0;"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
                     <div class="recent-search-text">${s.name}</div>
                 </div>
                 <span class="recent-search-time">${s.time}</span>
@@ -5221,36 +5804,13 @@ function bootApp() {
     const searchInputEl = document.getElementById("searchInput");
     const searchBoxCardEl = document.getElementById("searchBoxCard");
 
-    function switchToMonitorAndExpand() {
-        if (window.innerWidth > 768) {
-            if (currentNavTab !== 'monitor') {
-                switchNavTab('monitor');
-            }
-            if (isPanelCollapsed) {
-                toggleSidebar(true);
-            }
-            const wrap = document.getElementById("cardsScrollWrap");
-            if (wrap) wrap.scrollTop = 0;
-        }
-    }
-
     if (searchInputEl) {
-        searchInputEl.addEventListener("focus", switchToMonitorAndExpand);
-        searchInputEl.addEventListener("click", (e) => {
-            e.stopPropagation();
-            switchToMonitorAndExpand();
-        });
+        searchInputEl.addEventListener("focus", handleSearchInputFocus);
+        searchInputEl.addEventListener("click", handleSearchInputClick);
     }
 
     if (searchBoxCardEl) {
-        searchBoxCardEl.addEventListener("click", (e) => {
-            if (window.innerWidth > 768) {
-                if (!e.target.closest('#searchMenuBtn') && !e.target.closest('#searchSubmitBtn')) {
-                    switchToMonitorAndExpand();
-                    if (searchInputEl) searchInputEl.focus();
-                }
-            }
-        });
+        searchBoxCardEl.addEventListener("click", handleSearchBoxCardClick);
     }
 
     // Listener klik di luar area (Click Outside) untuk menutup cards-scroll-wrap pada Desktop
@@ -5258,14 +5818,20 @@ function bootApp() {
         if (window.innerWidth <= 768) return;
         if (!isPanelCollapsed) {
             const panel = document.getElementById("mainPanel") || document.getElementById("panelContainer");
+            const navRail = document.getElementById("desktopNavRail") || document.getElementById("navRail") || document.querySelector(".desktop-nav-rail");
             const settingsDrawer = document.getElementById("gmapSettingsWrapper");
+            const layerModal = document.getElementById("desktopLayerDetailModal");
+            
             const isInsidePanel = panel && panel.contains(e.target);
+            const isInsideNavRail = navRail && navRail.contains(e.target);
             const isInsideSettings = settingsDrawer && settingsDrawer.contains(e.target);
-            const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.maplibregl-popup') || e.target.closest('.toast');
+            const isInsideLayerModal = layerModal && layerModal.contains(e.target);
+            const isInsideModal = e.target.closest('.modal-backdrop') || e.target.closest('.maplibregl-popup') || e.target.closest('.toast') || e.target.closest('.custom-area-popup') || e.target.closest('.layer-switcher-wrapper');
 
-            if (!isInsidePanel && !isInsideSettings && !isInsideModal) {
+            if (!isInsidePanel && !isInsideNavRail && !isInsideSettings && !isInsideLayerModal && !isInsideModal) {
                 toggleSidebar(false);
                 if (searchInputEl) searchInputEl.blur();
+                if (typeof closeSearchSuggestions === 'function') closeSearchSuggestions();
             }
         }
     });
@@ -6243,12 +6809,28 @@ if (isGoogleMapsEngineActive || isGmapsFeatureUnlocked) injectGoogleMapsPreconne
 if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
 if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
 
-// Expose fungsi 3D Tilt, Kompas, dan Globe Projection ke window
+// Expose fungsi 3D Tilt, Kompas, Globe Projection, dan Layer Detail Modal ke window
 window.toggleMap3DMode = toggleMap3DMode;
 window.rotateMap = rotateMap;
 window.resetMapOrientation = resetMapOrientation;
 window.toggleGlobeProjection = toggleGlobeProjection;
 window.applyGlobeProjection = applyGlobeProjection;
+window.openDesktopLayerDetailModal = openDesktopLayerDetailModal;
+window.closeDesktopLayerDetailModal = closeDesktopLayerDetailModal;
+window.toggleTravelTimeTool = toggleTravelTimeTool;
+window.updateLayerDetailUI = updateLayerDetailUI;
+
+// Global Click listener untuk menutup Desktop Layer Detail Modal saat klik di luar
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('desktopLayerDetailModal');
+    if (modal && modal.classList.contains('show')) {
+        const switcher = document.querySelector('.layer-switcher-wrapper');
+        if (switcher && !switcher.contains(e.target)) {
+            modal.classList.remove('show');
+            switcher.classList.remove('detail-open');
+        }
+    }
+});
 
 // Sinkronisasi status layer dan globe awal
 if (typeof currentMapLayer !== 'undefined') {
@@ -6259,6 +6841,12 @@ if (typeof currentMapLayer !== 'undefined') {
     document.body.classList.toggle('layer-sat-active', currentMapLayer === 'sat');
     if (typeof updateGlobeZoomState === 'function') updateGlobeZoomState();
 }
+
+// Inisialisasi daftar pintasan tempat pada nav rail desktop
+if (typeof renderDesktopNavRailRecentPlaces === 'function') {
+    renderDesktopNavRailRecentPlaces();
+}
+
 
 
 
