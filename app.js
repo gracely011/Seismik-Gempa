@@ -432,6 +432,8 @@ function getGeographicReferenceLinesGeoJSON() {
 
 function buildMapLibreStyle() {
     const isGmap = isGoogleMapsEngineActive;
+    const cartoKey = (typeof getCartoApiKey === 'function') ? getCartoApiKey() : (localStorage.getItem('seismo_carto_api_key') || '').trim();
+    const cartoKeyParam = cartoKey ? `?key=${encodeURIComponent(cartoKey)}` : '';
 
     const sources = {
         'sat-src': {
@@ -454,22 +456,39 @@ function buildMapLibreStyle() {
         },
         'light-src': {
             type: 'raster',
-            tiles: [
-                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
+            tiles: cartoKey ? [
+                `https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png${cartoKeyParam}`,
+                `https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png${cartoKeyParam}`,
+                `https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png${cartoKeyParam}`,
+                `https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png${cartoKeyParam}`
+            ] : [
+                'https://mt0.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt1.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt2.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}',
+                'https://mt3.google.com/vt/lyrs=m&hl=id&gl=ID&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            maxzoom: cartoKey ? 19 : 20
+        },
+        'dark-src': {
+            type: 'raster',
+            tiles: cartoKey ? [
+                `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${cartoKeyParam}`,
+                `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${cartoKeyParam}`,
+                `https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${cartoKeyParam}`,
+                `https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png${cartoKeyParam}`
+            ] : [
+                'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
             maxzoom: 19
         },
-        'dark-src': {
+        'dark-labels-src': {
             type: 'raster',
             tiles: [
-                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-                'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-                'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+                'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
             maxzoom: 19
@@ -579,6 +598,7 @@ function buildMapLibreStyle() {
     const layers = [
         { id: 'layer-light', type: 'raster', source: isGmap ? 'gmap-roadmap-src' : 'light-src', layout: { visibility: currentMapLayer === 'light' ? 'visible' : 'none' } },
         { id: 'layer-dark', type: 'raster', source: isGmap ? 'gmap-roadmap-src' : 'dark-src', layout: { visibility: currentMapLayer === 'dark' ? 'visible' : 'none' } },
+        { id: 'layer-dark-labels', type: 'raster', source: 'dark-labels-src', layout: { visibility: (!cartoKey && !isGmap && currentMapLayer === 'dark') ? 'visible' : 'none' } },
         { id: 'layer-terrain', type: 'raster', source: isGmap ? 'gmap-terrain-src' : 'terrain-src', layout: { visibility: currentMapLayer === 'terrain' ? 'visible' : 'none' } },
         { id: 'layer-sat', type: 'raster', source: isGmap ? 'gmap-sat-src' : 'sat-src', layout: { visibility: currentMapLayer === 'sat' ? 'visible' : 'none' } },
         { id: 'layer-sat-labels', type: 'raster', source: isGmap ? 'gmap-labels-src' : 'sat-labels-src', layout: { visibility: (currentMapLayer === 'sat' && isSatelliteLabelsEnabled) ? 'visible' : 'none' } },
@@ -1725,6 +1745,11 @@ function applyMapLayer(layerName) {
                 map.setLayoutProperty(id, 'visibility', (id === target) ? 'visible' : 'none');
             }
         });
+        if (map.getLayer('layer-dark-labels')) {
+            const cartoKey = (typeof getCartoApiKey === 'function') ? getCartoApiKey() : (localStorage.getItem('seismo_carto_api_key') || '').trim();
+            const showDarkLabels = !cartoKey && !isGoogleMapsEngineActive && (layerName === 'dark');
+            map.setLayoutProperty('layer-dark-labels', 'visibility', showDarkLabels ? 'visible' : 'none');
+        }
         updateSatelliteLabelsLayer();
     }
 
@@ -2318,6 +2343,7 @@ function openDesktopSettings() {
     if (sw) sw.setAttribute("aria-checked", isNavRailEnabled ? "true" : "false");
     if (gSw) gSw.setAttribute("aria-checked", isGlobalQuakeMode ? "true" : "false");
     if (typeof updateGmapsVersionUI === 'function') updateGmapsVersionUI();
+    if (typeof updateCartoKeyBadgeUI === 'function') updateCartoKeyBadgeUI();
 }
 
 function closeDesktopSettings() {

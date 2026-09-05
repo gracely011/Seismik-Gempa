@@ -881,6 +881,140 @@ function initHistats() {
     }
 }
 
+// ==================== 7. MODAL KONFIGURASI KUNCI API CARTO BASEMAP ====================
+function getCartoApiKey() {
+    try {
+        return (localStorage.getItem('seismo_carto_api_key') || '').trim();
+    } catch (e) {
+        return '';
+    }
+}
+window.getCartoApiKey = getCartoApiKey;
+
+function setCartoApiKey(key) {
+    try {
+        if (key && key.trim()) {
+            localStorage.setItem('seismo_carto_api_key', key.trim());
+        } else {
+            localStorage.removeItem('seismo_carto_api_key');
+        }
+    } catch (e) {}
+}
+window.setCartoApiKey = setCartoApiKey;
+
+function ensureCartoKeyModalDOM() {
+    let modal = document.getElementById("modalCartoKey");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.className = "modal-backdrop";
+        modal.id = "modalCartoKey";
+        modal.style.display = "none";
+        modal.onclick = (e) => closeCartoKeyModal(e);
+        modal.innerHTML = `
+        <div class="modal-dialog carto-key-modal" onclick="event.stopPropagation()" style="max-width: 480px; width: 92%; padding: 24px; border-radius: 16px; background: var(--bg-panel, #202124); border: 1px solid var(--border-color, #3c4043); color: var(--text-primary, #e8eaed); box-shadow: 0 20px 48px rgba(0,0,0,0.5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: rgba(26, 115, 232, 0.15); color: var(--accent-blue, #8ab4f8);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                    </span>
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 600; color: var(--text-primary, #e8eaed);">Kunci API CARTO Basemap</h3>
+                </div>
+                <button class="modal-close-icon-btn" onclick="closeCartoKeyModal()" title="Tutup" style="background: none; border: none; cursor: pointer; color: var(--text-secondary, #9aa0a6); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                </button>
+            </div>
+            <div style="font-size: 13.5px; line-height: 1.55; color: var(--text-secondary, #9aa0a6); margin-bottom: 16px;">
+                Secara default, peta menggunakan <strong style="color: var(--text-primary, #e8eaed);">Smart Fallback (Esri Dark Gray & Google Roadmap)</strong> yang 100% bebas watermark selamanya. Jika Anda memiliki API key resmi dari CARTO, masukkan di bawah ini untuk mengaktifkan tile resmi CARTO Voyager & Dark Matter.
+            </div>
+            <div style="background: var(--bg-card, #2d2e31); border: 1px solid var(--border-color, #3c4043); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary, #e8eaed);">💡 Ingin Kunci API Resmi Gratis?</div>
+                <div style="color: var(--text-secondary, #9aa0a6);">Dapatkan kuota gratis 5.000.000 requests/bulan langsung di <a href="https://carto.com/basemaps/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--accent-blue, #8ab4f8); font-weight: 500; text-decoration: none;">carto.com/basemaps/apikey <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align: -1px;"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a></div>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label for="cartoApiKeyInput" style="display: block; font-size: 12.5px; font-weight: 500; margin-bottom: 6px; color: var(--text-primary, #e8eaed);">API Key CARTO</label>
+                <input type="text" id="cartoApiKeyInput" placeholder="Contoh: carto_live_xxxxxxxx..." style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color, #3c4043); background: var(--bg-input, #303134); color: var(--text-primary, #e8eaed); font-size: 13.5px; outline: none;">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" onclick="clearCartoApiKeyAction()" style="background: none; border: none; color: #ea4335; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 8px 10px; border-radius: 6px;">Gunakan Fallback (Hapus Kunci)</button>
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button type="button" onclick="closeCartoKeyModal()" style="background: none; border: 1px solid var(--border-color, #3c4043); color: var(--text-primary, #e8eaed); font-size: 13px; font-weight: 500; cursor: pointer; padding: 8px 16px; border-radius: 8px;">Batal</button>
+                    <button type="button" onclick="saveCartoApiKeyAction()" style="background: var(--accent-blue, #1a73e8); border: none; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; padding: 8px 18px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">Simpan & Terapkan</button>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    return modal;
+}
+
+function openCartoKeyModal() {
+    if (typeof closeDesktopSettings === 'function') closeDesktopSettings();
+    const modal = ensureCartoKeyModalDOM();
+    const input = document.getElementById("cartoApiKeyInput");
+    if (input) input.value = getCartoApiKey();
+    if (modal) modal.style.display = "flex";
+}
+window.openCartoKeyModal = openCartoKeyModal;
+
+function closeCartoKeyModal(e) {
+    if (e && e.target && e.target !== e.currentTarget) return;
+    const modal = document.getElementById("modalCartoKey");
+    if (modal) modal.style.display = "none";
+}
+window.closeCartoKeyModal = closeCartoKeyModal;
+
+function updateCartoKeyBadgeUI() {
+    const badge = document.getElementById('cartoKeyStatusBadge');
+    if (badge) {
+        const hasKey = !!getCartoApiKey();
+        badge.innerText = hasKey ? 'CARTO Resmi' : 'Fallback Esri';
+        badge.style.color = hasKey ? '#34a853' : 'var(--text-secondary, #9aa0a6)';
+        badge.style.background = hasKey ? 'rgba(52, 168, 83, 0.15)' : 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
+    }
+}
+window.updateCartoKeyBadgeUI = updateCartoKeyBadgeUI;
+
+function reloadMapStyleForCarto() {
+    if (typeof map !== 'undefined' && map && typeof buildMapLibreStyle === 'function') {
+        map.setStyle(buildMapLibreStyle());
+        map.once('style.load', () => {
+            if (typeof applyGlobeProjection === 'function') applyGlobeProjection();
+            if (typeof initFaultLinesGeoJSON === 'function') initFaultLinesGeoJSON();
+            if (typeof updateSatelliteLabelsLayer === 'function') updateSatelliteLabelsLayer();
+            if (typeof updateLayerDetailUI === 'function') updateLayerDetailUI();
+            if (typeof cullOccludedGlobeMarkers === 'function') cullOccludedGlobeMarkers();
+            if (typeof applyMapLayer === 'function') applyMapLayer(currentMapLayer || 'light');
+        });
+    }
+}
+
+function saveCartoApiKeyAction() {
+    const input = document.getElementById("cartoApiKeyInput");
+    const val = input ? input.value.trim() : '';
+    setCartoApiKey(val);
+    closeCartoKeyModal();
+    updateCartoKeyBadgeUI();
+    reloadMapStyleForCarto();
+    if (typeof showToastNotification === 'function') {
+        showToastNotification(val ? "🔑 Kunci CARTO disimpan! Memuat tile CARTO resmi..." : "🗺️ Menggunakan Smart Fallback (Esri & Google)");
+    }
+}
+window.saveCartoApiKeyAction = saveCartoApiKeyAction;
+
+function clearCartoApiKeyAction() {
+    setCartoApiKey('');
+    const input = document.getElementById("cartoApiKeyInput");
+    if (input) input.value = '';
+    closeCartoKeyModal();
+    updateCartoKeyBadgeUI();
+    reloadMapStyleForCarto();
+    if (typeof showToastNotification === 'function') {
+        showToastNotification("🗺️ Kunci dihapus. Beralih ke Smart Fallback (Esri & Google)");
+    }
+}
+window.clearCartoApiKeyAction = clearCartoApiKeyAction;
+
 // Tutup semua modal on-demand dengan tombol Esc
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -888,6 +1022,7 @@ document.addEventListener("keydown", (e) => {
         closeAppInfo();
         closeShareModal();
         closeLanguageModal();
+        closeCartoKeyModal();
     }
 });
 
@@ -904,5 +1039,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 350);
         }
     } catch(e){}
+    if (typeof updateCartoKeyBadgeUI === 'function') {
+        updateCartoKeyBadgeUI();
+    }
 });
 
